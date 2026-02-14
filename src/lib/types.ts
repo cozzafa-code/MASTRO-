@@ -339,3 +339,102 @@ export type StatoCommessa = {
     created_at?: string
     completato_at?: string
   }
+
+  export type Serramento = {
+    id: string
+    azienda_id: string
+    commessa_id: string
+    posizione: string
+    ambiente: string
+    piano: string
+    tipo: string
+    larghezza: number
+    altezza: number
+    profondita_muro: number
+    num_ante: number
+    configurazione: string
+    divisione_ante?: string
+    ha_traverso: boolean
+    altezza_sopraluce: number
+    tipo_sopraluce: string
+    sistema_profilo: string
+    materiale: string
+    larghezza_profilo: number
+    colore_esterno: string
+    colore_interno: string
+    nome_colore_esterno: string
+    nome_colore_interno: string
+    finitura: string
+    tipo_vetro: string
+    composizione_vetro: string
+    vetro_basso_emissivo: boolean
+    vetro_temperato: boolean
+    vetro_stratificato: boolean
+    gas_camera: string
+    ug_valore: number
+    tipo_ferramenta: string
+    classe_antieffrazione: string
+    maniglia: string
+    colore_maniglia: string
+    posizione_maniglia: string
+    cerniere: string
+    cassonetto: boolean
+    tipo_cassonetto: string
+    avvolgibile: boolean
+    tipo_avvolgibile: string
+    motorizzato: boolean
+    zanzariera: boolean
+    tipo_zanzariera: string
+    persiana: boolean
+    tipo_persiana: string
+    davanzale_interno: boolean
+    davanzale_esterno: boolean
+    soglia: string
+    uw_valore?: number
+    peso_kg?: number
+    superficie_mq?: number
+    prezzo_profilo: number
+    prezzo_vetro: number
+    prezzo_ferramenta: number
+    prezzo_accessori: number
+    prezzo_posa: number
+    sconto_percentuale: number
+    prezzo_totale: number
+    note?: string
+    ordine: number
+    created_at?: string
+    updated_at?: string
+  }
+
+  export const TIPI_SERRAMENTO = [
+    { value: 'finestra', label: 'Finestra', icon: '🪟' },
+    { value: 'portafinestra', label: 'Portafinestra', icon: '🚪' },
+    { value: 'scorrevole', label: 'Scorrevole', icon: '↔️' },
+    { value: 'alzante_scorrevole', label: 'Alzante Scorrevole', icon: '⬆️' },
+    { value: 'fisso', label: 'Fisso', icon: '⬜' },
+    { value: 'porta_ingresso', label: 'Porta Ingresso', icon: '🚪' },
+    { value: 'vasistas', label: 'Vasistas', icon: '🔽' },
+  ]
+
+  export const MATERIALI_PROFILO = [
+    { value: 'pvc', label: 'PVC', color: '#FFFFFF' },
+    { value: 'alluminio', label: 'Alluminio', color: '#A8A8A8' },
+    { value: 'legno_alluminio', label: 'Legno/Alluminio', color: '#8B6914' },
+    { value: 'legno', label: 'Legno', color: '#A0522D' },
+    { value: 'acciaio', label: 'Acciaio', color: '#71797E' },
+  ]
+
+  export const COLORI_SERRAMENTO = [
+    { value: '#FFFFFF', label: 'Bianco', ral: '9016' },
+    { value: '#F5F5DC', label: 'Avorio', ral: '1015' },
+    { value: '#808080', label: 'Grigio', ral: '7035' },
+    { value: '#474747', label: 'Grigio Scuro', ral: '7016' },
+    { value: '#3B3B3B', label: 'Antracite', ral: '7021' },
+    { value: '#1C1C1C', label: 'Nero', ral: '9005' },
+    { value: '#8B6914', label: 'Rovere Dorato', ral: '' },
+    { value: '#5C4033', label: 'Noce', ral: '' },
+    { value: '#A0522D', label: 'Ciliegio', ral: '' },
+    { value: '#4A6741', label: 'Verde Muschio', ral: '6005' },
+    { value: '#003153', label: 'Blu Notte', ral: '5011' },
+    { value: '#800020', label: 'Bordeaux', ral: '3005' },
+  ]
