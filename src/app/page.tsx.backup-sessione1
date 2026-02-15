@@ -216,7 +216,6 @@ export default function Dashboard() {
   const [calSelectedDate, setCalSelectedDate] = useState<string | null>(null)
   const [calEventi, setCalEventi] = useState<(Evento & { cliente?: Cliente })[]>([])
   const [showNewEvento, setShowNewEvento] = useState(false)
-  const [editingEvento, setEditingEvento] = useState<any>(null)
   const [newEvento, setNewEvento] = useState({ titolo: '', tipo: 'sopralluogo', data: new Date().toISOString().split('T')[0], ora_inizio: '09:00', durata_min: 60, cliente_id: '', commessa_id: '', note: '' })
   const [globalSearch, setGlobalSearch] = useState('')
   const [calFilterTipo, setCalFilterTipo] = useState<string[]>([])
@@ -381,11 +380,11 @@ export default function Dashboard() {
 
   async function loadDashboard() {
     const { data: commData } = await supabase
-      .from('commesse').select('*').eq('azienda_id', AZIENDA_ID)
+      .from('commesse').select('*, cliente:clienti(*)').eq('azienda_id', AZIENDA_ID)
       .neq('stato', 'chiusura').order('updated_at', { ascending: false })
     const oggi = new Date().toISOString().split('T')[0]
     const { data: evData } = await supabase
-      .from('eventi').select('*').eq('azienda_id', AZIENDA_ID)
+      .from('eventi').select('*, cliente:clienti(*)').eq('azienda_id', AZIENDA_ID)
       .eq('data', oggi).order('ora_inizio', { ascending: true })
     const { count: inboxCount } = await supabase
       .from('inbox').select('*', { count: 'exact', head: true })
@@ -398,7 +397,7 @@ export default function Dashboard() {
 
   async function loadContabilita() {
     const { data: fatData } = await supabase.from('fatture').select('*, cliente:clienti(*), commessa:commesse(*)').eq('azienda_id', AZIENDA_ID).order('data_emissione', { ascending: false })
-    const { data: pagData } = await supabase.from('pagamenti').select('*').eq('azienda_id', AZIENDA_ID).order('data_pagamento', { ascending: false })
+    const { data: pagData } = await supabase.from('pagamenti').select('*, cliente:clienti(*)').eq('azienda_id', AZIENDA_ID).order('data_pagamento', { ascending: false })
     const { data: scadData } = await supabase.from('scadenze').select('*, cliente:clienti(*), commessa:commesse(*)').eq('azienda_id', AZIENDA_ID).order('data_scadenza', { ascending: true })
     const fat = (fatData || []) as (Fattura & { cliente?: Cliente; commessa?: Commessa })[]
     const pag = (pagData || []) as (Pagamento & { cliente?: Cliente })[]
@@ -490,7 +489,7 @@ export default function Dashboard() {
 
   async function loadCalendario() {
     const d1 = new Date(calYear, calMonth - 1, 1); const d2 = new Date(calYear, calMonth + 2, 1)
-    const { data } = await supabase.from('eventi').select('*').eq('azienda_id', AZIENDA_ID).gte('data', d1.toISOString().split('T')[0]).lt('data', d2.toISOString().split('T')[0]).order('ora_inizio', { ascending: true })
+    const { data } = await supabase.from('eventi').select('*, cliente:clienti(*)').eq('azienda_id', AZIENDA_ID).gte('data', d1.toISOString().split('T')[0]).lt('data', d2.toISOString().split('T')[0]).order('ora_inizio', { ascending: true })
     setCalEventi((data || []) as any[])
   }
 
@@ -559,31 +558,6 @@ export default function Dashboard() {
     const { error } = await supabase.from('eventi').insert({ azienda_id: AZIENDA_ID, titolo: newEvento.titolo, tipo: newEvento.tipo, data: newEvento.data, ora_inizio: newEvento.ora_inizio, durata_min: newEvento.durata_min, cliente_id: newEvento.cliente_id || null, commessa_id: newEvento.commessa_id || null, note: newEvento.note || null })
     if (!error) { setShowNewEvento(false); setNewEvento({ titolo: '', tipo: 'sopralluogo', data: new Date().toISOString().split('T')[0], ora_inizio: '09:00', durata_min: 60, cliente_id: '', commessa_id: '', note: '' }); await loadCalendario(); await loadDashboard() }
   }
-
-  async function updateEvento(id: string, updates: any) {
-    const { error } = await supabase
-      .from('eventi')
-      .update({ ...updates, updated_at: new Date().toISOString() })
-      .eq('id', id)
-    if (!error) {
-      setEditingEvento(null)
-      await loadCalendario()
-      await loadDashboard()
-    }
-  }
-
-  async function deleteEvento(id: string) {
-    if (!confirm('Eliminare questo evento?')) return
-    const { error } = await supabase
-      .from('eventi')
-      .delete()
-      .eq('id', id)
-    if (!error) {
-      await loadCalendario()
-      await loadDashboard()
-    }
-  }
-
 
   async function createMovimento() {
     const art = articoli.find(a => a.id === newMovimento.articolo_id)
@@ -1983,92 +1957,7 @@ export default function Dashboard() {
             </div>
           </Card>
         )}
-      
-        {/* ═══ MODAL MODIFICA EVENTO ═══ */}
-        {editingEvento && (
-          <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-            onClick={() => setEditingEvento(null)}>
-            <div className="rounded-xl" style={{ width: 520, background: BG.card, boxShadow: isDark ? '0 4px 12px rgba(0,0,0,0.4)' : TH.shadowMd, overflow: 'hidden' }}
-              onClick={(ev) => ev.stopPropagation()}>
-              <div className="p-5" style={{ borderBottom: `1px solid ${TX.border}` }}>
-                <div className="flex items-center justify-between">
-                  <h3 style={{ fontSize: 16, fontWeight: 800, color: TX.text }}>Modifica Evento</h3>
-                  <button onClick={() => setEditingEvento(null)}
-                    style={{ background: BG.input, border: `1px solid ${TX.border}`, borderRadius: 8, padding: 6, cursor: 'pointer' }}>
-                    <Ic n="x" s={14} c={TX.textMuted}/>
-                  </button>
-                </div>
-              </div>
-              <div className="p-5 space-y-4">
-                <div>
-                  <label style={{ fontSize: 10, color: TX.textMuted, textTransform: 'uppercase', letterSpacing: 1, fontWeight: 600, display: 'block', marginBottom: 4 }}>Titolo</label>
-                  <input value={editingEvento.titolo || ''} onChange={(ev) => setEditingEvento((prev: any) => ({...prev, titolo: ev.target.value}))}
-                    className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-                    style={{ background: BG.input, border: `1px solid ${TX.border}`, color: TX.text }} />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label style={{ fontSize: 10, color: TX.textMuted, textTransform: 'uppercase', letterSpacing: 1, fontWeight: 600, display: 'block', marginBottom: 4 }}>Tipo</label>
-                    <select value={editingEvento.tipo || 'altro'} onChange={(ev) => setEditingEvento((prev: any) => ({...prev, tipo: ev.target.value}))}
-                      className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-                      style={{ background: BG.input, border: `1px solid ${TX.border}`, color: TX.text }}>
-                      {['sopralluogo','misure','scadenza','posa','consegna','riunione','altro'].map(t => (
-                        <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label style={{ fontSize: 10, color: TX.textMuted, textTransform: 'uppercase', letterSpacing: 1, fontWeight: 600, display: 'block', marginBottom: 4 }}>Data</label>
-                    <input type="date" value={editingEvento.data || ''} onChange={(ev) => setEditingEvento((prev: any) => ({...prev, data: ev.target.value}))}
-                      className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-                      style={{ background: BG.input, border: `1px solid ${TX.border}`, color: TX.text }} />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label style={{ fontSize: 10, color: TX.textMuted, textTransform: 'uppercase', letterSpacing: 1, fontWeight: 600, display: 'block', marginBottom: 4 }}>Ora inizio</label>
-                    <input type="time" value={editingEvento.ora_inizio || ''} onChange={(ev) => setEditingEvento((prev: any) => ({...prev, ora_inizio: ev.target.value}))}
-                      className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-                      style={{ background: BG.input, border: `1px solid ${TX.border}`, color: TX.text }} />
-                  </div>
-                  <div>
-                    <label style={{ fontSize: 10, color: TX.textMuted, textTransform: 'uppercase', letterSpacing: 1, fontWeight: 600, display: 'block', marginBottom: 4 }}>Durata (min)</label>
-                    <input type="number" value={editingEvento.durata_min || 60} onChange={(ev) => setEditingEvento((prev: any) => ({...prev, durata_min: parseInt(ev.target.value) || 60}))}
-                      className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-                      style={{ background: BG.input, border: `1px solid ${TX.border}`, color: TX.text }} />
-                  </div>
-                </div>
-                <div>
-                  <label style={{ fontSize: 10, color: TX.textMuted, textTransform: 'uppercase', letterSpacing: 1, fontWeight: 600, display: 'block', marginBottom: 4 }}>Note</label>
-                  <textarea value={editingEvento.note || ''} onChange={(ev) => setEditingEvento((prev: any) => ({...prev, note: ev.target.value}))}
-                    rows={2} className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-                    style={{ background: BG.input, border: `1px solid ${TX.border}`, color: TX.text, resize: 'none' }} />
-                </div>
-              </div>
-              <div className="p-5 flex gap-3" style={{ borderTop: `1px solid ${TX.border}`, background: BG.input }}>
-                <button onClick={() => setEditingEvento(null)}
-                  style={{ flex: 1, padding: '10px 0', background: 'transparent', border: `1px solid ${TX.border}`, borderRadius: 8, fontSize: 12, fontWeight: 600, color: TX.textSec, cursor: 'pointer' }}>
-                  Annulla
-                </button>
-                <button onClick={() => deleteEvento(editingEvento.id)}
-                  style={{ padding: '10px 16px', background: TH.red + '10', border: `1px solid ${TH.red}30`, borderRadius: 8, fontSize: 12, fontWeight: 700, color: TH.red, cursor: 'pointer' }}>
-                  Elimina
-                </button>
-                <button onClick={() => updateEvento(editingEvento.id, {
-                    titolo: editingEvento.titolo, tipo: editingEvento.tipo, data: editingEvento.data,
-                    ora_inizio: editingEvento.ora_inizio, durata_min: editingEvento.durata_min,
-                    cliente_id: editingEvento.cliente_id || null, commessa_id: editingEvento.commessa_id || null,
-                    note: editingEvento.note || null,
-                  })}
-                  style={{ flex: 2, padding: '10px 0', background: AC, border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 700, color: '#fff', cursor: 'pointer' }}>
-                  Salva Modifiche
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        </div>
+      </div>
     )
   }
 
