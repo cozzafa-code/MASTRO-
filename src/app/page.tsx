@@ -142,7 +142,8 @@ export default function Dashboard() {
     BASE: { label: 'Servizi Generali', color: '#5D6D7E', icon: '🏢', tabs: ['dashboard','team'] },
   }
 
-  const userLicenza = profilo?.licenza || 'BASE'
+  const [devLicenza, setDevLicenza] = useState<string | null>(null)
+  const userLicenza = devLicenza || profilo?.licenza || 'BASE'
   const userConfig = licenzaConfig[userLicenza] || licenzaConfig.BASE
   const allowedTabs = userConfig.tabs
 
@@ -5159,6 +5160,17 @@ export default function Dashboard() {
             </div>
           </div>
         )}
+      </div>
+      {/* DEV TOOLBAR */}
+      <div style={{ position: "fixed", bottom: 12, right: 12, zIndex: 99999, background: "#1a1a2e", borderRadius: 12, padding: 10, boxShadow: "0 4px 20px rgba(0,0,0,0.5)", maxWidth: 320, fontSize: 11 }}>
+        <div style={{ color: "#fff", fontWeight: 700, marginBottom: 6 }}>DEV TOOLBAR</div>
+        <div style={{ color: "#aaa", marginBottom: 4 }}>Licenza: <span style={{ color: "#0f0" }}>{userLicenza}</span></div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 8 }}>
+          {Object.keys(licenzaConfig).map(k => (
+            <button key={k} onClick={() => setDevLicenza(k)} style={{ padding: "3px 8px", borderRadius: 6, border: k === userLicenza ? "2px solid #0f0" : "1px solid #444", background: k === userLicenza ? "#0f03" : "#333", color: "#fff", cursor: "pointer", fontSize: 10 }}>{k}</button>
+          ))}
+        </div>
+        <div style={{ color: "#aaa", fontSize: 10 }}>Tabs: {allowedTabs.join(", ")}</div>
       </div>
     </>
   )
