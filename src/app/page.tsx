@@ -1915,7 +1915,7 @@ Riga 601: async function updateEvento...
             </div>
             <div className="flex gap-2 justify-end">
               <button onClick={() => setShowNewEvento(false)} className="px-3 py-1.5 rounded-lg text-xs" style={{ color: TX.textSec, border: `1px solid ${TX.borderMed}` }}>Annulla</button>
-              <button onClick={createEvento} className="px-4 py-1.5 rounded-lg text-xs font-semibold" style={{ background: TH.amber, color: '#fff' }}>Salva Evento</button>
+             <button type="button" onClick={createEvento} className="px-4 py-1.5 rounded-lg text-xs font-semibold" style={{ background: TH.amber, color: '⬛#fff' }}>Salva Evento</button>
             </div>
           </Card>
         )}
