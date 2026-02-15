@@ -147,7 +147,97 @@ export default function Dashboard() {
   const allowedTabs = userConfig.tabs
 
   // ==================== LOGIN PAGE ====================
+  if (authLoading) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)' }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 40, fontWeight: 900, color: '#fff', letterSpacing: -2 }}>MASTRO</div>
+          <div style={{ fontSize: 12, color: '#64748b', marginTop: 8 }}>Caricamento...</div>
+        </div>
+      </div>
+    )
+  }
 
+  if (!authUser) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+        <div style={{ width: 420, padding: 0 }}>
+          {/* Logo */}
+          <div style={{ textAlign: 'center', marginBottom: 40 }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 64, height: 64, borderRadius: 16, background: 'linear-gradient(135deg, #f59e0b, #d97706)', marginBottom: 16, boxShadow: '0 8px 32px rgba(245,158,11,0.25)' }}>
+              <span style={{ fontSize: 28, fontWeight: 900, color: '#fff' }}>M</span>
+            </div>
+            <h1 style={{ fontSize: 32, fontWeight: 900, color: '#fff', letterSpacing: -1.5, margin: 0 }}>MASTRO</h1>
+            <p style={{ fontSize: 13, color: '#64748b', marginTop: 4 }}>Il Sistema Operativo del Serramentista</p>
+          </div>
+
+          {/* Card */}
+          <div style={{ background: '#1e293b', borderRadius: 16, border: '1px solid #334155', padding: 32, boxShadow: '0 12px 48px rgba(0,0,0,0.4)' }}>
+            {/* Tabs */}
+            <div style={{ display: 'flex', gap: 0, marginBottom: 24, background: '#0f172a', borderRadius: 10, padding: 4 }}>
+              {(['login', 'signup'] as const).map(v => (
+                <button key={v} onClick={() => { setAuthView(v); setAuthError('') }}
+                  style={{ flex: 1, padding: '10px 0', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600,
+                    background: authView === v ? '#334155' : 'transparent', color: authView === v ? '#fff' : '#64748b' }}>
+                  {v === 'login' ? 'Accedi' : 'Registrati'}
+                </button>
+              ))}
+            </div>
+
+            {/* Signup fields */}
+            {authView === 'signup' && (
+              <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#94a3b8', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 1 }}>Nome</label>
+                  <input value={authNome} onChange={e => setAuthNome(e.target.value)} placeholder="Mario"
+                    style={{ width: '100%', padding: '12px 14px', background: '#0f172a', border: '1px solid #334155', borderRadius: 10, color: '#fff', fontSize: 14, outline: 'none', boxSizing: 'border-box' }} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#94a3b8', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 1 }}>Cognome</label>
+                  <input value={authCognome} onChange={e => setAuthCognome(e.target.value)} placeholder="Rossi"
+                    style={{ width: '100%', padding: '12px 14px', background: '#0f172a', border: '1px solid #334155', borderRadius: 10, color: '#fff', fontSize: 14, outline: 'none', boxSizing: 'border-box' }} />
+                </div>
+              </div>
+            )}
+
+            {/* Email */}
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#94a3b8', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 1 }}>Email</label>
+              <input value={authEmail} onChange={e => setAuthEmail(e.target.value)} type="email" placeholder="nome@azienda.it"
+                style={{ width: '100%', padding: '12px 14px', background: '#0f172a', border: '1px solid #334155', borderRadius: 10, color: '#fff', fontSize: 14, outline: 'none', boxSizing: 'border-box' }} />
+            </div>
+
+            {/* Password */}
+            <div style={{ marginBottom: 24 }}>
+              <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#94a3b8', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 1 }}>Password</label>
+              <input value={authPassword} onChange={e => setAuthPassword(e.target.value)} type="password" placeholder="••••••••"
+                onKeyDown={e => { if (e.key === 'Enter') authView === 'login' ? handleLogin() : handleSignup() }}
+                style={{ width: '100%', padding: '12px 14px', background: '#0f172a', border: '1px solid #334155', borderRadius: 10, color: '#fff', fontSize: 14, outline: 'none', boxSizing: 'border-box' }} />
+            </div>
+
+            {/* Error */}
+            {authError && (
+              <div style={{ padding: '10px 14px', marginBottom: 16, borderRadius: 10, background: authError.includes('email') && authView === 'signup' ? '#064e3b' : '#7f1d1d',
+                border: `1px solid ${authError.includes('email') && authView === 'signup' ? '#065f46' : '#991b1b'}`, fontSize: 12, color: authError.includes('email') && authView === 'signup' ? '#6ee7b7' : '#fca5a5' }}>
+                {authError}
+              </div>
+            )}
+
+            {/* Button */}
+            <button onClick={authView === 'login' ? handleLogin : handleSignup}
+              style={{ width: '100%', padding: '14px 0', background: 'linear-gradient(135deg, #f59e0b, #d97706)', border: 'none', borderRadius: 10, color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer', letterSpacing: 0.5, boxShadow: '0 4px 16px rgba(245,158,11,0.3)' }}>
+              {authView === 'login' ? 'Accedi a MASTRO' : 'Crea Account'}
+            </button>
+          </div>
+
+          {/* Footer */}
+          <p style={{ textAlign: 'center', fontSize: 11, color: '#475569', marginTop: 24 }}>
+            Walter Cozza Serramenti SRL · MASTRO ERP v1.0
+          </p>
+        </div>
+      </div>
+    )
+  }
 
   // ==================== APP STATE ====================
   const [commesse, setCommesse] = useState<(Commessa & { cliente?: Cliente })[]>([])
@@ -652,100 +742,6 @@ export default function Dashboard() {
   const getStato = (stato: string) => STATI_COMMESSA.find(s => s.value === stato) || STATI_COMMESSA[0]
   const oggi = new Date().toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
   const oggiISO = new Date().toISOString().split('T')[0]
-
-
-  // === AUTH GUARD ===
-  if (authLoading) {
-    return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)' }}>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 40, fontWeight: 900, color: '#fff', letterSpacing: -2 }}>MASTRO</div>
-          <div style={{ fontSize: 12, color: '#64748b', marginTop: 8 }}>Caricamento...</div>
-        </div>
-      </div>
-    )
-  }
-
-  if (!authUser) {
-    return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
-        <div style={{ width: 420, padding: 0 }}>
-          {/* Logo */}
-          <div style={{ textAlign: 'center', marginBottom: 40 }}>
-            <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 64, height: 64, borderRadius: 16, background: 'linear-gradient(135deg, #f59e0b, #d97706)', marginBottom: 16, boxShadow: '0 8px 32px rgba(245,158,11,0.25)' }}>
-              <span style={{ fontSize: 28, fontWeight: 900, color: '#fff' }}>M</span>
-            </div>
-            <h1 style={{ fontSize: 32, fontWeight: 900, color: '#fff', letterSpacing: -1.5, margin: 0 }}>MASTRO</h1>
-            <p style={{ fontSize: 13, color: '#64748b', marginTop: 4 }}>Il Sistema Operativo del Serramentista</p>
-          </div>
-
-          {/* Card */}
-          <div style={{ background: '#1e293b', borderRadius: 16, border: '1px solid #334155', padding: 32, boxShadow: '0 12px 48px rgba(0,0,0,0.4)' }}>
-            {/* Tabs */}
-            <div style={{ display: 'flex', gap: 0, marginBottom: 24, background: '#0f172a', borderRadius: 10, padding: 4 }}>
-              {(['login', 'signup'] as const).map(v => (
-                <button key={v} onClick={() => { setAuthView(v); setAuthError('') }}
-                  style={{ flex: 1, padding: '10px 0', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600,
-                    background: authView === v ? '#334155' : 'transparent', color: authView === v ? '#fff' : '#64748b' }}>
-                  {v === 'login' ? 'Accedi' : 'Registrati'}
-                </button>
-              ))}
-            </div>
-
-            {/* Signup fields */}
-            {authView === 'signup' && (
-              <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
-                <div style={{ flex: 1 }}>
-                  <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#94a3b8', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 1 }}>Nome</label>
-                  <input value={authNome} onChange={e => setAuthNome(e.target.value)} placeholder="Mario"
-                    style={{ width: '100%', padding: '12px 14px', background: '#0f172a', border: '1px solid #334155', borderRadius: 10, color: '#fff', fontSize: 14, outline: 'none', boxSizing: 'border-box' }} />
-                </div>
-                <div style={{ flex: 1 }}>
-                  <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#94a3b8', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 1 }}>Cognome</label>
-                  <input value={authCognome} onChange={e => setAuthCognome(e.target.value)} placeholder="Rossi"
-                    style={{ width: '100%', padding: '12px 14px', background: '#0f172a', border: '1px solid #334155', borderRadius: 10, color: '#fff', fontSize: 14, outline: 'none', boxSizing: 'border-box' }} />
-                </div>
-              </div>
-            )}
-
-            {/* Email */}
-            <div style={{ marginBottom: 16 }}>
-              <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#94a3b8', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 1 }}>Email</label>
-              <input value={authEmail} onChange={e => setAuthEmail(e.target.value)} type="email" placeholder="nome@azienda.it"
-                style={{ width: '100%', padding: '12px 14px', background: '#0f172a', border: '1px solid #334155', borderRadius: 10, color: '#fff', fontSize: 14, outline: 'none', boxSizing: 'border-box' }} />
-            </div>
-
-            {/* Password */}
-            <div style={{ marginBottom: 24 }}>
-              <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#94a3b8', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 1 }}>Password</label>
-              <input value={authPassword} onChange={e => setAuthPassword(e.target.value)} type="password" placeholder="••••••••"
-                onKeyDown={e => { if (e.key === 'Enter') authView === 'login' ? handleLogin() : handleSignup() }}
-                style={{ width: '100%', padding: '12px 14px', background: '#0f172a', border: '1px solid #334155', borderRadius: 10, color: '#fff', fontSize: 14, outline: 'none', boxSizing: 'border-box' }} />
-            </div>
-
-            {/* Error */}
-            {authError && (
-              <div style={{ padding: '10px 14px', marginBottom: 16, borderRadius: 10, background: authError.includes('email') && authView === 'signup' ? '#064e3b' : '#7f1d1d',
-                border: `1px solid ${authError.includes('email') && authView === 'signup' ? '#065f46' : '#991b1b'}`, fontSize: 12, color: authError.includes('email') && authView === 'signup' ? '#6ee7b7' : '#fca5a5' }}>
-                {authError}
-              </div>
-            )}
-
-            {/* Button */}
-            <button onClick={authView === 'login' ? handleLogin : handleSignup}
-              style={{ width: '100%', padding: '14px 0', background: 'linear-gradient(135deg, #f59e0b, #d97706)', border: 'none', borderRadius: 10, color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer', letterSpacing: 0.5, boxShadow: '0 4px 16px rgba(245,158,11,0.3)' }}>
-              {authView === 'login' ? 'Accedi a MASTRO' : 'Crea Account'}
-            </button>
-          </div>
-
-          {/* Footer */}
-          <p style={{ textAlign: 'center', fontSize: 11, color: '#475569', marginTop: 24 }}>
-            Walter Cozza Serramenti SRL · MASTRO ERP v1.0
-          </p>
-        </div>
-      </div>
-    )
-  }
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-screen" style={{ background: BG.page }}>
