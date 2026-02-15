@@ -556,9 +556,62 @@ export default function Dashboard() {
   }
 
   async function createEvento() {
-    const { error } = await supabase.from('eventi').insert({ azienda_id: AZIENDA_ID, titolo: newEvento.titolo, tipo: newEvento.tipo, data: newEvento.data, ora_inizio: newEvento.ora_inizio, durata_min: newEvento.durata_min, cliente_id: newEvento.cliente_id || null, commessa_id: newEvento.commessa_id || null, note: newEvento.note || null })
-    if (!error) { setShowNewEvento(false); setNewEvento({ titolo: '', tipo: 'sopralluogo', data: new Date().toISOString().split('T')[0], ora_inizio: '09:00', durata_min: 60, cliente_id: '', commessa_id: '', note: '' }); await loadCalendario(); await loadDashboard() }
+  if (!newEvento.titolo?.trim()) {
+    alert('Inserisci un titolo per l\'evento');
+    return;
   }
+
+  const { error } = await supabase
+    .from('eventi')
+    .insert([{
+      azienda_id: AZIENDA_ID,
+      titolo: newEvento.titolo,
+      tipo_evento: newEvento.tipo || 'sopralluogo',
+      data: newEvento.data || new Date().toISOString().split('T')[0],
+      ora_inizio: newEvento.ora_inizio || null,
+      durata_min: newEvento.durata_min || 60,
+      cliente_id: newEvento.cliente_id || null,
+      commessa_id: newEvento.commessa_id || null,
+      note: newEvento.note || null,
+      completato: false
+    }]);
+
+  if (!error) {
+    setShowNewEvento(false);
+    setNewEvento({ titolo: '', tipo: 'sopralluogo', data: new Date().toISOString().split('T')[0] });
+    // Ricarica eventi
+    caricaEventi();
+  } else {
+    console.error('Errore salvataggio:', error);
+    alert('Errore nel salvare l\'evento');
+  }
+}
+async function caricaEventi() {
+  const { data } = await supabase
+    .from('eventi')
+    .select('*')
+    .eq('azienda_id', AZIENDA_ID)
+    .order('data', { ascending: true });
+  
+  if (data) {
+    setCalEventi(data);
+  }
+}
+```
+
+---
+
+## 📋 **RISULTATO:**
+
+Dovresti avere:
+```
+Riga 558-587: createEvento() { ... }
+Riga 588: }
+
+Riga 590-598: caricaEventi() { ... }  ← NUOVA FUNZIONE
+Riga 599: }
+
+Riga 601: async function updateEvento...
 
   async function updateEvento(id: string, updates: any) {
     const { error } = await supabase
