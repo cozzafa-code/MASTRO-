@@ -1,9 +1,8 @@
-
 'use client';
-// @ts-nocheck
+
 import { useState, useRef } from "react";
 
-/* ═══ MASTRO MISURE v6 ═══
+/* ═══ MASTRO MISURE v7 ═══
    + 3 Temi (Cantiere Dark / Chiaro / Blu Notte)
    + Nuovo Cliente + Nuova Commessa
    + AI "Ask MASTRO"
@@ -266,7 +265,7 @@ export default function MastroMisure() {
   const [showAnomalies, setShowAnomalies] = useState(false);
 
   const S = {
-    app: { width: "100%", maxWidth: 430, margin: "0 auto", height: "100dvh", background: T.bg, fontFamily: "'DM Sans', system-ui", color: T.text, display: "flex", flexDirection: "column", position: "relative", overflow: "hidden" },
+    app: { width: "100%", height: "100dvh", background: T.bg, fontFamily: "'DM Sans', system-ui", color: T.text, display: "flex", flexDirection: "column", position: "relative", overflow: "hidden" },
     header: { padding: "12px 16px", display: "flex", alignItems: "center", gap: 12, background: T.bg2, borderBottom: `1px solid ${T.bdr}`, minHeight: 56, flexShrink: 0 },
     hTitle: { fontSize: 17, fontWeight: 700, letterSpacing: "-0.02em" },
     hSub: { fontSize: 11, color: T.sub, marginTop: 1 },
@@ -278,7 +277,7 @@ export default function MastroMisure() {
     btn: (bg, c = "#fff") => ({ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "12px 20px", borderRadius: 12, background: bg, color: c, fontSize: 14, fontWeight: 600, border: "none", cursor: "pointer", width: "100%" }),
     input: { width: "100%", background: T.bg, border: `1px solid ${T.bdr}`, borderRadius: 10, padding: "10px 14px", color: T.text, fontSize: 14, outline: "none", fontFamily: "'DM Sans'" },
     modal: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "flex-end", justifyContent: "center", zIndex: 200 },
-    modalBox: { width: "100%", maxWidth: 430, background: T.bg2, borderRadius: "20px 20px 0 0", padding: "20px 16px max(env(safe-area-inset-bottom),20px)", maxHeight: "85vh", overflowY: "auto" },
+    modalBox: { width: "100%", maxWidth: 430, background: T.bg2, borderRadius: "20px 20px 0 0", padding: "20px 16px max(env(safe-area-inset-bottom),20px)", maxHeight: "85vh", overflow: "auto" },
   };
 
   const goBack = () => {
@@ -441,7 +440,7 @@ export default function MastroMisure() {
     const cv = vani.filter(v => v.cantiereId === c.id);
     return (<div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
       <div style={S.header}><div onClick={goBack} style={{ cursor: "pointer", padding: 4 }}><Ico d={ICO.back} size={20} color={T.sub} /></div><div style={{ flex: 1 }}><div style={S.hTitle}>{c.cliente}</div><div style={S.hSub}>{c.indirizzo}</div></div></div>
-      <div style={{ flex: 1, overflowY: "auto" }}>
+      <div style={{ flex: 1, overflow: "auto" }}>
         <div style={{ padding: "14px 12px 8px" }}>
           <div style={{ display: "flex", gap: 4, marginBottom: 8 }}>{FASI.map((f, i) => (<div key={f.id} style={{ flex: 1, textAlign: "center" }}><div style={{ height: 6, borderRadius: 3, background: i <= fi ? fase.color : T.white08, marginBottom: 4 }} /><div style={{ fontSize: 12 }}>{f.icon}</div></div>))}</div>
           <div style={{ display: "flex", gap: 8 }}>
@@ -499,7 +498,7 @@ export default function MastroMisure() {
     const c = selectedCantiere; if (!c) return null;
     return (<div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
       <div style={S.header}><div onClick={goBack} style={{ cursor: "pointer", padding: 4 }}><Ico d={ICO.back} size={20} color={T.sub} /></div><div style={{ flex: 1 }}><div style={S.hTitle}>Pipeline</div><div style={S.hSub}>{c.cliente}</div></div></div>
-      <div style={{ flex: 1, overflowY: "auto", padding: 12 }}>
+      <div style={{ flex: 1, overflow: "auto", padding: 12 }}>
         {FASI.map((f, i) => { const info = c.pipeline[f.id]; const done = info.stato === "completato"; const curr = info.stato === "in_corso"; const fut = info.stato === "futuro"; const resp = info.responsabile ? TEAM.find(t => t.id === info.responsabile) : null; return (
           <div key={f.id} style={{ display: "flex", gap: 12, marginBottom: 4 }}>
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: 32 }}>
@@ -525,7 +524,7 @@ export default function MastroMisure() {
     const doSend = () => { if (!msgText.trim()) return; setMessages(p => [...p, { id: Date.now(), cantiereId: c.id, faseId: msgTarget.faseId, da: "fabio", a: msgTarget.responsabile, testo: msgText.trim(), ora: new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }), data: "oggi" }]); setMsgText(""); };
     return (<div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
       <div style={S.header}><div onClick={goBack} style={{ cursor: "pointer", padding: 4 }}><Ico d={ICO.back} size={20} color={T.sub} /></div><Avatar member={msgTarget.responsabile} size={32} /><div style={{ flex: 1 }}><div style={S.hTitle}>{resp?.nome}</div><div style={S.hSub}>{fase?.icon} {fase?.label}</div></div></div>
-      <div style={{ flex: 1, overflowY: "auto", padding: 12, display: "flex", flexDirection: "column", gap: 8 }}>
+      <div style={{ flex: 1, overflow: "auto", padding: 12, display: "flex", flexDirection: "column", gap: 8 }}>
         {fm.length === 0 && <div style={{ textAlign: "center", padding: 40, color: T.sub2, fontSize: 13 }}>Nessun messaggio</div>}
         {fm.map(m => { const mine = m.da === "fabio"; return (<div key={m.id} style={{ display: "flex", justifyContent: mine ? "flex-end" : "flex-start" }}><div style={{ maxWidth: "80%", padding: "10px 14px", borderRadius: 14, borderBottomRightRadius: mine ? 4 : 14, borderBottomLeftRadius: mine ? 14 : 4, background: mine ? T.acc + "20" : T.card, border: `1px solid ${mine ? T.acc + "30" : T.bdr}` }}><div style={{ fontSize: 13, lineHeight: 1.5 }}>{m.testo}</div></div></div>);})}
       </div>
@@ -541,7 +540,7 @@ export default function MastroMisure() {
     const fi = FASI.findIndex(f => f.id === c.faseCorrente); const fase = FASI[fi]; const info = c.pipeline[c.faseCorrente]; const resp = info?.responsabile ? TEAM.find(t => t.id === info.responsabile) : null;
     return (<div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
       <div style={{ ...S.header }}><div onClick={goBack} style={{ cursor: "pointer", padding: 4 }}><Ico d={ICO.back} size={20} color={T.sub} /></div><div style={{ flex: 1 }}><div style={{ fontSize: 10, color: T.grn, fontWeight: 600 }}>📞 CLIENTE CHIAMA</div><div style={S.hTitle}>{c.cliente}</div></div></div>
-      <div style={{ flex: 1, overflowY: "auto" }}>
+      <div style={{ flex: 1, overflow: "auto" }}>
         <div style={{ margin: 12, padding: 20, background: `linear-gradient(135deg, ${fase.color}15, ${fase.color}08)`, borderRadius: 16, border: `1px solid ${fase.color}30` }}>
           <div style={{ fontSize: 22, fontWeight: 700, color: fase.color, marginBottom: 8 }}>{fase.icon} {fase.label}</div>
           <div style={{ display: "flex", gap: 4, marginBottom: 16 }}>{FASI.map((f, i) => <div key={f.id} style={{ flex: 1, height: 6, borderRadius: 3, background: i <= fi ? fase.color : T.white08 }} />)}</div>
@@ -567,9 +566,9 @@ export default function MastroMisure() {
         <div style={{ flex: 1 }}><div style={S.hTitle}>{v.nome}</div><div style={S.hSub}>{v.tipo} · {filled}/9</div></div>
         <button onClick={() => setScreen("draw")} style={{ background: T.purpleLt, border: "none", borderRadius: 10, padding: "6px 10px", cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}><Ico d={ICO.pencil} size={16} color={T.purple} /><span style={{ fontSize: 11, fontWeight: 600, color: T.purple }}>Disegna</span></button>
       </div>
-      <div style={{ flex: 1, overflowY: "auto" }}>
+      <div style={{ flex: 1, overflow: "auto" }}>
         {/* AI Action Bar */}
-        <div style={{ display: "flex", gap: 6, padding: "10px 12px", overflowX: "auto", flexShrink: 0 }}>
+        <div style={{ display: "flex", gap: 6, padding: "10px 12px", overflow: "auto", flexShrink: 0 }}>
           <button onClick={() => setShowVoice(true)} style={{ display: "flex", alignItems: "center", gap: 4, background: T.accLt, border: "none", borderRadius: 8, padding: "6px 10px", fontSize: 11, fontWeight: 600, color: T.acc, cursor: "pointer", whiteSpace: "nowrap" }}>🎤 Voce</button>
           <button onClick={() => { const r = aiPhotoScan(); setShowScanResult(r); }} style={{ display: "flex", alignItems: "center", gap: 4, background: T.blueLt, border: "none", borderRadius: 8, padding: "6px 10px", fontSize: 11, fontWeight: 600, color: T.blue, cursor: "pointer", whiteSpace: "nowrap" }}>📸 Scan</button>
           <button onClick={() => { const filled2 = aiSmartFill(misureData); setMisureData(filled2); }} style={{ display: "flex", alignItems: "center", gap: 4, background: T.grnLt, border: "none", borderRadius: 8, padding: "6px 10px", fontSize: 11, fontWeight: 600, color: T.grn, cursor: "pointer", whiteSpace: "nowrap" }}>🧠 Smart Fill</button>
@@ -744,10 +743,10 @@ export default function MastroMisure() {
           <div style={{ flex: 1 }}><div style={S.hTitle}>MASTRO AI</div><div style={S.hSub}>Assistente intelligente</div></div>
         </div>
         {/* Quick chips */}
-        <div style={{ display: "flex", gap: 6, padding: "8px 12px", overflowX: "auto", flexShrink: 0 }}>
+        <div style={{ display: "flex", gap: 6, padding: "8px 12px", overflow: "auto", flexShrink: 0 }}>
           {["Cosa ho oggi?","Riepilogo","Misure mancanti","Percorso","Prezzi","Priorità"].map(q => (<button key={q} onClick={() => { setAiChat(p => [...p, { role: "user", text: q }]); setAiLoading(true); setTimeout(() => { setAiChat(p => [...p, { role: "ai", text: getAIResponse(q, cantieri) }]); setAiLoading(false); }, 800); }} style={{ background: T.white08, border: `1px solid ${T.bdr}`, borderRadius: 20, padding: "6px 12px", fontSize: 11, color: T.sub, cursor: "pointer", whiteSpace: "nowrap", fontFamily: "'DM Sans'" }}>{q}</button>))}
         </div>
-        <div style={{ flex: 1, overflowY: "auto", padding: 12, display: "flex", flexDirection: "column", gap: 10 }}>
+        <div style={{ flex: 1, overflow: "auto", padding: 12, display: "flex", flexDirection: "column", gap: 10 }}>
           {aiChat.map((m, i) => (
             <div key={i} style={{ display: "flex", justifyContent: m.role === "user" ? "flex-end" : "flex-start" }}>
               <div style={{ maxWidth: "85%", padding: "12px 16px", borderRadius: 16, borderBottomRightRadius: m.role === "user" ? 4 : 16, borderBottomLeftRadius: m.role === "user" ? 16 : 4, background: m.role === "user" ? T.acc + "20" : T.card, border: `1px solid ${m.role === "user" ? T.acc + "30" : T.bdr}` }}>
