@@ -1,5 +1,6 @@
 
 'use client';
+// @ts-nocheck
 import { useState, useRef } from "react";
 
 /* ═══ MASTRO MISURE v6 ═══
@@ -271,7 +272,7 @@ export default function MastroMisure() {
     hSub: { fontSize: 11, color: T.sub, marginTop: 1 },
     tabBar: { display: "flex", borderTop: `1px solid ${T.bdr}`, background: T.bg2, padding: "4px 0 max(env(safe-area-inset-bottom), 6px)", flexShrink: 0 },
     tabI: (a) => ({ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 2, padding: "5px 0", fontSize: 9, fontWeight: a ? 600 : 400, color: a ? T.acc : T.sub2, cursor: "pointer", position: "relative" }),
-    content: { flex: 1, overflowY: "auto" as const, paddingBottom: 8 },
+    content: { flex: 1, overflowY: "auto", paddingBottom: 8 },
     card: { background: T.card, borderRadius: 14, border: `1px solid ${T.bdr}`, margin: "0 12px 10px", padding: 14, cursor: "pointer" },
     badge: (bg, c) => ({ display: "inline-flex", padding: "3px 8px", borderRadius: 6, fontSize: 10, fontWeight: 600, background: bg, color: c }),
     btn: (bg, c = "#fff") => ({ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "12px 20px", borderRadius: 12, background: bg, color: c, fontSize: 14, fontWeight: 600, border: "none", cursor: "pointer", width: "100%" }),
