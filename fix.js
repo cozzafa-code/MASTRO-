@@ -1,0 +1,1 @@
+const fs=require('fs'),p=require('path');function w(f,c){fs.mkdirSync(p.dirname(f),{recursive:true});fs.writeFileSync(f,c);console.log('+',f);}try{fs.rmSync('.next',{recursive:true})}catch(e){}try{fs.rmSync(p.join('src','app','(app)'),{recursive:true})}catch(e){}console.log('Cleaned. Rebuilding...');
