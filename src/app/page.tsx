@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { supabase, AZIENDA_ID } from '@/lib/supabase'
 import { Commessa, Cliente, Evento, Fattura, Pagamento, Scadenza, STATI_COMMESSA, ArticoloMagazzino, CategoriaMagazzino, MovimentoMagazzino, Fornitore, FaseProduzione, CentroLavoro, Lavorazione, Dipendente, CommessaAttivita, MACRO_FASI, OrdineFornitore, Promemoria, Serramento, TIPI_SERRAMENTO, MATERIALI_PROFILO, COLORI_SERRAMENTO } from '@/lib/types'
 
@@ -72,6 +72,78 @@ const TH = {
   shadowMd: '0 4px 6px rgba(0,0,0,0.05), 0 2px 4px rgba(0,0,0,0.03)',
 }
 
+// ==================== SHARED INPUT COMPONENTS ====================
+const InputField = ({ label, value, onChange, type = 'text', placeholder = '' }: { label: string; value: string | number; onChange: (v: string) => void; type?: string; placeholder?: string }) => (
+  <div>
+    <label style={{ fontSize: 10, color: TH.textMuted, textTransform: 'uppercase' as const, letterSpacing: 1, fontWeight: 600 }}>{label}</label>
+    <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
+      className="w-full mt-1 px-3 py-2 rounded-lg text-sm outline-none"
+      style={{ background: TH.bgInput, border: `1px solid ${TH.borderMed}`, color: TH.text }} />
+  </div>
+)
+
+const SelectField = ({ label, value, onChange, options }: { label: string; value: string; onChange: (v: string) => void; options: { value: string; label: string }[] }) => (
+  <div>
+    <label style={{ fontSize: 10, color: TH.textMuted, textTransform: 'uppercase' as const, letterSpacing: 1, fontWeight: 600 }}>{label}</label>
+    <select value={value} onChange={e => onChange(e.target.value)}
+      className="w-full mt-1 px-3 py-2 rounded-lg text-sm outline-none"
+      style={{ background: TH.bgInput, border: `1px solid ${TH.borderMed}`, color: TH.text }}>
+      <option value="">— Seleziona —</option>
+      {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+    </select>
+  </div>
+)
+
+// Componente separato per il form evento - evita re-render di Dashboard
+const CalendarioEventoForm = React.memo(({ 
+  initialValues,
+  onSave, 
+  onCancel,
+  clienti,
+  commesse,
+  tipiEvento,
+  styles
+}: {
+  initialValues: any
+  onSave: (evento: any) => void
+  onCancel: () => void
+  clienti: any[]
+  commesse: any[]
+  tipiEvento: any
+  styles: { TH: any; TX: any; BG: any }
+}) => {
+  const { TH, TX, BG } = styles
+  
+  // State interno del form - NON fa re-render di Dashboard!
+  const [formData, setFormData] = useState(initialValues)
+  
+  const handleSave = () => {
+    onSave(formData)
+  }
+  
+  return (
+    <div className="rounded-2xl p-5 mb-6" style={{ background: BG.card, border: `1px solid ${TX.border}`, boxShadow: TH.shadow }}>
+      <h4 className="text-sm font-semibold mb-3">Nuovo Evento</h4>
+      <div className="grid grid-cols-4 gap-3 mb-3">
+        <InputField label="Titolo" value={formData.titolo} onChange={v => setFormData(prev => ({ ...prev, titolo: v }))} placeholder="es. Sopralluogo via Roma" />
+        <SelectField label="Tipo" value={formData.tipo} onChange={v => setFormData(prev => ({ ...prev, tipo: v }))} options={Object.entries(tipiEvento).map(([k, v]: [string, any]) => ({ value: k, label: v.label }))} />
+        <InputField label="Data" value={formData.data} onChange={v => setFormData(prev => ({ ...prev, data: v }))} type="date" />
+        <InputField label="Ora Inizio" value={formData.ora_inizio} onChange={v => setFormData(prev => ({ ...prev, ora_inizio: v }))} type="time" />
+      </div>
+      <div className="grid grid-cols-4 gap-3 mb-3">
+        <SelectField label="Durata" value={String(formData.durata_min)} onChange={v => setFormData(prev => ({ ...prev, durata_min: parseInt(v) }))} options={[{ value: '30', label: '30 min' }, { value: '60', label: '1 ora' }, { value: '90', label: '1.5 ore' }, { value: '120', label: '2 ore' }, { value: '180', label: '3 ore' }, { value: '240', label: '4 ore' }, { value: '480', label: 'Giornata' }]} />
+        <SelectField label="Cliente" value={formData.cliente_id} onChange={v => setFormData(prev => ({ ...prev, cliente_id: v }))} options={clienti.map(c => ({ value: c.id, label: `${c.nome} ${c.cognome}` }))} />
+        <SelectField label="Commessa" value={formData.commessa_id} onChange={v => setFormData(prev => ({ ...prev, commessa_id: v }))} options={commesse.map(c => ({ value: c.id, label: `${c.codice} - ${c.titolo}` }))} />
+        <InputField label="Note" value={formData.note} onChange={v => setFormData(prev => ({ ...prev, note: v }))} placeholder="Note..." />
+      </div>
+      <div className="flex gap-2 justify-end">
+        <button onClick={onCancel} className="px-3 py-1.5 rounded-lg text-xs" style={{ color: TX.textSec, border: `1px solid ${TX.borderMed}` }}>Annulla</button>
+        <button type="button" onClick={handleSave} className="px-4 py-1.5 rounded-lg text-xs font-semibold" style={{ background: TH.amber, color: '#fff' }}>Salva Evento</button>
+      </div>
+    </div>
+  )
+})
+
 export default function Dashboard() {
   // ==================== AUTH STATE ====================
   const [authUser, setAuthUser] = useState<any>(null)
@@ -133,10 +205,10 @@ export default function Dashboard() {
 
   // ==================== LICENSE CONFIG ====================
   const licenzaConfig: Record<string, { label: string; color: string; icon: string; tabs: string[] }> = {
-    TITAN: { label: 'Direzione Generale', color: '#B7950B', icon: '👑', tabs: ['dashboard','commesse','contabilita','magazzino','produzione','clienti','calendario','configuratore','pratiche','team','rete','marketplace'] },
-    VENDITA: { label: 'Commerciale', color: '#196F3D', icon: '🤝', tabs: ['dashboard','commesse','clienti','calendario','configuratore','pratiche','team'] },
-    ADMIN: { label: 'Amministrazione', color: '#1B4F72', icon: '📊', tabs: ['dashboard','commesse','contabilita','clienti','calendario','pratiche','team','marketplace'] },
-    PRODUZIONE: { label: 'Produzione', color: '#6C3483', icon: '🔧', tabs: ['dashboard','commesse','magazzino','produzione','team'] },
+    TITAN: { label: 'Direzione Generale', color: '#B7950B', icon: '👑', tabs: ['dashboard','commesse','contabilita','magazzino','produzione','clienti','calendario','configuratore','workflow','pratiche','team','rete','marketplace'] },
+    VENDITA: { label: 'Commerciale', color: '#196F3D', icon: '🤝', tabs: ['dashboard','commesse','clienti','calendario','configuratore','workflow','pratiche','team'] },
+    ADMIN: { label: 'Amministrazione', color: '#1B4F72', icon: '📊', tabs: ['dashboard','commesse','contabilita','clienti','calendario','workflow','pratiche','team','marketplace'] },
+    PRODUZIONE: { label: 'Produzione', color: '#6C3483', icon: '🔧', tabs: ['dashboard','commesse','magazzino','produzione','workflow','team'] },
     CANTIERE: { label: 'Cantiere', color: '#E67E22', icon: '🏗️', tabs: ['dashboard','commesse','clienti','calendario','team'] },
     LOGISTICA: { label: 'Logistica', color: '#922B21', icon: '🚚', tabs: ['dashboard','magazzino','team','marketplace'] },
     BASE: { label: 'Servizi Generali', color: '#5D6D7E', icon: '🏢', tabs: ['dashboard','team'] },
@@ -183,7 +255,18 @@ export default function Dashboard() {
   const [selectedCommessa, setSelectedCommessa] = useState<string | null>(null)
   const [showNewCommessa, setShowNewCommessa] = useState(false)
   const [showNewCliente, setShowNewCliente] = useState(false)
-  const [newCommessa, setNewCommessa] = useState({ titolo: '', cliente_id: '', indirizzo: '', citta: '', valore_preventivo: 0, note: '' })
+  const [newCommessa, setNewCommessa] = useState({ 
+    codice: '', 
+    titolo: '', 
+    cliente_id: '', 
+    commessa_originale_id: '', // Per riparazioni/manutenzioni
+    stato: 'sopralluogo',
+    data_inizio: new Date().toISOString().split('T')[0],
+    indirizzo: '', 
+    citta: '', 
+    valore_preventivo: 0, 
+    note: '' 
+  })
   const [newCliente, setNewCliente] = useState({ nome: '', cognome: '', telefono: '', email: '', indirizzo: '', citta: '', tipo: 'privato' })
   const [commessaAttivita, setCommessaAttivita] = useState<CommessaAttivita[]>([])
   const [progettoLoading, setProgettoLoading] = useState(false)
@@ -216,11 +299,14 @@ export default function Dashboard() {
   const [calSelectedDate, setCalSelectedDate] = useState<string | null>(null)
   const [calEventi, setCalEventi] = useState<(Evento & { cliente?: Cliente })[]>([])
   const [showNewEvento, setShowNewEvento] = useState(false)
-  const [editingEvento, setEditingEvento] = useState<any>(null)
   const [newEvento, setNewEvento] = useState({ titolo: '', tipo: 'sopralluogo', data: new Date().toISOString().split('T')[0], ora_inizio: '09:00', durata_min: 60, cliente_id: '', commessa_id: '', note: '' })
+  
   const [globalSearch, setGlobalSearch] = useState('')
   const [calFilterTipo, setCalFilterTipo] = useState<string[]>([])
   const [calZoom, setCalZoom] = useState(2)
+  const [draggedEvento, setDraggedEvento] = useState<any>(null)
+  const [draggingEventoOggi, setDraggingEventoOggi] = useState<string | null>(null)
+  const [dragStartY, setDragStartY] = useState(0)
   const [dashView, setDashView] = useState<string>('kanban')
   const [ordini, setOrdini] = useState<(OrdineFornitore & { fornitore?: Fornitore; commessa?: Commessa })[]>([])
   const [showNewOrdine, setShowNewOrdine] = useState(false)
@@ -234,6 +320,14 @@ export default function Dashboard() {
   const [selectedSerramento, setSelectedSerramento] = useState<string | null>(null)
   const [commessaView, setCommessaView] = useState<'progetto' | 'configuratore'>('progetto')
   const [configTab, setConfigTab] = useState<string>('dimensioni')
+  
+  // FLOW BUILDER
+  const [showFlowBuilder, setShowFlowBuilder] = useState(false)
+  const [workflows, setWorkflows] = useState<any[]>([])
+  const [currentFlow, setCurrentFlow] = useState<any>(null)
+  const [flowNodes, setFlowNodes] = useState<any[]>([])
+  const [flowConnections, setFlowConnections] = useState<any[]>([])
+  
   const defaultSerramento = {
     posizione: '', ambiente: '', piano: 'PT', tipo: 'finestra',
     larghezza: 1200, altezza: 1400, profondita_muro: 300,
@@ -287,7 +381,6 @@ export default function Dashboard() {
   const [newAccessorio, setNewAccessorio] = useState({codice:'',nome:'',tipo:'ferramenta',prezzo:0,fornitore:'',note:''})
   const [newVetro, setNewVetro] = useState({codice:'',nome:'',spessore:0,ug:0,prezzo:0,note:''})
   const [dashWidgets, setDashWidgets] = useState([
-    {id:'search',label:'Ricerca Globale',icon:'search',size:'full' as string,visible:true},
     {id:'kpi',label:'KPI Principali',icon:'chart',size:'full' as string,visible:true},
     {id:'promemoria',label:'Promemoria',icon:'pin',size:'half' as string,visible:true},
     {id:'ordini',label:'Ordini Fornitore',icon:'package',size:'half' as string,visible:true},
@@ -381,11 +474,11 @@ export default function Dashboard() {
 
   async function loadDashboard() {
     const { data: commData } = await supabase
-      .from('commesse').select('*').eq('azienda_id', AZIENDA_ID)
+      .from('commesse').select('*, cliente:clienti(*)').eq('azienda_id', AZIENDA_ID)
       .neq('stato', 'chiusura').order('updated_at', { ascending: false })
     const oggi = new Date().toISOString().split('T')[0]
     const { data: evData } = await supabase
-      .from('eventi').select('*').eq('azienda_id', AZIENDA_ID)
+      .from('eventi').select('*, cliente:clienti(*)').eq('azienda_id', AZIENDA_ID)
       .eq('data', oggi).order('ora_inizio', { ascending: true })
     const { count: inboxCount } = await supabase
       .from('inbox').select('*', { count: 'exact', head: true })
@@ -398,7 +491,7 @@ export default function Dashboard() {
 
   async function loadContabilita() {
     const { data: fatData } = await supabase.from('fatture').select('*, cliente:clienti(*), commessa:commesse(*)').eq('azienda_id', AZIENDA_ID).order('data_emissione', { ascending: false })
-    const { data: pagData } = await supabase.from('pagamenti').select('*').eq('azienda_id', AZIENDA_ID).order('data_pagamento', { ascending: false })
+    const { data: pagData } = await supabase.from('pagamenti').select('*, cliente:clienti(*)').eq('azienda_id', AZIENDA_ID).order('data_pagamento', { ascending: false })
     const { data: scadData } = await supabase.from('scadenze').select('*, cliente:clienti(*), commessa:commesse(*)').eq('azienda_id', AZIENDA_ID).order('data_scadenza', { ascending: true })
     const fat = (fatData || []) as (Fattura & { cliente?: Cliente; commessa?: Commessa })[]
     const pag = (pagData || []) as (Pagamento & { cliente?: Cliente })[]
@@ -474,9 +567,39 @@ export default function Dashboard() {
   }
 
   async function createCommessa() {
-    const count = commesse.length; const codice = `WC-${String(count + 257).padStart(4, '0')}`
-    const { error } = await supabase.from('commesse').insert({ azienda_id: AZIENDA_ID, codice, titolo: newCommessa.titolo, cliente_id: newCommessa.cliente_id || null, indirizzo: newCommessa.indirizzo, citta: newCommessa.citta, valore_preventivo: newCommessa.valore_preventivo, note: newCommessa.note || null, stato: 'sopralluogo' })
-    if (!error) { setShowNewCommessa(false); setNewCommessa({ titolo: '', cliente_id: '', indirizzo: '', citta: '', valore_preventivo: 0, note: '' }); await loadAll() }
+    // Genera codice automatico se non fornito
+    const codice = newCommessa.codice || `WC-${String(commesse.length + 257).padStart(4, '0')}`
+    
+    const { error } = await supabase.from('commesse').insert({ 
+      azienda_id: AZIENDA_ID, 
+      codice, 
+      titolo: newCommessa.titolo, 
+      cliente_id: newCommessa.cliente_id || null, 
+      commessa_originale_id: newCommessa.commessa_originale_id || null,
+      stato: newCommessa.stato || 'sopralluogo',
+      data_inizio: newCommessa.data_inizio,
+      indirizzo: newCommessa.indirizzo, 
+      citta: newCommessa.citta, 
+      valore_preventivo: newCommessa.valore_preventivo || 0, 
+      note: newCommessa.note || null 
+    })
+    
+    if (!error) { 
+      setShowNewCommessa(false)
+      setNewCommessa({ 
+        codice: '', 
+        titolo: '', 
+        cliente_id: '', 
+        commessa_originale_id: '',
+        stato: 'sopralluogo',
+        data_inizio: new Date().toISOString().split('T')[0],
+        indirizzo: '', 
+        citta: '', 
+        valore_preventivo: 0, 
+        note: '' 
+      })
+      await loadAll()
+    }
   }
 
   async function createCliente() {
@@ -490,11 +613,31 @@ export default function Dashboard() {
 
   async function loadCalendario() {
     const d1 = new Date(calYear, calMonth - 1, 1); const d2 = new Date(calYear, calMonth + 2, 1)
-    const { data } = await supabase.from('eventi').select('*').eq('azienda_id', AZIENDA_ID).gte('data', d1.toISOString().split('T')[0]).lt('data', d2.toISOString().split('T')[0]).order('ora_inizio', { ascending: true })
+    const { data } = await supabase.from('eventi').select('*, cliente:clienti(*), commessa:commesse(*)').eq('azienda_id', AZIENDA_ID).gte('data', d1.toISOString().split('T')[0]).lt('data', d2.toISOString().split('T')[0]).order('ora_inizio', { ascending: true })
     setCalEventi((data || []) as any[])
   }
 
   useEffect(() => { if (activeTab === 'calendario') loadCalendario() }, [calMonth, calYear, calWeekStart, activeTab])
+
+  // REAL-TIME SYNC - Eventi calendario
+  useEffect(() => {
+    if (activeTab !== 'calendario') return
+    
+    const channel = supabase
+      .channel('eventi_realtime')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'eventi', filter: `azienda_id=eq.${AZIENDA_ID}` },
+        (payload) => {
+          console.log('📡 Real-time evento:', payload)
+          loadCalendario() // Ricarica eventi quando cambiano
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [activeTab, calMonth, calYear])
 
   async function loadOrdini() {
     const { data } = await supabase.from('ordini_fornitore').select('*, fornitore:fornitori(*), commessa:commesse(*)').eq('azienda_id', AZIENDA_ID).order('created_at', { ascending: false })
@@ -555,88 +698,20 @@ export default function Dashboard() {
     if (selectedCommessa) await loadSerramenti(selectedCommessa)
   }
 
-  async function createEvento() {
-  if (!newEvento.titolo?.trim()) {
-    alert('Inserisci un titolo per l\'evento');
-    return;
+  async function createEvento(eventoData: any) {
+    const { error } = await supabase.from('eventi').insert({ azienda_id: AZIENDA_ID, titolo: eventoData.titolo, tipo: eventoData.tipo, data: eventoData.data, ora_inizio: eventoData.ora_inizio, durata_min: eventoData.durata_min, cliente_id: eventoData.cliente_id || null, commessa_id: eventoData.commessa_id || null, note: eventoData.note || null })
+    if (!error) { setShowNewEvento(false); await loadCalendario(); await loadDashboard() }
   }
 
-  const { error } = await supabase
-    .from('eventi')
-    .insert([{
-      azienda_id: AZIENDA_ID,
-      titolo: newEvento.titolo,
-      tipo_evento: newEvento.tipo || 'sopralluogo',
-      data: newEvento.data || new Date().toISOString().split('T')[0],
-      ora_inizio: newEvento.ora_inizio || null,
-      durata_min: newEvento.durata_min || 60,
-      cliente_id: newEvento.cliente_id || null,
-      commessa_id: newEvento.commessa_id || null,
-      note: newEvento.note || null,
-      completato: false
-    }]);
-
-  if (!error) {
-    setShowNewEvento(false);
-    setNewEvento({ titolo: '', tipo: 'sopralluogo', data: new Date().toISOString().split('T')[0] });
-    // Ricarica eventi
-    caricaEventi();
-  } else {
-    console.error('Errore salvataggio:', error);
-    alert('Errore nel salvare l\'evento');
-  }
-}
-async function caricaEventi() {
-  const { data } = await supabase
-    .from('eventi')
-    .select('*')
-    .eq('azienda_id', AZIENDA_ID)
-    .order('data', { ascending: true });
-  
-  if (data) {
-    setCalEventi(data);
-  }
-}
-```
-
----
-
-## 📋 **RISULTATO:**
-
-Dovresti avere:
-```
-Riga 558-587: createEvento() { ... }
-Riga 588: }
-
-Riga 590-598: caricaEventi() { ... }  ← NUOVA FUNZIONE
-Riga 599: }
-
-Riga 601: async function updateEvento...
-
-  async function updateEvento(id: string, updates: any) {
-    const { error } = await supabase
-      .from('eventi')
-      .update({ ...updates, updated_at: new Date().toISOString() })
-      .eq('id', id)
-    if (!error) {
-      setEditingEvento(null)
-      await loadCalendario()
-      await loadDashboard()
-    }
+  async function updateEventoOra(eventoId: string, newOraInizio: string) {
+    const { error } = await supabase.from('eventi').update({ ora_inizio: newOraInizio }).eq('id', eventoId)
+    if (!error) { await loadCalendario() }
   }
 
-  async function deleteEvento(id: string) {
-    if (!confirm('Eliminare questo evento?')) return
-    const { error } = await supabase
-      .from('eventi')
-      .delete()
-      .eq('id', id)
-    if (!error) {
-      await loadCalendario()
-      await loadDashboard()
-    }
+  async function updateEventoData(eventoId: string, newData: string) {
+    const { error } = await supabase.from('eventi').update({ data: newData }).eq('id', eventoId)
+    if (!error) { await loadCalendario() }
   }
-
 
   async function createMovimento() {
     const art = articoli.find(a => a.id === newMovimento.articolo_id)
@@ -841,27 +916,6 @@ Riga 601: async function updateEvento...
     <div className={`rounded-2xl p-5 ${className}`} style={{ background: BG.card, border: `1px solid ${TX.border}`, boxShadow: isDark ? '0 1px 4px rgba(0,0,0,0.3)' : TH.shadow }}>{children}</div>
   )
 
-  const InputField = ({ label, value, onChange, type = 'text', placeholder = '' }: { label: string; value: string | number; onChange: (v: string) => void; type?: string; placeholder?: string }) => (
-    <div>
-      <label style={{ fontSize: 10, color: TX.textMuted, textTransform: 'uppercase' as const, letterSpacing: 1, fontWeight: 600 }}>{label}</label>
-      <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
-        className="w-full mt-1 px-3 py-2 rounded-lg text-sm outline-none"
-        style={{ background: BG.input, border: `1px solid ${TX.borderMed}`, color: TX.text }} />
-    </div>
-  )
-
-  const SelectField = ({ label, value, onChange, options }: { label: string; value: string; onChange: (v: string) => void; options: { value: string; label: string }[] }) => (
-    <div>
-      <label style={{ fontSize: 10, color: TX.textMuted, textTransform: 'uppercase' as const, letterSpacing: 1, fontWeight: 600 }}>{label}</label>
-      <select value={value} onChange={e => onChange(e.target.value)}
-        className="w-full mt-1 px-3 py-2 rounded-lg text-sm outline-none"
-        style={{ background: BG.input, border: `1px solid ${TX.borderMed}`, color: TX.text }}>
-        <option value="">— Seleziona —</option>
-        {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-      </select>
-    </div>
-  )
-
   const Badge = ({ text, color }: { text: string; color: string }) => (
     <span className="px-2 py-0.5 rounded-md" style={{ background: color + '15', color, fontSize: 10, fontWeight: 600 }}>{text}</span>
   )
@@ -1039,8 +1093,20 @@ Riga 601: async function updateEvento...
     const filtered = commesse.filter(c => commessaFilter === 'tutti' || c.stato === commessaFilter)
     return (
       <div>
-        <div className="flex items-center gap-3 mb-4 flex-wrap">
-          <div className="flex gap-1 p-1 rounded-lg" style={{ background: BG.input }}>
+        {/* Pulsante Nuova Commessa in alto a destra */}
+        <div className="flex justify-end mb-3">
+          <button 
+            onClick={() => setShowNewCommessa(true)} 
+            className="px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2"
+            style={{ background: TH.green, color: '#fff' }}>
+            <Ic n="plus" s={16}/>
+            Nuova Commessa
+          </button>
+        </div>
+
+        {/* Filtri stati commessa */}
+        <div className="mb-4">
+          <div className="flex gap-1 p-1 rounded-lg" style={{ background: BG.input, display: 'inline-flex' }}>
             <button onClick={() => setCommessaFilter('tutti')} className="px-3 py-1.5 rounded-md text-xs font-semibold"
               style={{ background: commessaFilter === 'tutti' ? BG.card : 'transparent', color: commessaFilter === 'tutti' ? TX.text : TX.textMuted, border: 'none', cursor: 'pointer', boxShadow: commessaFilter === 'tutti' ? isDark ? '0 1px 4px rgba(0,0,0,0.3)' : TH.shadow : 'none' }}>
               Tutte ({commesse.length})
@@ -1057,6 +1123,414 @@ Riga 601: async function updateEvento...
             })}
           </div>
         </div>
+
+        {/* ═══ DIALOG NUOVA COMMESSA ═══ */}
+        {showNewCommessa && (
+          <div 
+            key="dialog-new-commessa"
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            onClick={() => setShowNewCommessa(false)}>
+            <div 
+              onClick={(e) => e.stopPropagation()}
+              onMouseDown={(e) => e.stopPropagation()}
+              className="rounded-xl p-6" 
+              style={{ background: BG.card, width: 600, maxHeight: '90vh', overflowY: 'auto', border: `1px solid ${TX.border}`, boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
+              
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: TH.green + '15' }}>
+                    <Ic n="plus" s={24} c={TH.green}/>
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-lg" style={{ color: TX.text }}>Nuova Commessa</h3>
+                    <p style={{ fontSize: 11, color: TX.textMuted }}>Crea una nuova commessa nel sistema</p>
+                  </div>
+                </div>
+                <button onClick={() => setShowNewCommessa(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: TX.textMuted }}>
+                  <Ic n="x" s={20}/>
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {/* Riga 1: Codice + Titolo */}
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold mb-1" style={{ color: TX.textMuted }}>
+                      Codice <span style={{ color: TX.textMuted }}>(opzionale)</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={newCommessa.codice}
+                      onChange={(e) => setNewCommessa(prev => ({ ...prev, codice: e.target.value }))}
+                      placeholder="es. WC-0100"
+                      className="w-full px-3 py-2 rounded-lg text-sm"
+                      style={{ background: BG.input, border: `1px solid ${TX.border}`, color: TX.text, fontFamily: 'monospace' }}
+                    />
+                    <p style={{ fontSize: 10, color: TX.textMuted, marginTop: 4 }}>Se vuoto, viene generato automaticamente</p>
+                  </div>
+                  <div className="col-span-2">
+                    <label className="block text-xs font-semibold mb-1" style={{ color: TX.textMuted }}>
+                      Titolo * <span style={{ color: '#ff4444' }}>richiesto</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={newCommessa.titolo}
+                      onChange={(e) => setNewCommessa(prev => ({ ...prev, titolo: e.target.value }))}
+                      placeholder="es. Sostituzione infissi Villa Rende"
+                      className="w-full px-3 py-2 rounded-lg text-sm"
+                      style={{ background: BG.input, border: `1px solid ${TX.border}`, color: TX.text }}
+                    />
+                  </div>
+                </div>
+
+                {/* Riga 2: Cliente + Data Inizio */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold mb-1" style={{ color: TX.textMuted }}>
+                      Cliente
+                    </label>
+                    <select
+                      value={newCommessa.cliente_id}
+                      onChange={(e) => setNewCommessa(prev => ({ ...prev, cliente_id: e.target.value }))}
+                      className="w-full px-3 py-2 rounded-lg text-sm"
+                      style={{ background: BG.input, border: `1px solid ${TX.border}`, color: TX.text }}>
+                      <option value="">Seleziona cliente...</option>
+                      {clienti.map(c => (
+                        <option key={c.id} value={c.id}>{c.nome} {c.cognome}</option>
+                      ))}
+                    </select>
+                    <button 
+                      onClick={() => { setShowNewCommessa(false); setShowNewCliente(true) }}
+                      style={{ fontSize: 10, color: TH.blue, background: 'none', border: 'none', cursor: 'pointer', marginTop: 4 }}>
+                      + Crea nuovo cliente
+                    </button>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold mb-1" style={{ color: TX.textMuted }}>
+                      Data Inizio
+                    </label>
+                    <input
+                      type="date"
+                      value={newCommessa.data_inizio}
+                      onChange={(e) => setNewCommessa(prev => ({ ...prev, data_inizio: e.target.value }))}
+                      className="w-full px-3 py-2 rounded-lg text-sm"
+                      style={{ background: BG.input, border: `1px solid ${TX.border}`, color: TX.text }}
+                    />
+                  </div>
+                </div>
+
+                {/* Riga 3: Indirizzo + Città */}
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="col-span-2">
+                    <label className="block text-xs font-semibold mb-1" style={{ color: TX.textMuted }}>
+                      Indirizzo
+                    </label>
+                    <input
+                      type="text"
+                      value={newCommessa.indirizzo}
+                      onChange={(e) => setNewCommessa(prev => ({ ...prev, indirizzo: e.target.value }))}
+                      placeholder="es. Via Roma 123"
+                      className="w-full px-3 py-2 rounded-lg text-sm"
+                      style={{ background: BG.input, border: `1px solid ${TX.border}`, color: TX.text }}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold mb-1" style={{ color: TX.textMuted }}>
+                      Città
+                    </label>
+                    <input
+                      type="text"
+                      value={newCommessa.citta}
+                      onChange={(e) => setNewCommessa(prev => ({ ...prev, citta: e.target.value }))}
+                      placeholder="es. Cosenza"
+                      className="w-full px-3 py-2 rounded-lg text-sm"
+                      style={{ background: BG.input, border: `1px solid ${TX.border}`, color: TX.text }}
+                    />
+                  </div>
+                </div>
+
+                {/* Riga 3.5: Commessa Originale (per riparazioni/manutenzioni) */}
+                <div>
+                  <label className="block text-xs font-semibold mb-1" style={{ color: TX.textMuted }}>
+                    Commessa Originale <span style={{ fontSize: 9, color: TX.textMuted }}>(opzionale - per riparazioni)</span>
+                  </label>
+                  <select
+                    value={newCommessa.commessa_originale_id}
+                    onChange={(e) => setNewCommessa(prev => ({ ...prev, commessa_originale_id: e.target.value }))}
+                    className="w-full px-3 py-2 rounded-lg text-sm"
+                    style={{ background: BG.input, border: `1px solid ${TX.border}`, color: TX.text }}>
+                    <option value="">Nessuna (nuova commessa)</option>
+                    {commesse.map(c => (
+                      <option key={c.id} value={c.id}>{c.codice} - {c.titolo}</option>
+                    ))}
+                  </select>
+                  <p style={{ fontSize: 10, color: TX.textMuted, marginTop: 4 }}>
+                    Se è una riparazione/manutenzione, collega alla commessa originale per tracciare lo storico
+                  </p>
+                </div>
+
+                {/* Riga 4: Valore + Stato */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold mb-1" style={{ color: TX.textMuted }}>
+                      Valore Preventivo (€)
+                    </label>
+                    <input
+                      type="number"
+                      value={newCommessa.valore_preventivo}
+                      onChange={(e) => setNewCommessa(prev => ({ ...prev, valore_preventivo: parseFloat(e.target.value) || 0 }))}
+                      placeholder="0.00"
+                      step="0.01"
+                      min="0"
+                      className="w-full px-3 py-2 rounded-lg text-sm"
+                      style={{ background: BG.input, border: `1px solid ${TX.border}`, color: TX.text, fontFamily: 'monospace' }}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold mb-1" style={{ color: TX.textMuted }}>
+                      Stato Iniziale
+                    </label>
+                    <select
+                      value={newCommessa.stato}
+                      onChange={(e) => setNewCommessa(prev => ({ ...prev, stato: e.target.value }))}
+                      className="w-full px-3 py-2 rounded-lg text-sm"
+                      style={{ background: BG.input, border: `1px solid ${TX.border}`, color: TX.text }}>
+                      {STATI_COMMESSA.map(s => (
+                        <option key={s.value} value={s.value}>{s.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Riga 5: Note */}
+                <div>
+                  <label className="block text-xs font-semibold mb-1" style={{ color: TX.textMuted }}>
+                    Note
+                  </label>
+                  <textarea
+                    value={newCommessa.note}
+                    onChange={(e) => setNewCommessa(prev => ({ ...prev, note: e.target.value }))}
+                    placeholder="Note aggiuntive sulla commessa..."
+                    rows={3}
+                    className="w-full px-3 py-2 rounded-lg text-sm"
+                    style={{ background: BG.input, border: `1px solid ${TX.border}`, color: TX.text }}
+                  />
+                </div>
+              </div>
+
+              {/* Pulsanti azione */}
+              <div className="flex gap-2 mt-6">
+                <button 
+                  onClick={() => {
+                    setShowNewCommessa(false)
+                    setNewCommessa({ 
+                      codice: '', 
+                      titolo: '', 
+                      cliente_id: '', 
+                      commessa_originale_id: '',
+                      stato: 'sopralluogo',
+                      data_inizio: new Date().toISOString().split('T')[0],
+                      indirizzo: '', 
+                      citta: '', 
+                      valore_preventivo: 0, 
+                      note: '' 
+                    })
+                  }}
+                  className="flex-1 px-4 py-2 rounded-lg text-sm font-semibold"
+                  style={{ background: BG.input, color: TX.text, border: `1px solid ${TX.border}` }}>
+                  Annulla
+                </button>
+                <button 
+                  onClick={createCommessa}
+                  disabled={!newCommessa.titolo.trim()}
+                  className="flex-1 px-4 py-2 rounded-lg text-sm font-semibold flex items-center justify-center gap-2"
+                  style={{ 
+                    background: newCommessa.titolo.trim() ? TH.green : TX.border, 
+                    color: '#fff',
+                    opacity: newCommessa.titolo.trim() ? 1 : 0.5,
+                    cursor: newCommessa.titolo.trim() ? 'pointer' : 'not-allowed'
+                  }}>
+                  <Ic n="check" s={16}/>
+                  Crea Commessa
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ═══ DIALOG NUOVO CLIENTE ═══ */}
+        {showNewCliente && (
+          <div 
+            key="dialog-new-cliente"
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            onClick={() => setShowNewCliente(false)}>
+            <div 
+              onClick={(e) => e.stopPropagation()}
+              onMouseDown={(e) => e.stopPropagation()}
+              className="rounded-xl p-6" 
+              style={{ background: BG.card, width: 500, maxHeight: '90vh', overflowY: 'auto', border: `1px solid ${TX.border}`, boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
+              
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: TH.blue + '15' }}>
+                    <Ic n="user" s={24} c={TH.blue}/>
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-lg" style={{ color: TX.text }}>Nuovo Cliente</h3>
+                    <p style={{ fontSize: 11, color: TX.textMuted }}>Aggiungi un nuovo cliente all'anagrafica</p>
+                  </div>
+                </div>
+                <button onClick={() => setShowNewCliente(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: TX.textMuted }}>
+                  <Ic n="x" s={20}/>
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {/* Riga 1: Nome + Cognome */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold mb-1" style={{ color: TX.textMuted }}>
+                      Nome * <span style={{ color: '#ff4444' }}>richiesto</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={newCliente.nome}
+                      onChange={(e) => setNewCliente(prev => ({ ...prev, nome: e.target.value }))}
+                      placeholder="es. Mario"
+                      className="w-full px-3 py-2 rounded-lg text-sm"
+                      style={{ background: BG.input, border: `1px solid ${TX.border}`, color: TX.text }}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold mb-1" style={{ color: TX.textMuted }}>
+                      Cognome * <span style={{ color: '#ff4444' }}>richiesto</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={newCliente.cognome}
+                      onChange={(e) => setNewCliente(prev => ({ ...prev, cognome: e.target.value }))}
+                      placeholder="es. Rossi"
+                      className="w-full px-3 py-2 rounded-lg text-sm"
+                      style={{ background: BG.input, border: `1px solid ${TX.border}`, color: TX.text }}
+                    />
+                  </div>
+                </div>
+
+                {/* Riga 2: Telefono + Email */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold mb-1" style={{ color: TX.textMuted }}>
+                      Telefono
+                    </label>
+                    <input
+                      type="tel"
+                      value={newCliente.telefono}
+                      onChange={(e) => setNewCliente(prev => ({ ...prev, telefono: e.target.value }))}
+                      placeholder="es. 328 1234567"
+                      className="w-full px-3 py-2 rounded-lg text-sm"
+                      style={{ background: BG.input, border: `1px solid ${TX.border}`, color: TX.text }}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold mb-1" style={{ color: TX.textMuted }}>
+                      Email
+                    </label>
+                    <input
+                      type="email"
+                      value={newCliente.email}
+                      onChange={(e) => setNewCliente(prev => ({ ...prev, email: e.target.value }))}
+                      placeholder="es. mario@email.it"
+                      className="w-full px-3 py-2 rounded-lg text-sm"
+                      style={{ background: BG.input, border: `1px solid ${TX.border}`, color: TX.text }}
+                    />
+                  </div>
+                </div>
+
+                {/* Riga 3: Tipo Cliente */}
+                <div>
+                  <label className="block text-xs font-semibold mb-1" style={{ color: TX.textMuted }}>
+                    Tipo Cliente
+                  </label>
+                  <div className="flex gap-2">
+                    {['privato', 'azienda', 'ente'].map(tipo => (
+                      <button
+                        key={tipo}
+                        onClick={() => setNewCliente(prev => ({ ...prev, tipo }))}
+                        className="flex-1 px-3 py-2 rounded-lg text-sm font-semibold capitalize"
+                        style={{ 
+                          background: newCliente.tipo === tipo ? TH.blue + '15' : BG.input,
+                          color: newCliente.tipo === tipo ? TH.blue : TX.text,
+                          border: `1px solid ${newCliente.tipo === tipo ? TH.blue + '50' : TX.border}`
+                        }}>
+                        {tipo}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Riga 4: Indirizzo + Città */}
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="col-span-2">
+                    <label className="block text-xs font-semibold mb-1" style={{ color: TX.textMuted }}>
+                      Indirizzo
+                    </label>
+                    <input
+                      type="text"
+                      value={newCliente.indirizzo}
+                      onChange={(e) => setNewCliente(prev => ({ ...prev, indirizzo: e.target.value }))}
+                      placeholder="es. Via Roma 123"
+                      className="w-full px-3 py-2 rounded-lg text-sm"
+                      style={{ background: BG.input, border: `1px solid ${TX.border}`, color: TX.text }}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold mb-1" style={{ color: TX.textMuted }}>
+                      Città
+                    </label>
+                    <input
+                      type="text"
+                      value={newCliente.citta}
+                      onChange={(e) => setNewCliente(prev => ({ ...prev, citta: e.target.value }))}
+                      placeholder="es. Cosenza"
+                      className="w-full px-3 py-2 rounded-lg text-sm"
+                      style={{ background: BG.input, border: `1px solid ${TX.border}`, color: TX.text }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Pulsanti azione */}
+              <div className="flex gap-2 mt-6">
+                <button 
+                  onClick={() => {
+                    setShowNewCliente(false)
+                    setNewCliente({ nome: '', cognome: '', telefono: '', email: '', indirizzo: '', citta: '', tipo: 'privato' })
+                  }}
+                  className="flex-1 px-4 py-2 rounded-lg text-sm font-semibold"
+                  style={{ background: BG.input, color: TX.text, border: `1px solid ${TX.border}` }}>
+                  Annulla
+                </button>
+                <button 
+                  onClick={async () => {
+                    await createCliente()
+                    // Riapri il form commessa con il nuovo cliente selezionato
+                    setShowNewCommessa(true)
+                  }}
+                  disabled={!newCliente.nome.trim() || !newCliente.cognome.trim()}
+                  className="flex-1 px-4 py-2 rounded-lg text-sm font-semibold flex items-center justify-center gap-2"
+                  style={{ 
+                    background: (newCliente.nome.trim() && newCliente.cognome.trim()) ? TH.blue : TX.border, 
+                    color: '#fff',
+                    opacity: (newCliente.nome.trim() && newCliente.cognome.trim()) ? 1 : 0.5,
+                    cursor: (newCliente.nome.trim() && newCliente.cognome.trim()) ? 'pointer' : 'not-allowed'
+                  }}>
+                  <Ic n="check" s={16}/>
+                  Crea Cliente
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* ═══ BOX 1: RADAR COMMESSE — Mappa visuale pipeline ═══ */}
         <Card className="mb-4">
@@ -1879,69 +2353,248 @@ Riga 601: async function updateEvento...
 
     const filteredEventi = calFilterTipo.length > 0 ? calEventi.filter(e => calFilterTipo.includes(e.tipo)) : calEventi
 
+    // Memorizzo styles, callbacks e initialValues per evitare re-render di CalendarioEventoForm
+    const memoizedStyles = useMemo(() => ({ TH, TX, BG }), [isDark])
+    const handleCancelEvento = useCallback(() => setShowNewEvento(false), [])
+    const initialValues = useMemo(() => ({ 
+      titolo: '', 
+      tipo: 'sopralluogo', 
+      data: new Date().toISOString().split('T')[0], 
+      ora_inizio: '09:00', 
+      durata_min: 60, 
+      cliente_id: '', 
+      commessa_id: '', 
+      note: '' 
+    }), [])
+    const handleCreateEvento = useCallback((eventoData: any) => createEvento(eventoData), [])
+
     return (
       <div>
         <div className="flex items-center justify-between mb-6">
-          <div className="flex gap-2">
-            {[{ id: 'oggi', label: 'Oggi', icon: 'target' }, { id: 'settimana', label: 'Settimana', icon: 'grid' }, { id: 'mese', label: 'Mese', icon: 'calendar' }, { id: 'timeline', label: 'Timeline', icon: 'activity' }].map(v => (
-              <button key={v.id} onClick={() => setCalView(v.id)} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all"
-                style={{ background: calView === v.id ? TH.amber + '10' : BG.card, color: calView === v.id ? TH.amber : TX.textSec, border: `1px solid ${calView === v.id ? TH.amber + '30' : TX.border}` }}>
-                <Ic n={v.icon} s={14}/> {v.label}
+          <div className="flex items-center gap-4">
+            {/* Tab Vista */}
+            <div className="flex gap-2">
+              {[{ id: 'oggi', label: 'Oggi', icon: 'target' }, { id: 'settimana', label: 'Settimana', icon: 'grid' }, { id: 'mese', label: 'Mese', icon: 'calendar' }, { id: 'timeline', label: 'Timeline', icon: 'activity' }].map(v => (
+                <button key={v.id} onClick={() => setCalView(v.id)} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all"
+                  style={{ background: calView === v.id ? TH.amber + '10' : BG.card, color: calView === v.id ? TH.amber : TX.textSec, border: `1px solid ${calView === v.id ? TH.amber + '30' : TX.border}` }}>
+                  <Ic n={v.icon} s={14}/> {v.label}
+                </button>
+              ))}
+            </div>
+            
+            {/* Separatore visivo */}
+            <div style={{ width: 1, height: 24, background: TX.border }} />
+            
+            {/* Filtri Tipo Evento */}
+            <div className="flex gap-1">
+              <button 
+                onClick={() => setCalFilterTipo([])} 
+                className="px-2 py-1 rounded text-xs" 
+                style={{ 
+                  background: calFilterTipo.length === 0 ? TH.blue + '12' : 'transparent', 
+                  color: calFilterTipo.length === 0 ? TH.blue : TX.textMuted, 
+                  fontWeight: 500,
+                  border: `1px solid ${calFilterTipo.length === 0 ? TH.blue + '30' : 'transparent'}`
+                }}>
+                Tutte ({calEventi.length})
               </button>
-            ))}
+              {Object.entries(tipiEvento).map(([k, v]) => (
+                <button key={k} onClick={() => setCalFilterTipo(prev => prev.includes(k) ? prev.filter(t => t !== k) : [...prev, k])} className="px-2 py-1 rounded text-xs" style={{ background: calFilterTipo.includes(k) ? v.color + '20' : 'transparent', color: calFilterTipo.includes(k) ? v.color : TX.textMuted, opacity: calFilterTipo.length > 0 && !calFilterTipo.includes(k) ? 0.4 : 1, fontWeight: 500, border: `1px solid ${calFilterTipo.includes(k) ? v.color + '40' : 'transparent'}` }}>
+                  {v.label} ({calEventi.filter(e => e.tipo === k).length})
+                </button>
+              ))}
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="flex gap-1">{Object.entries(tipiEvento).map(([k, v]) => (
-              <button key={k} onClick={() => setCalFilterTipo(prev => prev.includes(k) ? prev.filter(t => t !== k) : [...prev, k])} className="px-2 py-1 rounded text-xs" style={{ background: calFilterTipo.includes(k) || calFilterTipo.length === 0 ? v.color + '12' : 'transparent', color: calFilterTipo.includes(k) || calFilterTipo.length === 0 ? v.color : TX.textMuted, opacity: calFilterTipo.length > 0 && !calFilterTipo.includes(k) ? 0.4 : 1, fontWeight: 500 }}>{v.label}</button>
-            ))}</div>
-            <button onClick={() => setShowNewEvento(true)} className="px-3 py-1.5 rounded-lg text-xs font-semibold" style={{ background: TH.amber, color: '#fff' }}>+ Evento</button>
-          </div>
+          
+          {/* Pulsante Nuovo Evento a destra */}
+          <button onClick={() => setShowNewEvento(true)} className="px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5" style={{ background: TH.amber, color: '#fff' }}>
+            <Ic n="plus" s={14}/>
+            Nuovo Evento
+          </button>
         </div>
 
         {showNewEvento && (
-          <Card className="mb-6">
-            <h4 className="text-sm font-semibold mb-3">Nuovo Evento</h4>
-            <div className="grid grid-cols-4 gap-3 mb-3">
-              <InputField label="Titolo" value={newEvento.titolo} onChange={v => setNewEvento({ ...newEvento, titolo: v })} placeholder="es. Sopralluogo via Roma" />
-              <SelectField label="Tipo" value={newEvento.tipo} onChange={v => setNewEvento({ ...newEvento, tipo: v })} options={Object.entries(tipiEvento).map(([k, v]) => ({ value: k, label: v.label }))} />
-              <InputField label="Data" value={newEvento.data} onChange={v => setNewEvento({ ...newEvento, data: v })} type="date" />
-              <InputField label="Ora Inizio" value={newEvento.ora_inizio} onChange={v => setNewEvento({ ...newEvento, ora_inizio: v })} type="time" />
-            </div>
-            <div className="grid grid-cols-4 gap-3 mb-3">
-              <SelectField label="Durata" value={String(newEvento.durata_min)} onChange={v => setNewEvento({ ...newEvento, durata_min: parseInt(v) })} options={[{ value: '30', label: '30 min' }, { value: '60', label: '1 ora' }, { value: '90', label: '1.5 ore' }, { value: '120', label: '2 ore' }, { value: '180', label: '3 ore' }, { value: '240', label: '4 ore' }, { value: '480', label: 'Giornata' }]} />
-              <SelectField label="Cliente" value={newEvento.cliente_id} onChange={v => setNewEvento({ ...newEvento, cliente_id: v })} options={clienti.map(c => ({ value: c.id, label: `${c.nome} ${c.cognome}` }))} />
-              <SelectField label="Commessa" value={newEvento.commessa_id} onChange={v => setNewEvento({ ...newEvento, commessa_id: v })} options={commesse.map(c => ({ value: c.id, label: `${c.codice} - ${c.titolo}` }))} />
-              <InputField label="Note" value={newEvento.note} onChange={v => setNewEvento({ ...newEvento, note: v })} placeholder="Note..." />
-            </div>
-            <div className="flex gap-2 justify-end">
-              <button onClick={() => setShowNewEvento(false)} className="px-3 py-1.5 rounded-lg text-xs" style={{ color: TX.textSec, border: `1px solid ${TX.borderMed}` }}>Annulla</button>
-             <button type="button" onClick={createEvento} className="px-4 py-1.5 rounded-lg text-xs font-semibold" style={{ background: TH.amber, color: '⬛#fff' }}>Salva Evento</button>
-            </div>
-          </Card>
+          <CalendarioEventoForm 
+            initialValues={initialValues}
+            onSave={handleCreateEvento}
+            onCancel={handleCancelEvento}
+            clienti={clienti}
+            commesse={commesse}
+            tipiEvento={tipiEvento}
+            styles={memoizedStyles}
+          />
         )}
 
         {/* OGGI VIEW */}
         {calView === 'oggi' && (
           <Card>
             <div className="flex items-center gap-3 mb-4" style={{ borderBottom: `1px solid ${TX.border}`, paddingBottom: 12 }}>
-              <Ic n="target" s={20} c={TH.amber}/><div><h3 className="font-semibold text-sm" style={{ color: TX.text }}>Oggi</h3><span style={{ fontSize: 11, color: TX.textMuted }}>{oggi}</span></div>
+              <Ic n="target" s={20} c={TH.amber}/>
+              <div>
+                <h3 className="font-semibold text-sm" style={{ color: TX.text }}>
+                  {calSelectedDate && calSelectedDate !== oggiISO 
+                    ? new Date(calSelectedDate + 'T00:00:00').toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' })
+                    : 'Oggi'}
+                </h3>
+                <span style={{ fontSize: 11, color: TX.textMuted }}>
+                  {calSelectedDate || oggiISO}
+                </span>
+              </div>
+              {calSelectedDate && calSelectedDate !== oggiISO && (
+                <button 
+                  onClick={() => {
+                    setCalSelectedDate(null)
+                    setCalView('oggi')
+                  }} 
+                  className="ml-auto px-2 py-1 rounded text-xs" 
+                  style={{ background: TH.blue + '15', color: TH.blue }}>
+                  Torna a oggi
+                </button>
+              )}
             </div>
-            <div className="relative" style={{ minHeight: 600 }}>
+            <div 
+              className="relative" 
+              style={{ minHeight: 600 }}
+              onMouseMove={(ev) => {
+                if (!draggingEventoOggi) return
+                const evento = filteredEventi.find(e => e.id === draggingEventoOggi)
+                if (!evento) return
+                
+                // Calcola nuova ora basata sulla posizione Y del mouse
+                const deltaY = ev.clientY - dragStartY
+                const [hh, mm] = (evento.ora_inizio || '08:00').split(':').map(Number)
+                const startMinutes = hh * 60 + mm
+                const rawMinutes = startMinutes + Math.round(deltaY / (50 * calZoom) * 60)
+                
+                // SNAP a 15 minuti per precisione
+                const snappedMinutes = Math.round(rawMinutes / 15) * 15
+                
+                // Limiti: 07:00 - 18:00
+                const clampedMinutes = Math.max(7 * 60, Math.min(18 * 60, snappedMinutes))
+                const newHH = Math.floor(clampedMinutes / 60)
+                const newMM = clampedMinutes % 60
+                const newOraInizio = `${String(newHH).padStart(2, '0')}:${String(newMM).padStart(2, '0')}`
+                
+                // Aggiorna temporaneamente la visualizzazione (ottimistic update)
+                setCalEventi(prev => prev.map(e => 
+                  e.id === draggingEventoOggi ? { ...e, ora_inizio: newOraInizio } : e
+                ))
+              }}
+              onMouseUp={async () => {
+                if (!draggingEventoOggi) return
+                const evento = filteredEventi.find(e => e.id === draggingEventoOggi)
+                if (evento && evento.ora_inizio) {
+                  // Salva sul database
+                  await updateEventoOra(draggingEventoOggi, evento.ora_inizio)
+                }
+                setDraggingEventoOggi(null)
+              }}
+              onMouseLeave={() => {
+                if (draggingEventoOggi) {
+                  setDraggingEventoOggi(null)
+                  loadCalendario() // Ricarica per ripristinare se drag annullato
+                }
+              }}>
               {Array.from({ length: 12 }).map((_, i) => {
                 const hour = i + 7
                 return (<div key={hour} className="flex items-start" style={{ height: 50 * calZoom }}><span style={{ width: 50, fontSize: 10, fontFamily: 'monospace', color: TX.textMuted, textAlign: 'right', paddingRight: 8, paddingTop: 2 }}>{String(hour).padStart(2, '0')}:00</span><div className="flex-1" style={{ borderTop: `1px solid ${TX.border}` }} /></div>)
               })}
-              {filteredEventi.filter(e => e.data === oggiISO).map(e => {
-                const te = tipiEvento[e.tipo] || tipiEvento.altro
-                const [hh, mm] = (e.ora_inizio || '08:00').split(':').map(Number)
-                const top = ((hh - 7) * 50 + (mm / 60) * 50) * calZoom; const height = ((e.durata_min || 60) / 60) * 50 * calZoom
-                return (
-                  <div key={e.id} className="absolute rounded-lg p-2 overflow-hidden" style={{ top, left: 58, right: 8, height: Math.max(height, 30), background: te.color + '10', borderLeft: `3px solid ${te.color}`, border: `1px solid ${te.color}20` }}>
-                    <div className="flex items-center gap-1"><Ic n={te.icon} s={12} c={te.color}/><span className="text-xs font-semibold" style={{ color: te.color }}>{e.titolo}</span></div>
-                    <span style={{ fontSize: 9, color: TX.textMuted }}>{e.ora_inizio} · {e.durata_min}min</span>
-                  </div>
-                )
-              })}
+              {(() => {
+                // Gestione intelligente sovrapposizioni
+                const giornoVista = calSelectedDate || oggiISO
+                const eventiOggi = filteredEventi.filter(e => e.data === giornoVista)
+                const eventiConPosizione = eventiOggi.map((e, idx) => {
+                  const te = tipiEvento[e.tipo] || tipiEvento.altro
+                  const [hh, mm] = (e.ora_inizio || '08:00').split(':').map(Number)
+                  const startMinutes = hh * 60 + mm
+                  const endMinutes = startMinutes + (e.durata_min || 60)
+                  return { ...e, te, startMinutes, endMinutes, column: 0, totalColumns: 1 }
+                })
+                
+                // Calcola sovrapposizioni e colonne
+                eventiConPosizione.forEach((e1, i) => {
+                  const overlapping = eventiConPosizione.filter((e2, j) => 
+                    i !== j && e1.startMinutes < e2.endMinutes && e1.endMinutes > e2.startMinutes
+                  )
+                  e1.totalColumns = Math.max(e1.totalColumns, overlapping.length + 1)
+                  
+                  // Trova prima colonna libera
+                  const usedColumns = overlapping
+                    .filter(e2 => eventiConPosizione.indexOf(e2) < i)
+                    .map(e2 => e2.column)
+                  for (let col = 0; col < e1.totalColumns; col++) {
+                    if (!usedColumns.includes(col)) {
+                      e1.column = col
+                      break
+                    }
+                  }
+                })
+                
+                return eventiConPosizione.map(e => {
+                  const top = ((e.startMinutes - 7 * 60) / 60) * 50 * calZoom
+                  const height = ((e.durata_min || 60) / 60) * 50 * calZoom
+                  
+                  // Calcolo corretto posizione
+                  const columnWidth = `calc((100% - 58px) / ${e.totalColumns})`
+                  const leftPosition = e.totalColumns === 1 
+                    ? '58px' 
+                    : `calc(58px + (100% - 58px) * ${e.column} / ${e.totalColumns})`
+                  
+                  return (
+                    <div 
+                      key={e.id}
+                      onMouseDown={(ev) => {
+                        ev.stopPropagation()
+                        setDraggingEventoOggi(e.id)
+                        setDragStartY(ev.clientY)
+                      }}
+                      onClick={(ev) => {
+                        // Click funziona solo se non ho appena draggato
+                        if (draggingEventoOggi) return
+                        if (e.commessa_id) {
+                          setSelectedCommessa(e.commessa_id)
+                          setActiveTab('commesse')
+                        } else if (e.cliente_id) {
+                          setActiveTab('clienti')
+                        }
+                      }}
+                      className="absolute rounded-lg p-2.5 overflow-hidden shadow-md transition-all select-none" 
+                      style={{ 
+                        top, 
+                        left: leftPosition,
+                        width: e.totalColumns === 1 ? 'calc(100% - 66px)' : `calc(${columnWidth} - 4px)`,
+                        height: Math.max(height, 50), 
+                        background: e.te.color + '15', 
+                        borderLeft: `4px solid ${e.te.color}`, 
+                        border: `1px solid ${e.te.color}35`,
+                        cursor: draggingEventoOggi === e.id ? 'grabbing' : 'grab',
+                        opacity: draggingEventoOggi === e.id ? 0.7 : 1,
+                        transform: draggingEventoOggi === e.id ? 'scale(1.02)' : 'scale(1)',
+                        boxShadow: draggingEventoOggi === e.id ? `0 8px 24px ${e.te.color}60` : '0 2px 8px rgba(0,0,0,0.1)'
+                      }}>
+                      {/* Etichetta tipo evento */}
+                      <div className="flex items-center gap-1 mb-2 px-1.5 py-0.5 rounded-md inline-block" style={{ background: e.te.color + '30' }}>
+                        <Ic n={e.te.icon} s={10} c={e.te.color}/>
+                        <span style={{ fontSize: 9, fontWeight: 700, color: e.te.color, textTransform: 'uppercase', letterSpacing: 0.5 }}>{e.te.label}</span>
+                      </div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-xs font-bold" style={{ color: e.te.color, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.titolo}</span>
+                      </div>
+                      <div style={{ fontSize: 10, color: TX.textMuted, fontWeight: 600 }}>{e.ora_inizio} · {e.durata_min}min</div>
+                      {e.cliente && (
+                        <div style={{ fontSize: 10, color: TX.text, fontWeight: 600, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          👤 {e.cliente.nome} {e.cliente.cognome}
+                        </div>
+                      )}
+                      {e.commessa && (
+                        <div style={{ fontSize: 10, color: TH.blue, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          📋 #{e.commessa.codice}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })
+              })()}
             </div>
           </Card>
         )}
@@ -1959,13 +2612,109 @@ Riga 601: async function updateEvento...
                 const iso = d.toISOString().split('T')[0]; const isToday = iso === oggiISO
                 const dayEvents = filteredEventi.filter(e => e.data === iso)
                 return (
-                  <div key={iso} className="rounded-xl p-3" style={{ background: isToday ? TH.amber + '06' : BG.input, border: `1px solid ${isToday ? TH.amber + '30' : TX.border}`, minHeight: 180 }}>
-                    <div className="text-center mb-2"><div style={{ fontSize: 9, color: TX.textMuted, textTransform: 'uppercase' as const }}>{d.toLocaleDateString('it-IT', { weekday: 'short' })}</div><div className={`w-7 h-7 rounded-full flex items-center justify-center mx-auto text-sm font-bold ${isToday ? '' : ''}`} style={{ background: isToday ? TH.amber : 'transparent', color: isToday ? '#fff' : TX.text }}>{d.getDate()}</div></div>
-                    <div className="space-y-1">
-                      {dayEvents.map(e => { const te = tipiEvento[e.tipo] || tipiEvento.altro; return (
-                        <div key={e.id} className="rounded-md p-1.5" style={{ background: te.color + '10', borderLeft: `2px solid ${te.color}` }}>
-                          <div className="flex items-center gap-1"><Ic n={te.icon} s={10} c={te.color}/><span style={{ fontSize: 9, fontWeight: 600, color: te.color }}>{e.ora_inizio?.slice(0, 5)}</span></div>
-                          <div style={{ fontSize: 9, color: TX.text, fontWeight: 500 }}>{e.titolo}</div>
+                  <div 
+                    key={iso} 
+                    onDragOver={(e) => {
+                      e.preventDefault()
+                      e.dataTransfer.dropEffect = 'move'
+                    }}
+                    onDragEnter={(e) => {
+                      e.currentTarget.style.transform = 'scale(1.02)'
+                    }}
+                    onDragLeave={(e) => {
+                      e.currentTarget.style.transform = 'scale(1)'
+                    }}
+                    onDrop={(e) => {
+                      e.currentTarget.style.transform = 'scale(1)'
+                      if (draggedEvento && draggedEvento.data !== iso) {
+                        updateEventoData(draggedEvento.id, iso)
+                      }
+                    }}
+                    className="rounded-xl p-3 transition-all duration-200" 
+                    style={{ 
+                      background: draggedEvento && draggedEvento.data !== iso ? TH.amber + '15' : (isToday ? TH.amber + '06' : BG.input), 
+                      border: `3px ${draggedEvento && draggedEvento.data !== iso ? 'dashed' : 'solid'} ${draggedEvento && draggedEvento.data !== iso ? TH.amber : (isToday ? TH.amber + '30' : TX.border)}`, 
+                      minHeight: 200,
+                      boxShadow: draggedEvento && draggedEvento.data !== iso ? '0 4px 12px rgba(217, 119, 6, 0.2)' : 'none'
+                    }}>
+                    <div className="text-center mb-3">
+                      <div style={{ fontSize: 10, color: TX.textMuted, textTransform: 'uppercase' as const, fontWeight: 700 }}>{d.toLocaleDateString('it-IT', { weekday: 'short' })}</div>
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center mx-auto text-sm font-bold mt-1`} style={{ background: isToday ? TH.amber : 'transparent', color: isToday ? '#fff' : TX.text, border: `2px solid ${isToday ? 'transparent' : TX.border}` }}>{d.getDate()}</div>
+                    </div>
+                    <div className="space-y-2">
+                      {dayEvents.map(e => { 
+                        const te = tipiEvento[e.tipo] || tipiEvento.altro
+                        return (
+                        <div 
+                          key={e.id} 
+                          draggable
+                          onClick={(ev) => {
+                            // Click funziona solo se non sto draggando
+                            if (!draggedEvento) {
+                              if (e.commessa_id) {
+                                setSelectedCommessa(e.commessa_id)
+                                setActiveTab('commesse')
+                              } else if (e.cliente_id) {
+                                setActiveTab('clienti')
+                              }
+                            }
+                          }}
+                          onDragStart={(ev) => {
+                            setDraggedEvento(e)
+                            ev.dataTransfer.effectAllowed = 'move'
+                          }}
+                          onDragEnd={() => setDraggedEvento(null)}
+                          className="rounded-lg p-2.5 cursor-pointer hover:shadow-lg transition-all" 
+                          style={{ 
+                            background: draggedEvento?.id === e.id ? te.color + '30' : te.color + '15', 
+                            borderLeft: `4px solid ${te.color}`, 
+                            border: `1px solid ${te.color}40`,
+                            opacity: draggedEvento?.id === e.id ? 0.5 : 1,
+                            marginBottom: 6
+                          }}>
+                          {/* Etichetta tipo evento */}
+                          <div className="flex items-center gap-1 mb-2 px-1.5 py-0.5 rounded-md inline-block" style={{ background: te.color + '25' }}>
+                            <Ic n={te.icon} s={9} c={te.color}/>
+                            <span style={{ fontSize: 8, fontWeight: 700, color: te.color, textTransform: 'uppercase', letterSpacing: 0.5 }}>{te.label}</span>
+                          </div>
+                          <div className="flex items-center gap-1 mb-1.5">
+                            <span style={{ fontSize: 11, fontWeight: 700, color: te.color }}>{e.ora_inizio?.slice(0, 5)}</span>
+                            <span style={{ fontSize: 9, color: TX.textMuted }}>·</span>
+                            <span style={{ fontSize: 9, color: TX.textMuted }}>{e.durata_min}min</span>
+                          </div>
+                          <div style={{ 
+                            fontSize: 12, 
+                            color: TX.text, 
+                            fontWeight: 700, 
+                            marginBottom: 4,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap'
+                          }}>{e.titolo}</div>
+                          {e.cliente && (
+                            <div style={{ 
+                              fontSize: 10, 
+                              color: TX.text, 
+                              fontWeight: 600,
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap'
+                            }}>
+                              👤 {e.cliente.nome} {e.cliente.cognome}
+                            </div>
+                          )}
+                          {e.commessa && (
+                            <div style={{ 
+                              fontSize: 10, 
+                              color: TH.blue, 
+                              fontWeight: 600,
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap'
+                            }}>
+                              📋 #{e.commessa.codice}
+                            </div>
+                          )}
                         </div>
                       )})}
                     </div>
@@ -1984,26 +2733,64 @@ Riga 601: async function updateEvento...
               <span className="text-sm font-semibold capitalize" style={{ color: TX.text }}>{monthName}</span>
               <button onClick={() => { if (calMonth === 11) { setCalMonth(0); setCalYear(y => y + 1) } else setCalMonth(m => m + 1) }} className="p-1 rounded" style={{ color: TX.textSec }}><Ic n="chevronRight" s={18}/></button>
             </div>
-            <div className="grid grid-cols-7 gap-0.5">
-              {['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'].map(d => (<div key={d} className="text-center py-1" style={{ fontSize: 9, color: TX.textMuted, textTransform: 'uppercase' as const, fontWeight: 600 }}>{d}</div>))}
+            <div className="grid grid-cols-7 gap-1">
+              {['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'].map(d => (<div key={d} className="text-center py-2" style={{ fontSize: 10, color: TX.textMuted, textTransform: 'uppercase' as const, fontWeight: 700 }}>{d}</div>))}
               {getMonthDays().map((d, i) => {
                 const iso = d.date.toISOString().split('T')[0]; const isToday = iso === oggiISO; const dayEv = filteredEventi.filter(e => e.data === iso)
+                const pienezza = Math.min((dayEv.length / 5) * 100, 100) // max 5 eventi = 100%
                 return (
-                  <div key={i} onClick={() => setCalSelectedDate(iso === calSelectedDate ? null : iso)}
-                    className="p-1 rounded-lg cursor-pointer text-center" style={{ background: calSelectedDate === iso ? TH.amber + '10' : isToday ? TH.blue + '06' : 'transparent', border: `1px solid ${calSelectedDate === iso ? TH.amber + '30' : 'transparent'}`, opacity: d.current ? 1 : 0.3, minHeight: 50 }}>
-                    <div style={{ fontSize: 11, fontWeight: isToday ? 700 : 400, color: isToday ? TH.blue : TX.text }}>{d.date.getDate()}</div>
-                    <div className="flex gap-0.5 justify-center mt-1 flex-wrap">{dayEv.slice(0, 3).map(e => <div key={e.id} className="w-1.5 h-1.5 rounded-full" style={{ background: (tipiEvento[e.tipo] || tipiEvento.altro).color }} />)}</div>
+                  <div 
+                    key={i} 
+                    onClick={() => {
+                      // Click porta alla vista OGGI di quel giorno
+                      setCalView('oggi')
+                      setCalSelectedDate(iso)
+                      // Aggiorna anche la settimana per essere coerente
+                      const clickedDate = new Date(iso)
+                      const day = clickedDate.getDay()
+                      const diff = clickedDate.getDate() - day + (day === 0 ? -6 : 1)
+                      setCalWeekStart(new Date(clickedDate.setDate(diff)).toISOString().split('T')[0])
+                    }}
+                    className="relative p-2 rounded-lg cursor-pointer hover:shadow-lg hover:scale-105 transition-all group" 
+                    style={{ 
+                      background: calSelectedDate === iso ? TH.amber + '15' : isToday ? TH.blue + '08' : BG.input, 
+                      border: `2px solid ${calSelectedDate === iso ? TH.amber : isToday ? TH.blue + '50' : TX.border}`, 
+                      opacity: d.current ? 1 : 0.4, 
+                      minHeight: 80 
+                    }}>
+                    <div style={{ fontSize: 14, fontWeight: isToday ? 700 : 600, color: isToday ? TH.blue : TX.text, marginBottom: 6 }}>{d.date.getDate()}</div>
+                    {dayEv.length > 0 && (
+                      <>
+                        {/* Mostra i primi 3 eventi con etichette colorate */}
+                        <div className="space-y-1">
+                          {dayEv.slice(0, 3).map(e => {
+                            const te = tipiEvento[e.tipo] || tipiEvento.altro
+                            return (
+                              <div key={e.id} className="flex items-center gap-1 px-1.5 py-0.5 rounded" style={{ background: te.color + '20', borderLeft: `2px solid ${te.color}` }}>
+                                <Ic n={te.icon} s={8} c={te.color}/>
+                                <span style={{ fontSize: 8, fontWeight: 700, color: te.color, textTransform: 'uppercase' }}>{te.label}</span>
+                              </div>
+                            )
+                          })}
+                          {dayEv.length > 3 && (
+                            <div style={{ fontSize: 8, color: TX.textMuted, textAlign: 'center', marginTop: 2 }}>
+                              +{dayEv.length - 3} altri
+                            </div>
+                          )}
+                        </div>
+                      </>
+                    )}
                   </div>
                 )
               })}
             </div>
             {calSelectedDate && (
-              <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${TX.border}` }}>
+              <div className="mt-4 pt-4" style={{ borderBottom: `1px solid ${TX.border}` }}>
                 <h4 className="text-sm font-semibold mb-2" style={{ color: TX.text }}>{new Date(calSelectedDate + 'T00:00:00').toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' })}</h4>
                 <div className="space-y-1">
                   {filteredEventi.filter(e => e.data === calSelectedDate).map(e => { const te = tipiEvento[e.tipo] || tipiEvento.altro; return (
                     <div key={e.id} className="flex items-center gap-3 p-2 rounded-lg" style={{ background: te.color + '06', borderLeft: `3px solid ${te.color}` }}>
-                      <Ic n={te.icon} s={16} c={te.color}/><div><div className="text-sm font-medium" style={{ color: TX.text }}>{e.titolo}</div><span style={{ fontSize: 10, color: TX.textMuted }}>{e.ora_inizio} · {e.durata_min}min</span></div>
+                      <Ic n={te.icon} s={16} c={te.color}/><div><div className="text-sm font-medium" style={{ color: TX.text }}>{e.titolo}</div><span style={{ fontSize: 10, color: TX.textMuted }}>{e.ora_inizio || '??:??'} · {e.durata_min}min</span></div>
                     </div>
                   )})}
                   {filteredEventi.filter(e => e.data === calSelectedDate).length === 0 && <p style={{ fontSize: 12, color: TX.textMuted }}>Nessun evento</p>}
@@ -2026,9 +2813,35 @@ Riga 601: async function updateEvento...
                 {commesse.slice(0, 10).map(c => {
                   const si = getStato(c.stato); const idx = STATI_COMMESSA.findIndex(s => s.value === c.stato); const progress = ((idx + 1) / STATI_COMMESSA.length) * 100
                   return (
-                    <div key={c.id} className="flex items-center py-1" style={{ borderBottom: `1px solid ${TX.border}` }}>
-                      <div style={{ width: 180 }}><span style={{ fontSize: 10, fontFamily: 'monospace', color: TH.amber }}>{c.codice}</span><span className="ml-1" style={{ fontSize: 11, color: TX.text }}>{c.titolo.slice(0, 20)}</span></div>
-                      <div className="flex flex-1"><div className="h-6 rounded-md" style={{ background: `linear-gradient(90deg, ${si.color}25, ${si.color}08)`, width: `${Math.max(progress, 10)}%`, display: 'flex', alignItems: 'center', paddingLeft: 6 }}><span style={{ fontSize: 8, color: si.color, fontWeight: 600 }}>{si.label}</span></div></div>
+                    <div 
+                      key={c.id} 
+                      onClick={() => {
+                        setSelectedCommessa(c.id)
+                        setActiveTab('commesse')
+                      }}
+                      className="flex items-center py-1 cursor-pointer hover:bg-opacity-50 transition-all" 
+                      style={{ 
+                        borderBottom: `1px solid ${TX.border}`,
+                        background: selectedCommessa === c.id ? si.color + '08' : 'transparent'
+                      }}>
+                      <div style={{ width: 180 }}>
+                        <span style={{ fontSize: 10, fontFamily: 'monospace', color: TH.amber, fontWeight: 700 }}>{c.codice}</span>
+                        <span className="ml-1" style={{ fontSize: 11, color: TX.text }}>{(c.titolo || '').slice(0, 20)}</span>
+                      </div>
+                      <div className="flex flex-1">
+                        <div 
+                          className="h-6 rounded-md hover:shadow-md transition-all" 
+                          style={{ 
+                            background: `linear-gradient(90deg, ${si.color}25, ${si.color}08)`, 
+                            width: `${Math.max(progress, 10)}%`, 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            paddingLeft: 6,
+                            border: `1px solid ${si.color}30`
+                          }}>
+                          <span style={{ fontSize: 8, color: si.color, fontWeight: 600 }}>{si.label}</span>
+                        </div>
+                      </div>
                     </div>
                   )
                 })}
@@ -2036,92 +2849,7 @@ Riga 601: async function updateEvento...
             </div>
           </Card>
         )}
-      
-        {/* ═══ MODAL MODIFICA EVENTO ═══ */}
-        {editingEvento && (
-          <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-            onClick={() => setEditingEvento(null)}>
-            <div className="rounded-xl" style={{ width: 520, background: BG.card, boxShadow: isDark ? '0 4px 12px rgba(0,0,0,0.4)' : TH.shadowMd, overflow: 'hidden' }}
-              onClick={(ev) => ev.stopPropagation()}>
-              <div className="p-5" style={{ borderBottom: `1px solid ${TX.border}` }}>
-                <div className="flex items-center justify-between">
-                  <h3 style={{ fontSize: 16, fontWeight: 800, color: TX.text }}>Modifica Evento</h3>
-                  <button onClick={() => setEditingEvento(null)}
-                    style={{ background: BG.input, border: `1px solid ${TX.border}`, borderRadius: 8, padding: 6, cursor: 'pointer' }}>
-                    <Ic n="x" s={14} c={TX.textMuted}/>
-                  </button>
-                </div>
-              </div>
-              <div className="p-5 space-y-4">
-                <div>
-                  <label style={{ fontSize: 10, color: TX.textMuted, textTransform: 'uppercase', letterSpacing: 1, fontWeight: 600, display: 'block', marginBottom: 4 }}>Titolo</label>
-                  <input value={editingEvento.titolo || ''} onChange={(ev) => setEditingEvento((prev: any) => ({...prev, titolo: ev.target.value}))}
-                    className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-                    style={{ background: BG.input, border: `1px solid ${TX.border}`, color: TX.text }} />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label style={{ fontSize: 10, color: TX.textMuted, textTransform: 'uppercase', letterSpacing: 1, fontWeight: 600, display: 'block', marginBottom: 4 }}>Tipo</label>
-                    <select value={editingEvento.tipo || 'altro'} onChange={(ev) => setEditingEvento((prev: any) => ({...prev, tipo: ev.target.value}))}
-                      className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-                      style={{ background: BG.input, border: `1px solid ${TX.border}`, color: TX.text }}>
-                      {['sopralluogo','misure','scadenza','posa','consegna','riunione','altro'].map(t => (
-                        <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label style={{ fontSize: 10, color: TX.textMuted, textTransform: 'uppercase', letterSpacing: 1, fontWeight: 600, display: 'block', marginBottom: 4 }}>Data</label>
-                    <input type="date" value={editingEvento.data || ''} onChange={(ev) => setEditingEvento((prev: any) => ({...prev, data: ev.target.value}))}
-                      className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-                      style={{ background: BG.input, border: `1px solid ${TX.border}`, color: TX.text }} />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label style={{ fontSize: 10, color: TX.textMuted, textTransform: 'uppercase', letterSpacing: 1, fontWeight: 600, display: 'block', marginBottom: 4 }}>Ora inizio</label>
-                    <input type="time" value={editingEvento.ora_inizio || ''} onChange={(ev) => setEditingEvento((prev: any) => ({...prev, ora_inizio: ev.target.value}))}
-                      className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-                      style={{ background: BG.input, border: `1px solid ${TX.border}`, color: TX.text }} />
-                  </div>
-                  <div>
-                    <label style={{ fontSize: 10, color: TX.textMuted, textTransform: 'uppercase', letterSpacing: 1, fontWeight: 600, display: 'block', marginBottom: 4 }}>Durata (min)</label>
-                    <input type="number" value={editingEvento.durata_min || 60} onChange={(ev) => setEditingEvento((prev: any) => ({...prev, durata_min: parseInt(ev.target.value) || 60}))}
-                      className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-                      style={{ background: BG.input, border: `1px solid ${TX.border}`, color: TX.text }} />
-                  </div>
-                </div>
-                <div>
-                  <label style={{ fontSize: 10, color: TX.textMuted, textTransform: 'uppercase', letterSpacing: 1, fontWeight: 600, display: 'block', marginBottom: 4 }}>Note</label>
-                  <textarea value={editingEvento.note || ''} onChange={(ev) => setEditingEvento((prev: any) => ({...prev, note: ev.target.value}))}
-                    rows={2} className="w-full px-3 py-2 rounded-lg text-sm outline-none"
-                    style={{ background: BG.input, border: `1px solid ${TX.border}`, color: TX.text, resize: 'none' }} />
-                </div>
-              </div>
-              <div className="p-5 flex gap-3" style={{ borderTop: `1px solid ${TX.border}`, background: BG.input }}>
-                <button onClick={() => setEditingEvento(null)}
-                  style={{ flex: 1, padding: '10px 0', background: 'transparent', border: `1px solid ${TX.border}`, borderRadius: 8, fontSize: 12, fontWeight: 600, color: TX.textSec, cursor: 'pointer' }}>
-                  Annulla
-                </button>
-                <button onClick={() => deleteEvento(editingEvento.id)}
-                  style={{ padding: '10px 16px', background: TH.red + '10', border: `1px solid ${TH.red}30`, borderRadius: 8, fontSize: 12, fontWeight: 700, color: TH.red, cursor: 'pointer' }}>
-                  Elimina
-                </button>
-                <button onClick={() => updateEvento(editingEvento.id, {
-                    titolo: editingEvento.titolo, tipo: editingEvento.tipo, data: editingEvento.data,
-                    ora_inizio: editingEvento.ora_inizio, durata_min: editingEvento.durata_min,
-                    cliente_id: editingEvento.cliente_id || null, commessa_id: editingEvento.commessa_id || null,
-                    note: editingEvento.note || null,
-                  })}
-                  style={{ flex: 2, padding: '10px 0', background: AC, border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 700, color: '#fff', cursor: 'pointer' }}>
-                  Salva Modifiche
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        </div>
+      </div>
     )
   }
 
@@ -2369,6 +3097,40 @@ Riga 601: async function updateEvento...
                 {commessaAttivita.length === 0 && <Card><div className="text-center py-8"><Ic n="clipboard" s={32} c={TX.textMuted}/><p style={{ fontSize: 12, color: TX.textMuted, marginTop: 8 }}>Nessuna attività configurata. Le attività vengono create automaticamente dal database.</p></div></Card>}
               </>
             )}
+
+            {/* ═══ SEZIONE ALLEGATI ═══ */}
+            {commessaView === 'progetto' && selectedCommessa && (
+              <Card className="mt-4">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <Ic n="paperclip" s={16} c={TH.purple}/>
+                    <h3 className="font-semibold text-sm" style={{ color: TX.text }}>
+                      Allegati <span style={{ fontSize: 11, color: TX.textMuted }}>(0)</span>
+                    </h3>
+                  </div>
+                  <button
+                    className="px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5"
+                    style={{ 
+                      background: TH.purple + '15', 
+                      color: TH.purple,
+                      border: `1px solid ${TH.purple}30`,
+                      cursor: 'pointer'
+                    }}>
+                    <Ic n="plus" s={14}/>
+                    Carica File
+                  </button>
+                </div>
+
+                {/* Lista allegati (vuota per ora) */}
+                <div className="text-center py-8" style={{ color: TX.textMuted }}>
+                  <Ic n="paperclip" s={32} c={TX.textMuted} style={{ opacity: 0.3 }}/>
+                  <p className="text-xs mt-2">Nessun allegato caricato</p>
+                  <p className="text-xs mt-1" style={{ color: TX.textMuted, opacity: 0.7 }}>
+                    Carica PDF, foto, documenti relativi a questa commessa
+                  </p>
+                </div>
+              </Card>
+            )}
           </div>
         )}
 
@@ -2495,12 +3257,6 @@ Riga 601: async function updateEvento...
       {id:'tipologie',label:'Tipologie',icon:'window',count:0},
     ]
 
-    const InputField = ({label,value,onChange,type='text',w}:{label:string,value:any,onChange:(v:any)=>void,type?:string,w?:string}) => (
-      <div style={{width:w||'100%'}}>
-        <label style={{fontSize:9,color:TX.textMuted,textTransform:'uppercase',fontWeight:700,display:'block',marginBottom:2}}>{label}</label>
-        <input type={type} value={value} onChange={e=>onChange(type==='number'?parseFloat(e.target.value)||0:e.target.value)} className="rounded-lg w-full" style={{padding:'6px 10px',border:`1px solid ${TX.border}`,fontSize:12,color:TX.text,background:BG.input}}/>
-      </div>
-    )
 
     // ── PROFILI ──
     const ProfiliSection = () => (
@@ -2730,14 +3486,19 @@ Riga 601: async function updateEvento...
     const colClass = (s: string) => s === 'full' ? 'col-span-12' : s === 'half' ? 'col-span-6' : 'col-span-4'
 
     // ── WIDGET: Search ──
-    const WSearch = () => (
+    const WSearch = React.memo(() => (
       <div className="flex items-center gap-2 px-4 py-3" style={{ background: BG.input, border: `1px solid ${TX.border}`, borderRadius: rd }}>
         <Ic n="search" s={16} c={TX.textMuted}/>
-        <input value={globalSearch} onChange={(e) => setGlobalSearch(e.target.value)} placeholder="Cerca commesse, clienti, eventi..."
-          style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', color: TX.text, fontSize: 14 }} />
+        <input 
+          value={globalSearch} 
+          onChange={(e) => setGlobalSearch(e.target.value)} 
+          placeholder="Cerca commesse, clienti, eventi..."
+          autoComplete="off"
+          style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', color: TX.text, fontSize: 14 }} 
+        />
         {globalSearch && <button onClick={() => setGlobalSearch('')} style={{ background: 'transparent', border: 'none', color: TX.textMuted, cursor: 'pointer' }}><Ic n="x" s={14}/></button>}
       </div>
-    )
+    ))
 
     // ── WIDGET: KPI ──
     // All available KPIs
@@ -3154,7 +3915,7 @@ Riga 601: async function updateEvento...
     )
 
     const widgetMap: Record<string, React.ReactNode> = {
-      search: <WSearch/>, kpi: <WKPI/>, promemoria: <WPromemoria/>, ordini: <WOrdini/>,
+      kpi: <WKPI/>, promemoria: <WPromemoria/>, ordini: <WOrdini/>,
       kanban: <WKanban/>, pipeline: <WPipeline/>, eventi_oggi: <WEventiOggi/>,
       lavorazioni: <WLavorazioni/>, scadenze: <WScadenze/>, interconnessioni: <WInterconn/>,
     }
@@ -3188,6 +3949,11 @@ Riga 601: async function updateEvento...
             className="flex items-center gap-1.5" style={{ padding: '6px 14px', background: AC + '10', border: `1px solid ${AC}30`, borderRadius: rd, cursor: 'pointer', fontSize: 11, fontWeight: 600, color: AC }}>
             <Ic n="settings" s={13} c={AC}/> Personalizza
           </button>
+        </div>
+
+        {/* ═══ BARRA RICERCA GLOBALE ═══ */}
+        <div className="mb-6">
+          <WSearch />
         </div>
 
         {/* ═══ SMART COMMAND CENTER ═══ */}
@@ -5060,6 +5826,651 @@ Riga 601: async function updateEvento...
     )
   }
 
+  // ==================== WORKFLOW BUILDER ====================
+  const WorkflowContent = () => {
+    const [selectedWorkflow, setSelectedWorkflow] = useState<string | null>(null)
+    const [selectedNode, setSelectedNode] = useState<string | null>(null)
+    const [showNewWorkflowDialog, setShowNewWorkflowDialog] = useState(false)
+    const [newWorkflowName, setNewWorkflowName] = useState('')
+    const [newWorkflowDesc, setNewWorkflowDesc] = useState('')
+    const [newWorkflowTipo, setNewWorkflowTipo] = useState('commessa')
+    
+    // CANVAS INTERATTIVO - States
+    const [canvasNodes, setCanvasNodes] = useState<any[]>([])
+    const [canvasConnections, setCanvasConnections] = useState<any[]>([])
+    const [draggedNodeType, setDraggedNodeType] = useState<string | null>(null)
+    const [draggingNode, setDraggingNode] = useState<string | null>(null)
+    const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
+    const [connectingFrom, setConnectingFrom] = useState<string | null>(null)
+    const [tempConnectionEnd, setTempConnectionEnd] = useState<{ x: number, y: number } | null>(null)
+    const canvasRef = React.useRef<HTMLDivElement>(null)
+    
+    // Tipi di nodi disponibili
+    const nodeTypes = [
+      { id: 'start', label: 'Inizio', icon: 'play', color: TH.green, description: 'Punto di partenza del workflow' },
+      { id: 'fase', label: 'Fase Lavoro', icon: 'box', color: TH.blue, description: 'Fase operativa (es. Sopralluogo, Montaggio)' },
+      { id: 'decision', label: 'Decisione', icon: 'gitBranch', color: TH.amber, description: 'Punto di scelta (es. Cliente conferma?)' },
+      { id: 'action', label: 'Azione', icon: 'zap', color: TH.purple, description: 'Azione automatica (email, notifica)' },
+      { id: 'delay', label: 'Attesa', icon: 'clock', color: TX.textMuted, description: 'Pausa temporizzata' },
+      { id: 'end', label: 'Fine', icon: 'checkCircle', color: TH.green, description: 'Completamento workflow' },
+    ]
+
+    // Workflows esempio
+    const exampleWorkflows = [
+      { id: 'wf1', nome: 'Infissi Residenziali', tipo: 'commessa', fasi: 7, attivo: true, descrizione: 'Workflow standard per commesse residenziali' },
+      { id: 'wf2', nome: 'Infissi Commerciali', tipo: 'commessa', fasi: 9, attivo: true, descrizione: 'Workflow per progetti commerciali e uffici' },
+      { id: 'wf3', nome: 'Solo Misura + Preventivo', tipo: 'servizio', fasi: 3, attivo: false, descrizione: 'Workflow rapido solo preventivo' },
+    ]
+    
+    // FUNZIONI CANVAS
+    const addNodeToCanvas = (nodeType: any, x: number, y: number) => {
+      const newNode = {
+        id: `node_${Date.now()}`,
+        type: nodeType.id,
+        label: nodeType.label,
+        icon: nodeType.icon,
+        color: nodeType.color,
+        x,
+        y,
+        data: {
+          nome: '',
+          durata_giorni: 1,
+          responsabile: '',
+          note: ''
+        }
+      }
+      setCanvasNodes(prev => [...prev, newNode])
+      setSelectedNode(newNode.id)
+    }
+    
+    const deleteNode = (nodeId: string) => {
+      setCanvasNodes(prev => prev.filter(n => n.id !== nodeId))
+      setCanvasConnections(prev => prev.filter(c => c.from !== nodeId && c.to !== nodeId))
+      if (selectedNode === nodeId) setSelectedNode(null)
+    }
+    
+    const addConnection = (fromId: string, toId: string) => {
+      // Evita duplicati
+      const exists = canvasConnections.some(c => c.from === fromId && c.to === toId)
+      if (!exists && fromId !== toId) {
+        setCanvasConnections(prev => [...prev, { id: `conn_${Date.now()}`, from: fromId, to: toId }])
+      }
+    }
+    
+    const updateNodeData = (nodeId: string, field: string, value: any) => {
+      setCanvasNodes(prev => prev.map(n => 
+        n.id === nodeId ? { ...n, data: { ...n.data, [field]: value } } : n
+      ))
+    }
+
+    return (
+      <>
+        {/* DIALOG NUOVO WORKFLOW */}
+        {showNewWorkflowDialog && (
+          <div 
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            onClick={() => setShowNewWorkflowDialog(false)}>
+            <div 
+              onClick={(e) => e.stopPropagation()}
+              className="rounded-xl p-6" 
+              style={{ background: BG.card, width: 500, border: `1px solid ${TX.border}`, boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
+              <h3 className="font-bold text-lg mb-4" style={{ color: TX.text }}>Crea Nuovo Workflow</h3>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold mb-1" style={{ color: TX.textMuted }}>Nome Workflow</label>
+                  <input 
+                    type="text"
+                    value={newWorkflowName}
+                    onChange={(e) => setNewWorkflowName(e.target.value)}
+                    placeholder="es. Infissi Residenziali Premium"
+                    className="w-full px-3 py-2 rounded-lg text-sm"
+                    style={{ background: BG.input, border: `1px solid ${TX.border}`, color: TX.text }}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold mb-1" style={{ color: TX.textMuted }}>Tipo</label>
+                  <select 
+                    value={newWorkflowTipo}
+                    onChange={(e) => setNewWorkflowTipo(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg text-sm"
+                    style={{ background: BG.input, border: `1px solid ${TX.border}`, color: TX.text }}>
+                    <option value="commessa">Commessa</option>
+                    <option value="servizio">Servizio</option>
+                    <option value="manutenzione">Manutenzione</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold mb-1" style={{ color: TX.textMuted }}>Descrizione</label>
+                  <textarea 
+                    value={newWorkflowDesc}
+                    onChange={(e) => setNewWorkflowDesc(e.target.value)}
+                    placeholder="Breve descrizione del workflow..."
+                    rows={3}
+                    className="w-full px-3 py-2 rounded-lg text-sm"
+                    style={{ background: BG.input, border: `1px solid ${TX.border}`, color: TX.text }}
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-2 mt-6">
+                <button 
+                  onClick={() => {
+                    setShowNewWorkflowDialog(false)
+                    setNewWorkflowName('')
+                    setNewWorkflowDesc('')
+                  }}
+                  className="flex-1 px-4 py-2 rounded-lg text-sm font-semibold"
+                  style={{ background: BG.input, color: TX.text, border: `1px solid ${TX.border}` }}>
+                  Annulla
+                </button>
+                <button 
+                  onClick={() => {
+                    if (!newWorkflowName.trim()) return
+                    // TODO: Salvare workflow su Supabase
+                    console.log('Nuovo workflow:', { nome: newWorkflowName, tipo: newWorkflowTipo, descrizione: newWorkflowDesc })
+                    setShowNewWorkflowDialog(false)
+                    setNewWorkflowName('')
+                    setNewWorkflowDesc('')
+                    alert('✅ Workflow creato! (Salvataggio DB in arrivo)')
+                  }}
+                  disabled={!newWorkflowName.trim()}
+                  className="flex-1 px-4 py-2 rounded-lg text-sm font-semibold"
+                  style={{ 
+                    background: newWorkflowName.trim() ? TH.blue : TX.border, 
+                    color: '#fff',
+                    opacity: newWorkflowName.trim() ? 1 : 0.5
+                  }}>
+                  Crea Workflow
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+      <div className="flex h-full">
+        {/* SIDEBAR - Lista Workflows */}
+        <div className="w-64 flex flex-col" style={{ background: BG.card, borderRight: `1px solid ${TX.border}` }}>
+          <div className="p-4 border-b" style={{ borderColor: TX.border }}>
+            <h3 className="font-bold text-sm mb-2" style={{ color: TX.text }}>I Tuoi Workflow</h3>
+            <button 
+              onClick={() => setShowNewWorkflowDialog(true)}
+              className="w-full px-3 py-2 rounded-lg text-sm font-semibold flex items-center justify-center gap-2"
+              style={{ background: TH.blue, color: '#fff' }}>
+              <Ic n="plus" s={14}/> Nuovo Workflow
+            </button>
+          </div>
+          
+          <div className="flex-1 overflow-y-auto p-2">
+            {exampleWorkflows.map(wf => (
+              <div
+                key={wf.id}
+                onClick={() => setSelectedWorkflow(wf.id)}
+                className="p-3 rounded-lg mb-2 cursor-pointer transition-all"
+                style={{ 
+                  background: selectedWorkflow === wf.id ? TH.blue + '15' : 'transparent',
+                  border: `1px solid ${selectedWorkflow === wf.id ? TH.blue + '40' : TX.border}`
+                }}>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="font-semibold text-sm" style={{ color: TX.text }}>{wf.nome}</span>
+                  {wf.attivo && (
+                    <span className="px-1.5 py-0.5 rounded text-xs font-bold" style={{ background: TH.green + '20', color: TH.green }}>
+                      ATTIVO
+                    </span>
+                  )}
+                </div>
+                <div style={{ fontSize: 11, color: TX.textMuted }}>{wf.descrizione}</div>
+                <div className="flex items-center gap-2 mt-2">
+                  <span style={{ fontSize: 10, color: TX.textMuted }}>
+                    <Ic n="box" s={10}/> {wf.fasi} fasi
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* CANVAS - Area di disegno workflow */}
+        <div className="flex-1 flex flex-col">
+          <div className="p-4 border-b flex items-center justify-between" style={{ borderColor: TX.border, background: BG.card }}>
+            <div>
+              <h2 className="font-bold text-lg" style={{ color: TX.text }}>
+                {selectedWorkflow ? 'Infissi Residenziali' : 'Seleziona un workflow'}
+              </h2>
+              <p style={{ fontSize: 11, color: TX.textMuted }}>
+                {selectedWorkflow ? 'Trascina i nodi per creare il tuo processo personalizzato' : 'Scegli un workflow dalla lista o creane uno nuovo'}
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <button className="px-3 py-1.5 rounded-lg text-xs font-semibold" style={{ background: BG.input, color: TX.text, border: `1px solid ${TX.border}` }}>
+                <Ic n="save" s={12}/> Salva
+              </button>
+              <button className="px-3 py-1.5 rounded-lg text-xs font-semibold" style={{ background: TH.green, color: '#fff' }}>
+                <Ic n="play" s={12}/> Attiva
+              </button>
+            </div>
+          </div>
+
+          {selectedWorkflow ? (
+            <div className="flex-1 p-4" style={{ background: BG.page }}>
+              {/* TOOLBAR - Nodi disponibili */}
+              <div className="mb-4 p-3 rounded-lg" style={{ background: BG.card, border: `1px solid ${TX.border}` }}>
+                <div className="flex items-center justify-between mb-2">
+                  <div style={{ fontSize: 10, color: TX.textMuted, fontWeight: 700, textTransform: 'uppercase' as const }}>
+                    Nodi Disponibili - Trascina sul Canvas
+                  </div>
+                  <div style={{ fontSize: 10, color: TH.blue }}>
+                    {canvasNodes.length} nodi · {canvasConnections.length} collegamenti
+                  </div>
+                </div>
+                <div className="flex gap-2 flex-wrap">
+                  {nodeTypes.map(node => (
+                    <div
+                      key={node.id}
+                      draggable
+                      onDragStart={(e) => {
+                        setDraggedNodeType(node.id)
+                        e.dataTransfer.effectAllowed = 'copy'
+                      }}
+                      onDragEnd={() => setDraggedNodeType(null)}
+                      className="px-3 py-2 rounded-lg cursor-move hover:shadow-lg transition-all flex items-center gap-2"
+                      style={{ 
+                        background: node.color + '15', 
+                        border: `2px solid ${draggedNodeType === node.id ? node.color : node.color + '30'}`,
+                        minWidth: 120,
+                        transform: draggedNodeType === node.id ? 'scale(0.95)' : 'scale(1)'
+                      }}>
+                      <Ic n={node.icon} s={14} c={node.color}/>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: node.color }}>{node.label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* CANVAS INTERATTIVO */}
+              <div 
+                ref={canvasRef}
+                className="rounded-lg relative"
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                  e.preventDefault()
+                  if (!draggedNodeType || !canvasRef.current) return
+                  
+                  const rect = canvasRef.current.getBoundingClientRect()
+                  const x = e.clientX - rect.left - 75
+                  const y = e.clientY - rect.top - 20
+                  
+                  const nodeType = nodeTypes.find(n => n.id === draggedNodeType)
+                  if (nodeType) addNodeToCanvas(nodeType, x, y)
+                  setDraggedNodeType(null)
+                }}
+                onMouseMove={(e) => {
+                  if (!draggingNode || !canvasRef.current) return
+                  const rect = canvasRef.current.getBoundingClientRect()
+                  const x = e.clientX - rect.left - dragOffset.x
+                  const y = e.clientY - rect.top - dragOffset.y
+                  setCanvasNodes(prev => prev.map(n => 
+                    n.id === draggingNode ? { ...n, x, y } : n
+                  ))
+                }}
+                onMouseMove={(e) => {
+                  if (connectingFrom && canvasRef.current) {
+                    const rect = canvasRef.current.getBoundingClientRect()
+                    setTempConnectionEnd({ x: e.clientX - rect.left, y: e.clientY - rect.top })
+                  } else if (draggingNode && canvasRef.current) {
+                    const rect = canvasRef.current.getBoundingClientRect()
+                    const x = e.clientX - rect.left - dragOffset.x
+                    const y = e.clientY - rect.top - dragOffset.y
+                    setCanvasNodes(prev => prev.map(n => 
+                      n.id === draggingNode ? { ...n, x, y } : n
+                    ))
+                  }
+                }}
+                onMouseUp={() => {
+                  setDraggingNode(null)
+                  if (connectingFrom) {
+                    setConnectingFrom(null)
+                    setTempConnectionEnd(null)
+                  }
+                }}
+                style={{ 
+                  background: `repeating-linear-gradient(0deg, ${TX.border}20, ${TX.border}20 1px, transparent 1px, transparent 20px), repeating-linear-gradient(90deg, ${TX.border}20, ${TX.border}20 1px, transparent 1px, transparent 20px)`,
+                  backgroundColor: BG.card,
+                  border: `2px solid ${TX.border}`,
+                  minHeight: 600,
+                  cursor: draggingNode ? 'grabbing' : connectingFrom ? 'crosshair' : 'default'
+                }}>
+                
+                {/* SVG per le connessioni */}
+                <svg style={{ position: 'absolute', inset: 0, pointerEvents: 'none', width: '100%', height: '100%' }}>
+                  {canvasConnections.map(conn => {
+                    const fromNode = canvasNodes.find(n => n.id === conn.from)
+                    const toNode = canvasNodes.find(n => n.id === conn.to)
+                    if (!fromNode || !toNode) return null
+                    
+                    const x1 = fromNode.x + 75
+                    const y1 = fromNode.y + 20
+                    const x2 = toNode.x + 75
+                    const y2 = toNode.y + 20
+                    
+                    return (
+                      <g key={conn.id}>
+                        <line 
+                          x1={x1} y1={y1} x2={x2} y2={y2}
+                          stroke={TH.blue}
+                          strokeWidth="2"
+                          markerEnd="url(#arrowhead)"
+                        />
+                      </g>
+                    )
+                  })}
+                  
+                  {/* Connessione temporanea durante il drag */}
+                  {connectingFrom && tempConnectionEnd && (() => {
+                    const fromNode = canvasNodes.find(n => n.id === connectingFrom)
+                    if (!fromNode) return null
+                    return (
+                      <line 
+                        x1={fromNode.x + 75} 
+                        y1={fromNode.y + 20}
+                        x2={tempConnectionEnd.x}
+                        y2={tempConnectionEnd.y}
+                        stroke={TH.amber}
+                        strokeWidth="2"
+                        strokeDasharray="5,5"
+                      />
+                    )
+                  })()}
+                  
+                  {/* Marker per le frecce */}
+                  <defs>
+                    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                      <polygon points="0 0, 10 3, 0 6" fill={TH.blue} />
+                    </marker>
+                  </defs>
+                </svg>
+                
+                {/* Nodi nel canvas */}
+                {canvasNodes.map(node => (
+                  <div
+                    key={node.id}
+                    onMouseDown={(e) => {
+                      if (e.shiftKey) {
+                        // SHIFT + Click = inizia connessione
+                        e.stopPropagation()
+                        if (connectingFrom) {
+                          addConnection(connectingFrom, node.id)
+                          setConnectingFrom(null)
+                          setTempConnectionEnd(null)
+                        } else {
+                          setConnectingFrom(node.id)
+                        }
+                      } else if (e.altKey) {
+                        // ALT + Click = elimina
+                        e.stopPropagation()
+                        if (window.confirm(`Eliminare il nodo "${node.label}"?`)) {
+                          deleteNode(node.id)
+                        }
+                      } else {
+                        // Click normale = seleziona e inizia drag
+                        e.stopPropagation()
+                        setSelectedNode(node.id)
+                        setDraggingNode(node.id)
+                        const rect = e.currentTarget.getBoundingClientRect()
+                        const parentRect = canvasRef.current?.getBoundingClientRect()
+                        if (parentRect) {
+                          setDragOffset({
+                            x: e.clientX - parentRect.left - node.x,
+                            y: e.clientY - parentRect.top - node.y
+                          })
+                        }
+                      }
+                    }}
+                    className="absolute px-4 py-2.5 rounded-lg shadow-lg transition-all select-none"
+                    style={{
+                      left: node.x,
+                      top: node.y,
+                      background: node.color + '15',
+                      border: `3px solid ${selectedNode === node.id ? node.color : node.color + '40'}`,
+                      cursor: 'grab',
+                      minWidth: 150,
+                      transform: selectedNode === node.id ? 'scale(1.05)' : 'scale(1)',
+                      boxShadow: selectedNode === node.id ? `0 8px 24px ${node.color}40` : '0 2px 8px rgba(0,0,0,0.1)'
+                    }}>
+                    <div className="flex items-center gap-2 mb-1">
+                      <Ic n={node.icon} s={16} c={node.color}/>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: node.color }}>{node.label}</span>
+                    </div>
+                    {node.data.nome && (
+                      <div style={{ fontSize: 11, color: TX.text, fontWeight: 600 }}>{node.data.nome}</div>
+                    )}
+                    {node.data.durata_giorni && (
+                      <div style={{ fontSize: 10, color: TX.textMuted }}>⏱️ {node.data.durata_giorni}gg</div>
+                    )}
+                  </div>
+                ))}
+                
+                {/* Help overlay quando canvas vuoto */}
+                {canvasNodes.length === 0 && (
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="text-center">
+                      <Ic n="gitBranch" s={64} c={TX.textMuted}/>
+                      <h3 className="font-bold text-lg mt-4" style={{ color: TX.text }}>Trascina i Nodi qui!</h3>
+                      <p style={{ fontSize: 12, color: TX.textMuted, marginTop: 8, maxWidth: 400 }}>
+                        Trascina i blocchi dalla barra sopra per costruire il tuo workflow
+                      </p>
+                      <div className="mt-6 space-y-2" style={{ fontSize: 11, color: TX.textMuted, textAlign: 'left', maxWidth: 350, margin: '24px auto 0' }}>
+                        <div>🖱️ <strong>Click</strong> = Seleziona e sposta</div>
+                        <div>⇧ <strong>SHIFT + Click</strong> su 2 nodi = Collega</div>
+                        <div>⌥ <strong>ALT + Click</strong> = Elimina</div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="flex-1 flex items-center justify-center" style={{ background: BG.page }}>
+              <div className="text-center">
+                <Ic n="gitBranch" s={64} c={TX.textMuted}/>
+                <h3 className="font-bold text-lg mt-4" style={{ color: TX.text }}>Crea il Tuo Workflow</h3>
+                <p style={{ fontSize: 13, color: TX.textMuted, marginTop: 8, maxWidth: 400 }}>
+                  Seleziona un workflow esistente o creane uno nuovo per iniziare a personalizzare il tuo processo di lavoro
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* PROPERTIES - Proprietà nodo selezionato */}
+        <div className="w-80 flex flex-col" style={{ background: BG.card, borderLeft: `1px solid ${TX.border}` }}>
+          <div className="p-4 border-b" style={{ borderColor: TX.border }}>
+            <h3 className="font-bold text-sm" style={{ color: TX.text }}>Proprietà Nodo</h3>
+          </div>
+          
+          <div className="flex-1 overflow-y-auto p-4">
+            {selectedNode ? (() => {
+              const node = canvasNodes.find(n => n.id === selectedNode)
+              if (!node) return null
+              
+              return (
+                <div className="space-y-4">
+                  {/* Header nodo */}
+                  <div className="p-3 rounded-lg" style={{ background: node.color + '15', border: `2px solid ${node.color}40` }}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Ic n={node.icon} s={20} c={node.color}/>
+                      <span style={{ fontSize: 14, fontWeight: 700, color: node.color }}>{node.label}</span>
+                    </div>
+                    <div style={{ fontSize: 10, color: TX.textMuted, fontFamily: 'monospace' }}>ID: {node.id}</div>
+                  </div>
+
+                  {/* Form proprietà */}
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-xs font-semibold mb-1" style={{ color: TX.textMuted }}>
+                        Nome Fase
+                      </label>
+                      <input
+                        type="text"
+                        value={node.data.nome || ''}
+                        onChange={(e) => updateNodeData(node.id, 'nome', e.target.value)}
+                        placeholder="es. Sopralluogo Cliente"
+                        className="w-full px-3 py-2 rounded-lg text-sm"
+                        style={{ background: BG.input, border: `1px solid ${TX.border}`, color: TX.text }}
+                      />
+                    </div>
+
+                    {node.type === 'fase' && (
+                      <div>
+                        <label className="block text-xs font-semibold mb-1" style={{ color: TX.textMuted }}>
+                          Durata Stimata (giorni)
+                        </label>
+                        <input
+                          type="number"
+                          value={node.data.durata_giorni || 1}
+                          onChange={(e) => updateNodeData(node.id, 'durata_giorni', parseInt(e.target.value))}
+                          min="1"
+                          className="w-full px-3 py-2 rounded-lg text-sm"
+                          style={{ background: BG.input, border: `1px solid ${TX.border}`, color: TX.text }}
+                        />
+                      </div>
+                    )}
+
+                    {(node.type === 'fase' || node.type === 'action') && (
+                      <div>
+                        <label className="block text-xs font-semibold mb-1" style={{ color: TX.textMuted }}>
+                          Responsabile
+                        </label>
+                        <select
+                          value={node.data.responsabile || ''}
+                          onChange={(e) => updateNodeData(node.id, 'responsabile', e.target.value)}
+                          className="w-full px-3 py-2 rounded-lg text-sm"
+                          style={{ background: BG.input, border: `1px solid ${TX.border}`, color: TX.text }}>
+                          <option value="">Nessuno</option>
+                          <option value="ufficio">Ufficio</option>
+                          <option value="tecnico">Tecnico</option>
+                          <option value="commerciale">Commerciale</option>
+                          <option value="produzione">Produzione</option>
+                        </select>
+                      </div>
+                    )}
+
+                    {node.type === 'decision' && (
+                      <div>
+                        <label className="block text-xs font-semibold mb-1" style={{ color: TX.textMuted }}>
+                          Condizione
+                        </label>
+                        <input
+                          type="text"
+                          value={node.data.condizione || ''}
+                          onChange={(e) => updateNodeData(node.id, 'condizione', e.target.value)}
+                          placeholder="es. Cliente ha confermato?"
+                          className="w-full px-3 py-2 rounded-lg text-sm"
+                          style={{ background: BG.input, border: `1px solid ${TX.border}`, color: TX.text }}
+                        />
+                      </div>
+                    )}
+
+                    {node.type === 'action' && (
+                      <div>
+                        <label className="block text-xs font-semibold mb-1" style={{ color: TX.textMuted }}>
+                          Tipo Azione
+                        </label>
+                        <select
+                          value={node.data.azione_tipo || ''}
+                          onChange={(e) => updateNodeData(node.id, 'azione_tipo', e.target.value)}
+                          className="w-full px-3 py-2 rounded-lg text-sm"
+                          style={{ background: BG.input, border: `1px solid ${TX.border}`, color: TX.text }}>
+                          <option value="">Seleziona...</option>
+                          <option value="email">Invia Email</option>
+                          <option value="notifica">Notifica</option>
+                          <option value="ordine">Crea Ordine</option>
+                          <option value="calendario">Aggiungi Evento</option>
+                        </select>
+                      </div>
+                    )}
+
+                    {node.type === 'delay' && (
+                      <div>
+                        <label className="block text-xs font-semibold mb-1" style={{ color: TX.textMuted }}>
+                          Attesa (giorni)
+                        </label>
+                        <input
+                          type="number"
+                          value={node.data.delay_giorni || 1}
+                          onChange={(e) => updateNodeData(node.id, 'delay_giorni', parseInt(e.target.value))}
+                          min="1"
+                          className="w-full px-3 py-2 rounded-lg text-sm"
+                          style={{ background: BG.input, border: `1px solid ${TX.border}`, color: TX.text }}
+                        />
+                      </div>
+                    )}
+
+                    <div>
+                      <label className="block text-xs font-semibold mb-1" style={{ color: TX.textMuted }}>
+                        Note
+                      </label>
+                      <textarea
+                        value={node.data.note || ''}
+                        onChange={(e) => updateNodeData(node.id, 'note', e.target.value)}
+                        placeholder="Note aggiuntive..."
+                        rows={3}
+                        className="w-full px-3 py-2 rounded-lg text-sm"
+                        style={{ background: BG.input, border: `1px solid ${TX.border}`, color: TX.text }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Azioni nodo */}
+                  <div className="pt-4 border-t" style={{ borderColor: TX.border }}>
+                    <button
+                      onClick={() => {
+                        if (window.confirm(`Eliminare il nodo "${node.label}"?`)) {
+                          deleteNode(node.id)
+                        }
+                      }}
+                      className="w-full px-3 py-2 rounded-lg text-sm font-semibold flex items-center justify-center gap-2"
+                      style={{ background: '#ff4444', color: '#fff' }}>
+                      <Ic n="trash" s={14}/>
+                      Elimina Nodo
+                    </button>
+                  </div>
+
+                  {/* Statistiche connessioni */}
+                  <div className="pt-4 border-t" style={{ borderColor: TX.border }}>
+                    <div style={{ fontSize: 10, color: TX.textMuted, fontWeight: 700, textTransform: 'uppercase' as const, marginBottom: 8 }}>
+                      Connessioni
+                    </div>
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between" style={{ fontSize: 11, color: TX.text }}>
+                        <span>In ingresso:</span>
+                        <span className="font-bold">{canvasConnections.filter(c => c.to === node.id).length}</span>
+                      </div>
+                      <div className="flex items-center justify-between" style={{ fontSize: 11, color: TX.text }}>
+                        <span>In uscita:</span>
+                        <span className="font-bold">{canvasConnections.filter(c => c.from === node.id).length}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )
+            })() : (
+              <div className="text-center py-8">
+                <Ic n="mousePointer" s={32} c={TX.textMuted}/>
+                <p style={{ fontSize: 11, color: TX.textMuted, marginTop: 8 }}>
+                  Seleziona un nodo per modificarne le proprietà
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+      </>
+    )
+  }
+
   // ==================== DESKTOP LAYOUT ====================
   const tabs = [
     { id: 'dashboard', label: 'Dashboard', icon: 'home' },
@@ -5070,6 +6481,7 @@ Riga 601: async function updateEvento...
     { id: 'clienti', label: 'Clienti', icon: 'users' },
     { id: 'calendario', label: 'Calendario', icon: 'calendar' },
     { id: 'configuratore', label: 'Configuratore', icon: 'window' },
+    { id: 'workflow', label: 'Workflow Builder', icon: 'gitBranch' },
     { id: 'pratiche', label: 'Pratiche & Enti', icon: 'file' },
     { id: 'team', label: 'Team', icon: 'users' },
     { id: 'rete', label: 'Rete Commerciale', icon: 'users' },
@@ -5157,6 +6569,7 @@ Riga 601: async function updateEvento...
             {activeTab === 'clienti' && <ClientiContent />}
             {activeTab === 'calendario' && <CalendarioContent />}
             {activeTab === 'configuratore' && <ConfiguratoreContent />}
+            {activeTab === 'workflow' && <WorkflowContent />}
             {activeTab === 'pratiche' && <PraticheContent />}
             {activeTab === 'team' && <TeamContent />}
             {activeTab === 'rete' && <ReteCommercialeContent />}
