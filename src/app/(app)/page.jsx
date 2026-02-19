@@ -107,20 +107,28 @@ const TASKS_INIT = [
 ];
 
 const MSGS_INIT = [
-  { id: 1, from: "Fornitore Schüco", preview: "Conferma ordine #4521 — materiale pronto per spedizione il 20/02", time: "14:32", cm: "CM-0002", read: false, thread: [
-    { who: "Tu", text: "Buongiorno, stato ordine #4521?", time: "09:15", date: "18/02" },
-    { who: "Fornitore Schüco", text: "Ordine in lavorazione, consegna prevista 20/02", time: "10:40", date: "18/02" },
-    { who: "Tu", text: "Perfetto, confermate anche le maniglie satinate?", time: "11:05", date: "18/02" },
-    { who: "Fornitore Schüco", text: "Conferma ordine #4521 — materiale pronto per spedizione il 20/02. Maniglie satinate incluse.", time: "14:32", date: "19/02" },
+  { id: 1, from: "Fornitore Schüco", preview: "Conferma ordine #4521 — materiale pronto per spedizione il 20/02", time: "14:32", cm: "CM-0002", read: false, canale: "email", thread: [
+    { who: "Tu", text: "Buongiorno, stato ordine #4521?", time: "09:15", date: "18/02", canale: "email" },
+    { who: "Fornitore Schüco", text: "Ordine in lavorazione, consegna prevista 20/02", time: "10:40", date: "18/02", canale: "email" },
+    { who: "Tu", text: "Perfetto, confermate anche le maniglie satinate?", time: "11:05", date: "18/02", canale: "email" },
+    { who: "Fornitore Schüco", text: "Conferma ordine #4521 — materiale pronto per spedizione il 20/02. Maniglie satinate incluse.", time: "14:32", date: "19/02", canale: "email" },
   ]},
-  { id: 2, from: "Mario (posatore)", preview: "Fabio, per la CM-0004 servono i controtelai speciali?", time: "12:15", cm: "CM-0004", read: false, thread: [
-    { who: "Mario", text: "Ciao Fabio, domani vado a posare CM-0004", time: "08:30", date: "19/02" },
-    { who: "Tu", text: "Ok Mario, ricordati il silicone neutro", time: "08:45", date: "19/02" },
-    { who: "Mario", text: "Fabio, per la CM-0004 servono i controtelai speciali?", time: "12:15", date: "19/02" },
+  { id: 2, from: "Mario (posatore)", preview: "Fabio, per la CM-0004 servono i controtelai speciali?", time: "12:15", cm: "CM-0004", read: false, canale: "whatsapp", thread: [
+    { who: "Mario", text: "Ciao Fabio, domani vado a posare CM-0004", time: "08:30", date: "19/02", canale: "whatsapp" },
+    { who: "Tu", text: "Ok Mario, ricordati il silicone neutro", time: "08:45", date: "19/02", canale: "whatsapp" },
+    { who: "Mario", text: "Fabio, per la CM-0004 servono i controtelai speciali?", time: "12:15", date: "19/02", canale: "whatsapp" },
   ]},
-  { id: 3, from: "Cliente Rossi", preview: "Grazie per il preventivo, procediamo con l'ordine", time: "Ieri", cm: "", read: true, thread: [
-    { who: "Tu", text: "Buongiorno Sig. Rossi, in allegato il preventivo per la sostituzione dei 5 infissi.", time: "16:00", date: "17/02" },
-    { who: "Cliente Rossi", text: "Grazie per il preventivo, procediamo con l'ordine", time: "09:30", date: "18/02" },
+  { id: 3, from: "Cliente Rossi", preview: "Grazie per il preventivo, procediamo con l'ordine", time: "Ieri", cm: "CM-0001", read: true, canale: "sms", thread: [
+    { who: "Tu", text: "Buongiorno Sig. Rossi, in allegato il preventivo per la sostituzione dei 5 infissi.", time: "16:00", date: "17/02", canale: "email" },
+    { who: "Cliente Rossi", text: "Grazie per il preventivo, procediamo con l'ordine", time: "09:30", date: "18/02", canale: "sms" },
+  ]},
+  { id: 4, from: "Vetreria Milano", preview: "Vetri tripli pronti per il ritiro", time: "11:00", cm: "CM-0002", read: false, canale: "telegram", thread: [
+    { who: "Vetreria Milano", text: "Vetri tripli pronti per il ritiro. Magazzino aperto fino alle 17.", time: "11:00", date: "19/02", canale: "telegram" },
+  ]},
+  { id: 5, from: "Teresa Bruno", preview: "Quando iniziate i lavori?", time: "Ieri", cm: "CM-0002", read: true, canale: "whatsapp", thread: [
+    { who: "Teresa Bruno", text: "Buongiorno, quando iniziate i lavori a casa mia?", time: "15:00", date: "18/02", canale: "whatsapp" },
+    { who: "Tu", text: "Buongiorno signora Bruno, prevediamo di iniziare la prossima settimana", time: "15:30", date: "18/02", canale: "whatsapp" },
+    { who: "Teresa Bruno", text: "Quando iniziate i lavori?", time: "10:00", date: "19/02", canale: "sms" },
   ]},
 ];
 
@@ -296,6 +304,9 @@ export default function MastroMisure() {
   const [aiPhotoStep, setAiPhotoStep] = useState(0); // 0=ready, 1=analyzing, 2=done
   const [settingsModal, setSettingsModal] = useState(null); // {type, item?}
   const [settingsForm, setSettingsForm] = useState({});
+  const [showAllegatiModal, setShowAllegatiModal] = useState(null); // "nota" | "vocale" | "video" | null
+  const [allegatiText, setAllegatiText] = useState("");
+  const [selectedTask, setSelectedTask] = useState(null);
   
   // Drawing state
   const canvasRef = useRef(null);
@@ -406,6 +417,13 @@ export default function MastroMisure() {
   };
   const deleteEvent = (evId) => { if (confirm("Eliminare questo evento?")) setEvents(ev => ev.filter(e => e.id !== evId)); };
   const deleteMsg = (msgId) => { if (confirm("Eliminare questo messaggio?")) setMsgs(ms => ms.filter(m => m.id !== msgId)); };
+
+  const addAllegato = (tipo, content) => {
+    if (!selectedCM) return;
+    const a = { id: Date.now(), tipo, nome: content || (tipo === "file" ? "Allegato" : tipo === "vocale" ? "Nota vocale" : tipo === "video" ? "Video" : "Nota"), data: new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }), durata: tipo === "vocale" ? "0:" + String(Math.floor(Math.random() * 30 + 5)).padStart(2, "0") : tipo === "video" ? "0:" + String(Math.floor(Math.random() * 45 + 10)).padStart(2, "0") : "" };
+    setCantieri(cs => cs.map(x => x.id === selectedCM.id ? { ...x, allegati: [...(x.allegati || []), a] } : x));
+    setSelectedCM(p => ({ ...p, allegati: [...(p.allegati || []), a] }));
+  };
 
   // SETTINGS CRUD
   const addSettingsItem = () => {
@@ -750,16 +768,32 @@ export default function MastroMisure() {
       <div style={{ padding: "0 16px", marginBottom: 12 }}>
         <div style={{ background: T.card, borderRadius: T.r, border: `1px solid ${T.bdr}`, overflow: "hidden" }}>
           {tasks.map(t => (
-            <div key={t.id} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "12px 14px", borderBottom: `1px solid ${T.bg}`, cursor: "pointer" }} onClick={() => toggleTask(t.id)}>
+            <div key={t.id} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "12px 14px", borderBottom: `1px solid ${T.bg}`, cursor: "pointer" }}>
               <div style={{ width: 3, borderRadius: 2, alignSelf: "stretch", flexShrink: 0, background: t.done ? T.bdr : priColor(t.priority) }} />
-              <div style={{ width: 20, height: 20, border: `2px solid ${t.done ? T.grn : T.bdr}`, borderRadius: "50%", flexShrink: 0, marginTop: 1, background: t.done ? T.grn : "transparent", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, color: "#fff", fontWeight: 700, transition: "all 0.15s" }}>
+              <div onClick={() => toggleTask(t.id)} style={{ width: 20, height: 20, border: `2px solid ${t.done ? T.grn : T.bdr}`, borderRadius: "50%", flexShrink: 0, marginTop: 1, background: t.done ? T.grn : "transparent", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, color: "#fff", fontWeight: 700, transition: "all 0.15s", cursor: "pointer" }}>
                 {t.done && "✓"}
               </div>
               <div style={{ fontSize: 11, color: T.sub, fontWeight: 500, minWidth: 42 }}>{t.time}</div>
-              <div style={{ flex: 1 }}>
+              <div style={{ flex: 1, cursor: "pointer" }} onClick={() => setSelectedTask(selectedTask?.id === t.id ? null : t)}>
                 <div style={{ fontSize: 13, fontWeight: 600, color: t.done ? T.sub : T.text, textDecoration: t.done ? "line-through" : "none", lineHeight: 1.3 }}>{t.text}</div>
                 <div style={{ fontSize: 11, color: T.sub, marginTop: 2 }}>{t.meta}</div>
                 {t.cm && <span onClick={e => { e.stopPropagation(); const cm = cantieri.find(c => c.code === t.cm); if (cm) { setSelectedCM(cm); setTab("commesse"); } }} style={{ ...S.badge(T.accLt, T.acc), cursor: "pointer" }}>{t.cm}</span>}
+                {/* Expanded detail */}
+                {selectedTask?.id === t.id && (
+                  <div style={{ marginTop: 8, padding: "10px 12px", background: T.bg, borderRadius: 10, border: `1px solid ${T.bdr}` }}>
+                    <div style={{ display: "flex", gap: 4, marginBottom: 8, flexWrap: "wrap" }}>
+                      <span style={S.badge(priColor(t.priority) + "18", priColor(t.priority))}>{t.priority === "alta" ? "🔴 Urgente" : t.priority === "media" ? "🟠 Normale" : "⚪ Bassa"}</span>
+                      {t.cm && <span style={S.badge(T.accLt, T.acc)}>📁 {t.cm}</span>}
+                      {t.done && <span style={S.badge(T.grnLt, T.grn)}>✅ Completato</span>}
+                    </div>
+                    {t.meta && <div style={{ fontSize: 12, color: T.text, marginBottom: 8, lineHeight: 1.4 }}>📝 {t.meta}</div>}
+                    <div style={{ display: "flex", gap: 6 }}>
+                      <div style={{ flex: 1, padding: "8px", borderRadius: 8, background: T.card, border: `1px solid ${T.bdr}`, textAlign: "center", cursor: "pointer", fontSize: 11, fontWeight: 600, color: T.sub }}>📎 Allegato</div>
+                      <div style={{ flex: 1, padding: "8px", borderRadius: 8, background: T.card, border: `1px solid ${T.bdr}`, textAlign: "center", cursor: "pointer", fontSize: 11, fontWeight: 600, color: T.sub }}>🎤 Audio</div>
+                      <div style={{ flex: 1, padding: "8px", borderRadius: 8, background: T.card, border: `1px solid ${T.bdr}`, textAlign: "center", cursor: "pointer", fontSize: 11, fontWeight: 600, color: T.sub }}>📷 Foto</div>
+                    </div>
+                  </div>
+                )}
               </div>
               <div onClick={e => { e.stopPropagation(); deleteTask(t.id); }} style={{ padding: 4, cursor: "pointer", flexShrink: 0 }}><Ico d={ICO.trash} s={14} c={T.sub} /></div>
             </div>
@@ -774,19 +808,27 @@ export default function MastroMisure() {
       </div>
       <div style={{ padding: "0 16px", marginBottom: 12 }}>
         <div style={{ background: T.card, borderRadius: T.r, border: `1px solid ${T.bdr}`, overflow: "hidden" }}>
-          {msgs.map(m => (
+          {msgs.map(m => {
+            const chIco = { email: "📧", whatsapp: "💬", sms: "📱", telegram: "✈️" };
+            return (
             <div key={m.id} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "12px 14px", borderBottom: `1px solid ${T.bg}`, cursor: "pointer" }} onClick={() => { setMsgs(ms => ms.map(x => x.id === m.id ? { ...x, read: true } : x)); setSelectedMsg(m); }}>
               <div style={{ width: 8, height: 8, borderRadius: "50%", background: m.read ? "transparent" : T.acc, flexShrink: 0, marginTop: 5 }} />
               <div style={{ flex: 1 }}>
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: m.read ? T.sub : T.text }}>{m.from}</div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: m.read ? T.sub : T.text, display: "flex", alignItems: "center", gap: 4 }}>
+                    <span style={{ fontSize: 12 }}>{chIco[m.canale] || "💬"}</span> {m.from}
+                  </div>
                   <div style={{ fontSize: 10, color: T.sub }}>{m.time}</div>
                 </div>
                 <div style={{ fontSize: 12, color: T.sub, marginTop: 1, lineHeight: 1.3 }}>{m.preview}</div>
-                {m.cm && <span style={{ ...S.badge(T.accLt, T.acc), marginTop: 3 }}>{m.cm}</span>}
+                <div style={{ display: "flex", gap: 4, marginTop: 3 }}>
+                  {m.cm && <span style={{ ...S.badge(T.accLt, T.acc) }}>{m.cm}</span>}
+                  <span style={S.badge(m.canale === "whatsapp" ? "#25d36618" : m.canale === "email" ? T.blueLt : m.canale === "telegram" ? "#0088cc18" : T.orangeLt, m.canale === "whatsapp" ? "#25d366" : m.canale === "email" ? T.blue : m.canale === "telegram" ? "#0088cc" : T.orange)}>{m.canale}</span>
+                </div>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
@@ -940,10 +982,10 @@ export default function MastroMisure() {
         <div style={{ padding: "0 16px", marginBottom: 8 }}>
           <div style={{ display: "flex", gap: 6 }}>
             {[
-              { ico: "📎", label: "Allegato", act: () => { const a = { id: Date.now(), tipo: "file", nome: "Allegato_" + new Date().toLocaleDateString("it-IT").replace(/\//g, "-"), data: new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }) }; setCantieri(cs => cs.map(x => x.id === c.id ? { ...x, allegati: [...(x.allegati || []), a] } : x)); setSelectedCM(p => ({ ...p, allegati: [...(p.allegati || []), a] })); }},
-              { ico: "📝", label: "Nota", act: () => { const txt = prompt("Scrivi una nota:"); if (txt) { const a = { id: Date.now(), tipo: "nota", nome: txt, data: new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }) }; setCantieri(cs => cs.map(x => x.id === c.id ? { ...x, allegati: [...(x.allegati || []), a] } : x)); setSelectedCM(p => ({ ...p, allegati: [...(p.allegati || []), a] })); }}},
-              { ico: "🎤", label: "Vocale", act: () => { const a = { id: Date.now(), tipo: "vocale", nome: "Nota vocale " + new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }), data: new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }), durata: "0:" + String(Math.floor(Math.random() * 30 + 5)).padStart(2, "0") }; setCantieri(cs => cs.map(x => x.id === c.id ? { ...x, allegati: [...(x.allegati || []), a] } : x)); setSelectedCM(p => ({ ...p, allegati: [...(p.allegati || []), a] })); }},
-              { ico: "🎬", label: "Video", act: () => { const a = { id: Date.now(), tipo: "video", nome: "Video " + new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }), data: new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }), durata: "0:" + String(Math.floor(Math.random() * 45 + 10)).padStart(2, "0") }; setCantieri(cs => cs.map(x => x.id === c.id ? { ...x, allegati: [...(x.allegati || []), a] } : x)); setSelectedCM(p => ({ ...p, allegati: [...(p.allegati || []), a] })); }},
+              { ico: "📎", label: "File", act: () => { const inp = document.createElement("input"); inp.type = "file"; inp.onchange = (e) => { const f = e.target.files[0]; if (f) addAllegato("file", f.name); }; inp.click(); }},
+              { ico: "📝", label: "Nota", act: () => { setShowAllegatiModal("nota"); setAllegatiText(""); }},
+              { ico: "🎤", label: "Vocale", act: () => { setShowAllegatiModal("vocale"); }},
+              { ico: "🎬", label: "Video", act: () => { setShowAllegatiModal("video"); }},
             ].map((b, i) => (
               <div key={i} onClick={b.act} style={{ flex: 1, padding: "10px 4px", background: T.card, borderRadius: T.r, border: `1px solid ${T.bdr}`, textAlign: "center", cursor: "pointer" }}>
                 <div style={{ fontSize: 18 }}>{b.ico}</div>
@@ -2386,13 +2428,19 @@ export default function MastroMisure() {
         {tab === "settings" && renderSettings()}
 
         {/* MESSAGE DETAIL OVERLAY */}
-        {selectedMsg && (
+        {selectedMsg && (() => {
+          const chIco = { email: "📧", whatsapp: "💬", sms: "📱", telegram: "✈️" };
+          const chCol = { email: T.blue, whatsapp: "#25d366", sms: T.orange, telegram: "#0088cc" };
+          const [replyChannel, setReplyChannelX] = [selectedMsg._replyChannel || selectedMsg.canale, (ch) => setSelectedMsg(p => ({...p, _replyChannel: ch}))];
+          return (
           <div style={{ position: "fixed", inset: 0, background: T.bg, zIndex: 100, display: "flex", flexDirection: "column" }}>
             {/* Header */}
             <div style={{ padding: "12px 16px", background: T.card, borderBottom: `1px solid ${T.bdr}`, display: "flex", alignItems: "center", gap: 10 }}>
               <div onClick={() => { setSelectedMsg(null); setReplyText(""); }} style={{ cursor: "pointer", padding: 4 }}><Ico d={ICO.back} s={20} c={T.sub} /></div>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 15, fontWeight: 700 }}>{selectedMsg.from}</div>
+                <div style={{ fontSize: 15, fontWeight: 700, display: "flex", alignItems: "center", gap: 4 }}>
+                  <span>{chIco[selectedMsg.canale]}</span> {selectedMsg.from}
+                </div>
                 <div style={{ fontSize: 11, color: T.sub }}>{selectedMsg.cm ? `${selectedMsg.cm} · ` : ""}{selectedMsg.thread?.length || 0} messaggi</div>
               </div>
               {selectedMsg.cm && (
@@ -2405,45 +2453,61 @@ export default function MastroMisure() {
             <div style={{ flex: 1, overflowY: "auto", padding: "12px 16px" }}>
               {(selectedMsg.thread || []).map((msg, i) => {
                 const isMe = msg.who === "Tu";
+                const mChIco = chIco[msg.canale] || chIco[selectedMsg.canale] || "💬";
                 return (
                   <div key={i} style={{ marginBottom: 12, display: "flex", flexDirection: "column", alignItems: isMe ? "flex-end" : "flex-start" }}>
-                    <div style={{ fontSize: 9, color: T.sub, marginBottom: 3, fontWeight: 600 }}>{msg.who} · {msg.date} {msg.time}</div>
-                    <div style={{ maxWidth: "80%", padding: "10px 14px", borderRadius: isMe ? "14px 14px 4px 14px" : "14px 14px 14px 4px", background: isMe ? T.acc : T.card, color: isMe ? "#fff" : T.text, border: isMe ? "none" : `1px solid ${T.bdr}`, fontSize: 13, lineHeight: 1.4 }}>
+                    <div style={{ fontSize: 9, color: T.sub, marginBottom: 3, fontWeight: 600 }}>{mChIco} {msg.who} · {msg.date} {msg.time}</div>
+                    <div style={{ maxWidth: "80%", padding: "10px 14px", borderRadius: isMe ? "14px 14px 4px 14px" : "14px 14px 14px 4px", background: isMe ? (chCol[msg.canale || selectedMsg.canale] || T.acc) : T.card, color: isMe ? "#fff" : T.text, border: isMe ? "none" : `1px solid ${T.bdr}`, fontSize: 13, lineHeight: 1.4 }}>
                       {msg.text}
                     </div>
                   </div>
                 );
               })}
             </div>
-            {/* Reply bar */}
-            <div style={{ padding: "10px 16px", background: T.card, borderTop: `1px solid ${T.bdr}`, display: "flex", gap: 8, alignItems: "center" }}>
-              <input
-                style={{ flex: 1, padding: "10px 14px", fontSize: 13, border: `1px solid ${T.bdr}`, borderRadius: 20, background: T.bg, outline: "none", fontFamily: FF }}
-                placeholder="Scrivi un messaggio..."
-                value={replyText}
-                onChange={e => setReplyText(e.target.value)}
-                onKeyDown={e => {
-                  if (e.key === "Enter" && replyText.trim()) {
-                    const newThread = [...(selectedMsg.thread || []), { who: "Tu", text: replyText, time: new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }), date: new Date().toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit" }) }];
+            {/* Channel selector + Reply bar */}
+            <div style={{ borderTop: `1px solid ${T.bdr}`, background: T.card }}>
+              <div style={{ display: "flex", gap: 2, padding: "6px 16px 0" }}>
+                {["email", "whatsapp", "sms", "telegram"].map(ch => (
+                  <div key={ch} onClick={() => setReplyChannelX(ch)} style={{ padding: "4px 10px", borderRadius: "8px 8px 0 0", fontSize: 10, fontWeight: 700, cursor: "pointer", background: replyChannel === ch ? chCol[ch] + "18" : "transparent", color: replyChannel === ch ? chCol[ch] : T.sub, borderBottom: replyChannel === ch ? `2px solid ${chCol[ch]}` : "2px solid transparent" }}>
+                    {chIco[ch]} {ch}
+                  </div>
+                ))}
+              </div>
+              <div style={{ padding: "8px 16px 10px", display: "flex", gap: 8, alignItems: "center" }}>
+                <div style={{ display: "flex", gap: 4 }}>
+                  <div style={{ width: 32, height: 32, borderRadius: "50%", background: T.bg, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 14 }}>📎</div>
+                  <div style={{ width: 32, height: 32, borderRadius: "50%", background: T.bg, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 14 }}>🎤</div>
+                  <div style={{ width: 32, height: 32, borderRadius: "50%", background: T.bg, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 14 }}>📷</div>
+                </div>
+                <input
+                  style={{ flex: 1, padding: "10px 14px", fontSize: 13, border: `1px solid ${T.bdr}`, borderRadius: 20, background: T.bg, outline: "none", fontFamily: FF }}
+                  placeholder={`Rispondi via ${replyChannel}...`}
+                  value={replyText}
+                  onChange={e => setReplyText(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === "Enter" && replyText.trim()) {
+                      const newThread = [...(selectedMsg.thread || []), { who: "Tu", text: replyText, time: new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }), date: new Date().toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit" }), canale: replyChannel }];
+                      setMsgs(ms => ms.map(m => m.id === selectedMsg.id ? { ...m, thread: newThread, preview: replyText } : m));
+                      setSelectedMsg(prev => ({ ...prev, thread: newThread }));
+                      setReplyText("");
+                    }
+                  }}
+                />
+                <div onClick={() => {
+                  if (replyText.trim()) {
+                    const newThread = [...(selectedMsg.thread || []), { who: "Tu", text: replyText, time: new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }), date: new Date().toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit" }), canale: replyChannel }];
                     setMsgs(ms => ms.map(m => m.id === selectedMsg.id ? { ...m, thread: newThread, preview: replyText } : m));
                     setSelectedMsg(prev => ({ ...prev, thread: newThread }));
                     setReplyText("");
                   }
-                }}
-              />
-              <div onClick={() => {
-                if (replyText.trim()) {
-                  const newThread = [...(selectedMsg.thread || []), { who: "Tu", text: replyText, time: new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }), date: new Date().toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit" }) }];
-                  setMsgs(ms => ms.map(m => m.id === selectedMsg.id ? { ...m, thread: newThread, preview: replyText } : m));
-                  setSelectedMsg(prev => ({ ...prev, thread: newThread }));
-                  setReplyText("");
-                }
-              }} style={{ width: 38, height: 38, borderRadius: "50%", background: replyText.trim() ? T.acc : T.bdr, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}>
-                <Ico d={ICO.send} s={16} c={replyText.trim() ? "#fff" : T.sub} />
+                }} style={{ width: 38, height: 38, borderRadius: "50%", background: replyText.trim() ? (chCol[replyChannel] || T.acc) : T.bdr, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}>
+                  <Ico d={ICO.send} s={16} c={replyText.trim() ? "#fff" : T.sub} />
+                </div>
               </div>
             </div>
           </div>
-        )}
+          );
+        })()}
 
         {/* SETTINGS ADD MODAL */}
         {settingsModal && (
@@ -2639,13 +2703,66 @@ export default function MastroMisure() {
           </div>
         )}
 
+        {/* ALLEGATI MODAL */}
+        {showAllegatiModal && (
+          <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={e => e.target === e.currentTarget && setShowAllegatiModal(null)}>
+            <div style={{ background: T.card, borderRadius: 16, width: "100%", maxWidth: 380, padding: 20 }}>
+              {showAllegatiModal === "nota" && (
+                <>
+                  <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 12 }}>📝 Nuova nota</div>
+                  <textarea style={{ width: "100%", padding: 12, fontSize: 13, border: `1px solid ${T.bdr}`, borderRadius: 10, background: T.bg, minHeight: 100, resize: "vertical", fontFamily: FF, boxSizing: "border-box" }} placeholder="Scrivi la nota..." value={allegatiText} onChange={e => setAllegatiText(e.target.value)} autoFocus />
+                  <button onClick={() => { if (allegatiText.trim()) { addAllegato("nota", allegatiText.trim()); setShowAllegatiModal(null); setAllegatiText(""); } }} style={{ ...S.btn, marginTop: 10, opacity: allegatiText.trim() ? 1 : 0.5 }}>Salva nota</button>
+                </>
+              )}
+              {showAllegatiModal === "vocale" && (
+                <>
+                  <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 12 }}>🎤 Nota vocale</div>
+                  <div style={{ textAlign: "center", padding: "20px 0" }}>
+                    <div onClick={() => { addAllegato("vocale", "Nota vocale " + new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })); setShowAllegatiModal(null); }} style={{ width: 70, height: 70, borderRadius: "50%", background: "linear-gradient(135deg, #ff3b30, #ff6b6b)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto", cursor: "pointer", boxShadow: "0 4px 16px rgba(255,59,48,0.3)" }}>
+                      <span style={{ fontSize: 28, color: "#fff" }}>🎤</span>
+                    </div>
+                    <div style={{ fontSize: 12, color: T.sub, marginTop: 10 }}>Tocca per registrare</div>
+                    <div style={{ fontSize: 10, color: T.sub2, marginTop: 4 }}>(Simulazione — nella versione finale registra davvero)</div>
+                  </div>
+                </>
+              )}
+              {showAllegatiModal === "video" && (
+                <>
+                  <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 12 }}>🎬 Video</div>
+                  <div style={{ textAlign: "center", padding: "20px 0" }}>
+                    <div onClick={() => { addAllegato("video", "Video " + new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })); setShowAllegatiModal(null); }} style={{ width: 70, height: 70, borderRadius: "50%", background: "linear-gradient(135deg, #007aff, #5856d6)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto", cursor: "pointer", boxShadow: "0 4px 16px rgba(0,122,255,0.3)" }}>
+                      <span style={{ fontSize: 28, color: "#fff" }}>🎬</span>
+                    </div>
+                    <div style={{ fontSize: 12, color: T.sub, marginTop: 10 }}>Tocca per registrare video</div>
+                    <div style={{ fontSize: 10, color: T.sub2, marginTop: 4 }}>(Simulazione — nella versione finale registra davvero)</div>
+                  </div>
+                </>
+              )}
+              <button onClick={() => setShowAllegatiModal(null)} style={S.btnCancel}>Annulla</button>
+            </div>
+          </div>
+        )}
+
         {/* AI PHOTO MODAL */}
         {showAIPhoto && (() => {
           const vt = selectedVano?.tipo || "F1A";
           const isPorta = vt.includes("PF") || vt === "BLI";
           const isScorr = vt.includes("SC") || vt === "ALZSC";
-          const baseW = isScorr ? 1800 + Math.floor(Math.random() * 600) : isPorta ? 800 + Math.floor(Math.random() * 400) : 900 + Math.floor(Math.random() * 500);
-          const baseH = isPorta ? 2100 + Math.floor(Math.random() * 200) : 1000 + Math.floor(Math.random() * 600);
+          const isVas = vt === "VAS";
+          const isFisso = vt.includes("FIS");
+          // Realistic Italian window measurements
+          const baseW = isScorr ? (vt === "SC4A" ? 2600 : 1600) + Math.floor(Math.random() * 200 - 100)
+            : isPorta ? (vt === "PF2A" ? 1400 : 800) + Math.floor(Math.random() * 100 - 50)
+            : isVas ? 800 + Math.floor(Math.random() * 100 - 50)
+            : isFisso ? 600 + Math.floor(Math.random() * 100 - 50)
+            : vt === "F1A" ? 1000 + Math.floor(Math.random() * 100 - 50)
+            : vt === "F2A" ? 1200 + Math.floor(Math.random() * 100 - 50)
+            : vt === "F3A" ? 1800 + Math.floor(Math.random() * 100 - 50)
+            : 1100 + Math.floor(Math.random() * 100 - 50);
+          const baseH = isPorta ? 2200 + Math.floor(Math.random() * 60 - 30)
+            : isVas ? 600 + Math.floor(Math.random() * 60 - 30)
+            : vt === "SOPR" ? 400 + Math.floor(Math.random() * 50 - 25)
+            : 1300 + Math.floor(Math.random() * 100 - 50);
           const tipLabel = TIPOLOGIE_RAPIDE.find(t => t.code === vt)?.label || vt;
           return (
           <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={e => e.target === e.currentTarget && setShowAIPhoto(false)}>
