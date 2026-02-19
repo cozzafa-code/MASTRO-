@@ -306,6 +306,9 @@ export default function MastroMisure() {
   const [settingsForm, setSettingsForm] = useState({});
   const [showAllegatiModal, setShowAllegatiModal] = useState(null); // "nota" | "vocale" | "video" | null
   const [allegatiText, setAllegatiText] = useState("");
+  const [isRecording, setIsRecording] = useState(false);
+  const [recSeconds, setRecSeconds] = useState(0);
+  const recInterval = useRef(null);
   const [selectedTask, setSelectedTask] = useState(null);
   
   // Drawing state
@@ -317,6 +320,12 @@ export default function MastroMisure() {
 
   // New task form
   const [newTask, setNewTask] = useState({ text: "", meta: "", time: "", priority: "media", cm: "" });
+  const [taskAllegati, setTaskAllegati] = useState([]); // allegati for new task
+  const [msgFilter, setMsgFilter] = useState("tutti"); // tutti/email/whatsapp/sms/telegram
+  const [msgSearch, setMsgSearch] = useState("");
+  const [showCompose, setShowCompose] = useState(false);
+  const [composeMsg, setComposeMsg] = useState({ to: "", text: "", canale: "whatsapp", cm: "" });
+  const [fabOpen, setFabOpen] = useState(false);
   const [globalSearch, setGlobalSearch] = useState("");
   // New commessa form
   const [newCM, setNewCM] = useState({ cliente: "", indirizzo: "", telefono: "", sistema: "", tipo: "nuova", difficoltaSalita: "", mezzoSalita: "", foroScale: "", pianoEdificio: "", note: "" });
@@ -354,7 +363,8 @@ export default function MastroMisure() {
 
   const addTask = () => {
     if (!newTask.text.trim()) return;
-    setTasks(ts => [...ts, { id: Date.now(), ...newTask, done: false }]);
+    setTasks(ts => [...ts, { id: Date.now(), ...newTask, done: false, allegati: [...taskAllegati] }]);
+    setTaskAllegati([]);
     setNewTask({ text: "", meta: "", time: "", priority: "media", cm: "" });
     setShowModal(null);
   };
@@ -798,10 +808,30 @@ export default function MastroMisure() {
                       {t.done && <span style={S.badge(T.grnLt, T.grn)}>✅ Completato</span>}
                     </div>
                     {t.meta && <div style={{ fontSize: 12, color: T.text, marginBottom: 8, lineHeight: 1.4 }}>📝 {t.meta}</div>}
+                    {/* Existing allegati */}
+                    {(t.allegati || []).length > 0 && (
+                      <div style={{ marginBottom: 8 }}>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: T.sub, marginBottom: 4 }}>ALLEGATI</div>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                          {(t.allegati || []).map(a => (
+                            <div key={a.id} style={{ display: "flex", alignItems: "center", gap: 4, padding: "4px 8px", borderRadius: 6, background: T.card, border: `1px solid ${T.bdr}`, fontSize: 10 }}>
+                              {a.tipo === "nota" ? "📝" : a.tipo === "vocale" ? "🎤" : a.tipo === "foto" ? "📷" : "📎"} {a.nome}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {/* Add allegati to existing task */}
                     <div style={{ display: "flex", gap: 6 }}>
-                      <div style={{ flex: 1, padding: "8px", borderRadius: 8, background: T.card, border: `1px solid ${T.bdr}`, textAlign: "center", cursor: "pointer", fontSize: 11, fontWeight: 600, color: T.sub }}>📎 Allegato</div>
-                      <div style={{ flex: 1, padding: "8px", borderRadius: 8, background: T.card, border: `1px solid ${T.bdr}`, textAlign: "center", cursor: "pointer", fontSize: 11, fontWeight: 600, color: T.sub }}>🎤 Audio</div>
-                      <div style={{ flex: 1, padding: "8px", borderRadius: 8, background: T.card, border: `1px solid ${T.bdr}`, textAlign: "center", cursor: "pointer", fontSize: 11, fontWeight: 600, color: T.sub }}>📷 Foto</div>
+                      {[
+                        { ico: "📎", l: "File", act: () => { const a = { id: Date.now(), tipo: "file", nome: "Allegato" }; setTasks(ts => ts.map(x => x.id === t.id ? { ...x, allegati: [...(x.allegati || []), a] } : x)); setSelectedTask(p => ({ ...p, allegati: [...(p.allegati || []), a] })); }},
+                        { ico: "🎤", l: "Audio", act: () => { const a = { id: Date.now(), tipo: "vocale", nome: "Audio" }; setTasks(ts => ts.map(x => x.id === t.id ? { ...x, allegati: [...(x.allegati || []), a] } : x)); setSelectedTask(p => ({ ...p, allegati: [...(p.allegati || []), a] })); }},
+                        { ico: "📷", l: "Foto", act: () => { const a = { id: Date.now(), tipo: "foto", nome: "Foto" }; setTasks(ts => ts.map(x => x.id === t.id ? { ...x, allegati: [...(x.allegati || []), a] } : x)); setSelectedTask(p => ({ ...p, allegati: [...(p.allegati || []), a] })); }},
+                      ].map((b, i) => (
+                        <div key={i} onClick={b.act} style={{ flex: 1, padding: "8px", borderRadius: 8, background: T.card, border: `1px solid ${T.bdr}`, textAlign: "center", cursor: "pointer", fontSize: 11, fontWeight: 600, color: T.sub }}>
+                          {b.ico} {b.l}
+                        </div>
+                      ))}
                     </div>
                   </div>
                 )}
@@ -815,7 +845,7 @@ export default function MastroMisure() {
       {/* Messaggi */}
       <div style={S.section}>
         <div style={S.sectionTitle}>Messaggi</div>
-        <button style={S.sectionBtn} onClick={() => setTab("chat")}>Vedi tutti</button>
+        <button style={S.sectionBtn} onClick={() => setTab("messaggi")}>Vedi tutti</button>
       </div>
       <div style={{ padding: "0 16px", marginBottom: 12 }}>
         <div style={{ background: T.card, borderRadius: T.r, border: `1px solid ${T.bdr}`, overflow: "hidden" }}>
@@ -1855,31 +1885,133 @@ export default function MastroMisure() {
   };
 
   /* ── CHAT / AI TAB ── */
-  const renderChat = () => (
-    <div style={{ paddingBottom: 80, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)" }}>
-      <div style={S.header}>
-        <div style={{ flex: 1 }}>
-          <div style={S.headerTitle}>MASTRO AI</div>
-          <div style={S.headerSub}>Il tuo assistente intelligente</div>
+  const renderMessaggi = () => {
+    const chIco = { email: "📧", whatsapp: "💬", sms: "📱", telegram: "✈️" };
+    const chCol = { email: T.blue, whatsapp: "#25d366", sms: T.orange, telegram: "#0088cc" };
+    const chBg = { email: T.blueLt, whatsapp: "#25d36618", sms: T.orangeLt, telegram: "#0088cc18" };
+    const filteredMsgs = msgs.filter(m => {
+      const matchFilter = msgFilter === "tutti" || m.canale === msgFilter;
+      const matchSearch = !msgSearch.trim() || m.from.toLowerCase().includes(msgSearch.toLowerCase()) || m.preview.toLowerCase().includes(msgSearch.toLowerCase());
+      return matchFilter && matchSearch;
+    });
+    const unread = msgs.filter(m => !m.read).length;
+    return (
+      <div style={{ paddingBottom: 80 }}>
+        <div style={S.header}>
+          <div style={{ flex: 1 }}>
+            <div style={S.headerTitle}>Messaggi</div>
+            <div style={S.headerSub}>{unread > 0 ? `${unread} non letti` : "Tutti letti"} · {msgs.length} conversazioni</div>
+          </div>
+          <div onClick={() => setShowCompose(true)} style={{ width: 36, height: 36, borderRadius: 10, background: T.acc, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+            <Ico d={ICO.pen} s={16} c="#fff" />
+          </div>
         </div>
-      </div>
-      <div style={{ flex: 1, overflowY: "auto", padding: "12px 16px" }}>
-        {aiMsgs.map((m, i) => (
-          <div key={i} style={{ display: "flex", justifyContent: m.role === "user" ? "flex-end" : "flex-start", marginBottom: 8 }}>
-            <div style={{ maxWidth: "80%", padding: "10px 14px", borderRadius: 14, background: m.role === "user" ? T.acc : T.card, color: m.role === "user" ? "#fff" : T.text, fontSize: 13, lineHeight: 1.5, border: m.role === "ai" ? `1px solid ${T.bdr}` : "none", whiteSpace: "pre-wrap" }}>
-              {m.text}
+
+        {/* Search */}
+        <div style={{ padding: "8px 16px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", background: T.card, borderRadius: 10, border: `1px solid ${T.bdr}` }}>
+            <Ico d={ICO.search} s={14} c={T.sub} />
+            <input style={{ flex: 1, border: "none", background: "transparent", fontSize: 13, color: T.text, outline: "none", fontFamily: FF }} placeholder="Cerca contatto o messaggio..." value={msgSearch} onChange={e => setMsgSearch(e.target.value)} />
+            {msgSearch && <div onClick={() => setMsgSearch("")} style={{ cursor: "pointer", fontSize: 14, color: T.sub }}>✕</div>}
+          </div>
+        </div>
+
+        {/* Channel filters */}
+        <div style={{ display: "flex", gap: 4, padding: "0 16px 10px", overflowX: "auto" }}>
+          {[
+            { id: "tutti", l: "Tutti", c: T.acc },
+            { id: "whatsapp", l: "💬 WhatsApp", c: "#25d366" },
+            { id: "email", l: "📧 Email", c: T.blue },
+            { id: "sms", l: "📱 SMS", c: T.orange },
+            { id: "telegram", l: "✈️ Telegram", c: "#0088cc" },
+          ].map(f => {
+            const count = f.id === "tutti" ? msgs.length : msgs.filter(m => m.canale === f.id).length;
+            const unr = f.id === "tutti" ? unread : msgs.filter(m => m.canale === f.id && !m.read).length;
+            return (
+              <div key={f.id} onClick={() => setMsgFilter(f.id)} style={{ padding: "6px 12px", borderRadius: 20, border: `1px solid ${msgFilter === f.id ? f.c : T.bdr}`, background: msgFilter === f.id ? f.c + "15" : T.card, fontSize: 11, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap", color: msgFilter === f.id ? f.c : T.sub, display: "flex", alignItems: "center", gap: 4 }}>
+                {f.l}
+                {unr > 0 && <span style={{ width: 16, height: 16, borderRadius: "50%", background: f.c, color: "#fff", fontSize: 9, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>{unr}</span>}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Message list */}
+        <div style={{ padding: "0 16px" }}>
+          {filteredMsgs.length === 0 ? (
+            <div style={{ padding: 30, textAlign: "center", color: T.sub, fontSize: 13 }}>Nessun messaggio</div>
+          ) : (
+            <div style={{ background: T.card, borderRadius: T.r, border: `1px solid ${T.bdr}`, overflow: "hidden" }}>
+              {filteredMsgs.map(m => (
+                <div key={m.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", borderBottom: `1px solid ${T.bg}`, cursor: "pointer", background: m.read ? "transparent" : T.acc + "06" }} onClick={() => { setMsgs(ms => ms.map(x => x.id === m.id ? { ...x, read: true } : x)); setSelectedMsg(m); }}>
+                  {/* Avatar */}
+                  <div style={{ width: 42, height: 42, borderRadius: "50%", background: chBg[m.canale] || T.bg, border: `2px solid ${chCol[m.canale] || T.bdr}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0, position: "relative" }}>
+                    {m.from.charAt(0).toUpperCase()}
+                    <div style={{ position: "absolute", bottom: -2, right: -2, fontSize: 10, background: T.card, borderRadius: "50%", padding: 1 }}>{chIco[m.canale]}</div>
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <div style={{ fontSize: 13, fontWeight: m.read ? 500 : 700, color: T.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.from}</div>
+                      <div style={{ fontSize: 10, color: m.read ? T.sub : T.acc, fontWeight: m.read ? 400 : 700, flexShrink: 0, marginLeft: 8 }}>{m.time}</div>
+                    </div>
+                    <div style={{ fontSize: 12, color: m.read ? T.sub : T.text, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontWeight: m.read ? 400 : 500 }}>{m.preview}</div>
+                    <div style={{ display: "flex", gap: 4, marginTop: 4 }}>
+                      {m.cm && <span style={S.badge(T.accLt, T.acc)}>{m.cm}</span>}
+                    </div>
+                  </div>
+                  {!m.read && <div style={{ width: 10, height: 10, borderRadius: "50%", background: T.acc, flexShrink: 0 }} />}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* FAB — Compose menu */}
+        <style>{`
+          @keyframes fabIn { from { opacity:0; transform: scale(0.3) translateY(20px); } to { opacity:1; transform: scale(1) translateY(0); } }
+          @keyframes fabSpin { from { transform: rotate(0deg); } to { transform: rotate(135deg); } }
+          @keyframes fabSpinBack { from { transform: rotate(135deg); } to { transform: rotate(0deg); } }
+          @keyframes fabPulse { 0%,100% { box-shadow: 0 4px 20px rgba(0,122,255,0.4); } 50% { box-shadow: 0 4px 30px rgba(0,122,255,0.6); } }
+        `}</style>
+        {/* Backdrop */}
+        {fabOpen && <div onClick={() => setFabOpen(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.3)", backdropFilter: "blur(4px)", zIndex: 89 }} />}
+        {/* Channel buttons */}
+        {[
+          { ch: "whatsapp", ico: "💬", l: "WhatsApp", c: "#25d366", y: 240 },
+          { ch: "email", ico: "📧", l: "Email", c: "#007aff", y: 185 },
+          { ch: "sms", ico: "📱", l: "SMS", c: "#ff9500", y: 130 },
+          { ch: "telegram", ico: "✈️", l: "Telegram", c: "#0088cc", y: 75 },
+        ].map((item, i) => (
+          <div key={item.ch} onClick={() => { setFabOpen(false); setComposeMsg(c => ({ ...c, canale: item.ch })); setShowCompose(true); }} style={{
+            position: "fixed", bottom: item.y, right: 20, zIndex: 90,
+            display: "flex", alignItems: "center", gap: 10, flexDirection: "row-reverse",
+            opacity: fabOpen ? 1 : 0, transform: fabOpen ? "translateY(0) scale(1)" : "translateY(30px) scale(0.5)",
+            transition: `all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) ${fabOpen ? i * 0.06 : 0}s`,
+            pointerEvents: fabOpen ? "auto" : "none",
+          }}>
+            <div style={{ width: 48, height: 48, borderRadius: "50%", background: item.c, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, boxShadow: `0 4px 16px ${item.c}50`, cursor: "pointer" }}>
+              {item.ico}
+            </div>
+            <div style={{ padding: "6px 12px", borderRadius: 8, background: T.card, border: `1px solid ${T.bdr}`, boxShadow: "0 2px 12px rgba(0,0,0,0.1)", fontSize: 12, fontWeight: 700, color: item.c, whiteSpace: "nowrap" }}>
+              {item.l}
             </div>
           </div>
         ))}
-      </div>
-      <div style={{ padding: "8px 16px 16px", display: "flex", gap: 8, background: T.card, borderTop: `1px solid ${T.bdr}` }}>
-        <input style={{ ...S.input, flex: 1 }} placeholder="Chiedi a MASTRO AI..." value={aiInput} onChange={e => setAiInput(e.target.value)} onKeyDown={e => e.key === "Enter" && handleAI()} />
-        <div onClick={handleAI} style={{ width: 40, height: 40, borderRadius: 10, background: T.acc, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}>
-          <Ico d={ICO.send} s={18} c="#fff" />
+        {/* Main FAB */}
+        <div onClick={() => setFabOpen(!fabOpen)} style={{
+          position: "fixed", bottom: 76, right: 20, zIndex: 91,
+          width: 56, height: 56, borderRadius: "50%",
+          background: fabOpen ? T.sub : "linear-gradient(135deg, #007aff, #5856d6)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          boxShadow: fabOpen ? "0 4px 16px rgba(0,0,0,0.2)" : "0 4px 20px rgba(0,122,255,0.4)",
+          cursor: "pointer", transition: "all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)",
+          animation: fabOpen ? "none" : "fabPulse 2s infinite",
+        }}>
+          <div style={{ fontSize: 24, color: "#fff", transition: "transform 0.3s ease", transform: fabOpen ? "rotate(45deg)" : "rotate(0deg)" }}>✏️</div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   /* ── SETTINGS TAB ── */
   const renderSettings = () => (
@@ -2168,6 +2300,34 @@ export default function MastroMisure() {
                 <label style={S.fieldLabel}>Note (opzionale)</label>
                 <input style={S.input} placeholder="Dettagli, materiale da portare..." value={newTask.meta} onChange={e => setNewTask(t => ({ ...t, meta: e.target.value }))} />
               </div>
+              {/* Task Allegati */}
+              <div style={{ marginBottom: 14 }}>
+                <label style={S.fieldLabel}>Allegati</label>
+                <div style={{ display: "flex", gap: 6 }}>
+                  {[
+                    { ico: "📎", l: "File", act: () => setTaskAllegati(a => [...a, { id: Date.now(), tipo: "file", nome: "Allegato_" + (a.length + 1) }]) },
+                    { ico: "📝", l: "Nota", act: () => { const txt = prompt("Nota:"); if (txt) setTaskAllegati(a => [...a, { id: Date.now(), tipo: "nota", nome: txt }]); }},
+                    { ico: "🎤", l: "Audio", act: () => setTaskAllegati(a => [...a, { id: Date.now(), tipo: "vocale", nome: "Audio " + (a.length + 1) }]) },
+                    { ico: "📷", l: "Foto", act: () => setTaskAllegati(a => [...a, { id: Date.now(), tipo: "foto", nome: "Foto " + (a.length + 1) }]) },
+                  ].map((b, i) => (
+                    <div key={i} onClick={b.act} style={{ flex: 1, padding: "8px 4px", background: T.bg, borderRadius: 8, border: `1px solid ${T.bdr}`, textAlign: "center", cursor: "pointer" }}>
+                      <div style={{ fontSize: 16 }}>{b.ico}</div>
+                      <div style={{ fontSize: 9, fontWeight: 600, color: T.sub, marginTop: 1 }}>{b.l}</div>
+                    </div>
+                  ))}
+                </div>
+                {taskAllegati.length > 0 && (
+                  <div style={{ marginTop: 6, display: "flex", flexWrap: "wrap", gap: 4 }}>
+                    {taskAllegati.map(a => (
+                      <div key={a.id} style={{ display: "flex", alignItems: "center", gap: 4, padding: "3px 8px", borderRadius: 6, background: T.bg, border: `1px solid ${T.bdr}`, fontSize: 10 }}>
+                        <span>{a.tipo === "nota" ? "📝" : a.tipo === "vocale" ? "🎤" : a.tipo === "foto" ? "📷" : "📎"}</span>
+                        <span style={{ color: T.text, maxWidth: 80, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.nome}</span>
+                        <span onClick={() => setTaskAllegati(al => al.filter(x => x.id !== a.id))} style={{ cursor: "pointer", color: T.red }}>✕</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
               <button style={S.btn} onClick={addTask}>Crea task</button>
               <button style={S.btnCancel} onClick={() => setShowModal(null)}>Annulla</button>
             </>
@@ -2441,8 +2601,8 @@ export default function MastroMisure() {
         {/* Content */}
         {tab === "home" && !selectedCM && !selectedMsg && renderHome()}
         {tab === "commesse" && renderCommesse()}
+        {tab === "messaggi" && !selectedMsg && renderMessaggi()}
         {tab === "agenda" && renderAgenda()}
-        {tab === "chat" && renderChat()}
         {tab === "settings" && renderSettings()}
 
         {/* MESSAGE DETAIL OVERLAY */}
@@ -2600,12 +2760,19 @@ export default function MastroMisure() {
             {[
               { id: "home", ico: ICO.home, label: "Home" },
               { id: "commesse", ico: ICO.filter, label: "Commesse" },
+              { id: "messaggi", ico: ICO.chat, label: "Messaggi" },
               { id: "agenda", ico: ICO.calendar, label: "Agenda" },
-              { id: "chat", ico: ICO.ai, label: "AI" },
               { id: "settings", ico: ICO.settings, label: "Impost." },
             ].map(t => (
-              <div key={t.id} style={S.tabItem(tab === t.id)} onClick={() => { setTab(t.id); setSelectedCM(null); setSelectedVano(null); }}>
-                <Ico d={t.ico} s={22} c={tab === t.id ? T.acc : T.sub} />
+              <div key={t.id} style={S.tabItem(tab === t.id)} onClick={() => { setTab(t.id); setSelectedCM(null); setSelectedVano(null); setSelectedMsg(null); }}>
+                <div style={{ position: "relative", display: "inline-block" }}>
+                  <Ico d={t.ico} s={22} c={tab === t.id ? T.acc : T.sub} />
+                  {t.id === "messaggi" && msgs.filter(m => !m.read).length > 0 && (
+                    <div style={{ position: "absolute", top: -4, right: -8, width: 16, height: 16, borderRadius: "50%", background: T.red, color: "#fff", fontSize: 9, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      {msgs.filter(m => !m.read).length}
+                    </div>
+                  )}
+                </div>
                 <div style={S.tabLabel(tab === t.id)}>{t.label}</div>
               </div>
             ))}
@@ -2721,6 +2888,70 @@ export default function MastroMisure() {
           </div>
         )}
 
+        {/* COMPOSE MESSAGE MODAL */}
+        {showCompose && (
+          <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={e => e.target === e.currentTarget && setShowCompose(false)}>
+            <div style={{ background: T.card, borderRadius: 16, width: "100%", maxWidth: 420, padding: 20, maxHeight: "80vh", overflowY: "auto" }}>
+              <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 14 }}>✏️ Nuovo messaggio</div>
+              {/* Channel select */}
+              <div style={{ marginBottom: 12 }}>
+                <label style={S.fieldLabel}>Invia via</label>
+                <div style={{ display: "flex", gap: 4 }}>
+                  {[
+                    { id: "whatsapp", l: "💬 WhatsApp", c: "#25d366" },
+                    { id: "email", l: "📧 Email", c: T.blue },
+                    { id: "sms", l: "📱 SMS", c: T.orange },
+                    { id: "telegram", l: "✈️ Telegram", c: "#0088cc" },
+                  ].map(ch => (
+                    <div key={ch.id} onClick={() => setComposeMsg(c => ({ ...c, canale: ch.id }))} style={{ flex: 1, padding: "8px 4px", borderRadius: 8, border: `1.5px solid ${composeMsg.canale === ch.id ? ch.c : T.bdr}`, background: composeMsg.canale === ch.id ? ch.c + "15" : T.card, textAlign: "center", cursor: "pointer", fontSize: 10, fontWeight: 600, color: composeMsg.canale === ch.id ? ch.c : T.sub }}>
+                      {ch.l}
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div style={{ marginBottom: 12 }}>
+                <label style={S.fieldLabel}>Destinatario</label>
+                <input style={S.input} placeholder="Nome o numero..." value={composeMsg.to} onChange={e => setComposeMsg(c => ({ ...c, to: e.target.value }))} />
+              </div>
+              <div style={{ marginBottom: 12 }}>
+                <label style={S.fieldLabel}>Collega a commessa (opzionale)</label>
+                <select style={S.select} value={composeMsg.cm} onChange={e => setComposeMsg(c => ({ ...c, cm: e.target.value }))}>
+                  <option value="">— Nessuna —</option>
+                  {cantieri.map(c => <option key={c.id} value={c.code}>{c.code} · {c.cliente}</option>)}
+                </select>
+              </div>
+              <div style={{ marginBottom: 14 }}>
+                <label style={S.fieldLabel}>Messaggio</label>
+                <textarea style={{ width: "100%", padding: 12, fontSize: 13, border: `1px solid ${T.bdr}`, borderRadius: 10, background: T.bg, minHeight: 80, resize: "vertical", fontFamily: FF, boxSizing: "border-box" }} placeholder="Scrivi il messaggio..." value={composeMsg.text} onChange={e => setComposeMsg(c => ({ ...c, text: e.target.value }))} />
+              </div>
+              {/* Attach buttons */}
+              <div style={{ display: "flex", gap: 6, marginBottom: 14 }}>
+                {[{ ico: "📎", l: "File" }, { ico: "📷", l: "Foto" }, { ico: "🎤", l: "Audio" }, { ico: "📍", l: "Posizione" }].map((b, i) => (
+                  <div key={i} style={{ flex: 1, padding: "8px 4px", background: T.bg, borderRadius: 8, border: `1px solid ${T.bdr}`, textAlign: "center", cursor: "pointer" }}>
+                    <div style={{ fontSize: 16 }}>{b.ico}</div>
+                    <div style={{ fontSize: 9, fontWeight: 600, color: T.sub, marginTop: 1 }}>{b.l}</div>
+                  </div>
+                ))}
+              </div>
+              <button onClick={() => {
+                if (composeMsg.to.trim() && composeMsg.text.trim()) {
+                  const newMsg = {
+                    id: Date.now(), from: composeMsg.to, preview: composeMsg.text, time: new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }),
+                    cm: composeMsg.cm, read: true, canale: composeMsg.canale,
+                    thread: [{ who: "Tu", text: composeMsg.text, time: new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }), date: new Date().toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit" }), canale: composeMsg.canale }]
+                  };
+                  setMsgs(ms => [newMsg, ...ms]);
+                  setShowCompose(false);
+                  setComposeMsg({ to: "", text: "", canale: "whatsapp", cm: "" });
+                }
+              }} style={{ ...S.btn, opacity: composeMsg.to.trim() && composeMsg.text.trim() ? 1 : 0.5 }}>
+                Invia messaggio
+              </button>
+              <button onClick={() => setShowCompose(false)} style={S.btnCancel}>Annulla</button>
+            </div>
+          </div>
+        )}
+
         {/* ALLEGATI MODAL */}
         {showAllegatiModal && (
           <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={e => e.target === e.currentTarget && setShowAllegatiModal(null)}>
@@ -2736,11 +2967,29 @@ export default function MastroMisure() {
                 <>
                   <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 12 }}>🎤 Nota vocale</div>
                   <div style={{ textAlign: "center", padding: "20px 0" }}>
-                    <div onClick={() => { addAllegato("vocale", "Nota vocale " + new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })); setShowAllegatiModal(null); }} style={{ width: 70, height: 70, borderRadius: "50%", background: "linear-gradient(135deg, #ff3b30, #ff6b6b)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto", cursor: "pointer", boxShadow: "0 4px 16px rgba(255,59,48,0.3)" }}>
-                      <span style={{ fontSize: 28, color: "#fff" }}>🎤</span>
+                    {isRecording && (
+                      <div style={{ fontSize: 24, fontWeight: 700, fontFamily: FM, color: T.red, marginBottom: 12 }}>
+                        {Math.floor(recSeconds / 60)}:{String(recSeconds % 60).padStart(2, "0")}
+                      </div>
+                    )}
+                    <div onClick={() => {
+                      if (!isRecording) {
+                        setIsRecording(true); setRecSeconds(0);
+                        recInterval.current = setInterval(() => setRecSeconds(s => s + 1), 1000);
+                      } else {
+                        clearInterval(recInterval.current);
+                        setIsRecording(false);
+                        const dur = `${Math.floor(recSeconds / 60)}:${String(recSeconds % 60).padStart(2, "0")}`;
+                        addAllegato("vocale", "Nota vocale " + new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }));
+                        setShowAllegatiModal(null); setRecSeconds(0);
+                      }
+                    }} style={{ width: 70, height: 70, borderRadius: "50%", background: isRecording ? "linear-gradient(135deg, #ff3b30, #cc0000)" : "linear-gradient(135deg, #ff3b30, #ff6b6b)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto", cursor: "pointer", boxShadow: isRecording ? "0 0 24px rgba(255,59,48,0.5)" : "0 4px 16px rgba(255,59,48,0.3)", animation: isRecording ? "pulse 1.5s infinite" : "none" }}>
+                      <span style={{ fontSize: 28, color: "#fff" }}>{isRecording ? "⏹" : "🎤"}</span>
                     </div>
-                    <div style={{ fontSize: 12, color: T.sub, marginTop: 10 }}>Tocca per registrare</div>
-                    <div style={{ fontSize: 10, color: T.sub2, marginTop: 4 }}>(Simulazione — nella versione finale registra davvero)</div>
+                    <style>{`@keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.08); } }`}</style>
+                    <div style={{ fontSize: 12, color: isRecording ? T.red : T.sub, marginTop: 10, fontWeight: isRecording ? 700 : 400 }}>
+                      {isRecording ? "Registrazione... tocca per fermare" : "Tocca per registrare"}
+                    </div>
                   </div>
                 </>
               )}
@@ -2748,15 +2997,31 @@ export default function MastroMisure() {
                 <>
                   <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 12 }}>🎬 Video</div>
                   <div style={{ textAlign: "center", padding: "20px 0" }}>
-                    <div onClick={() => { addAllegato("video", "Video " + new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })); setShowAllegatiModal(null); }} style={{ width: 70, height: 70, borderRadius: "50%", background: "linear-gradient(135deg, #007aff, #5856d6)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto", cursor: "pointer", boxShadow: "0 4px 16px rgba(0,122,255,0.3)" }}>
-                      <span style={{ fontSize: 28, color: "#fff" }}>🎬</span>
+                    {isRecording && (
+                      <div style={{ fontSize: 24, fontWeight: 700, fontFamily: FM, color: T.red, marginBottom: 12 }}>
+                        {Math.floor(recSeconds / 60)}:{String(recSeconds % 60).padStart(2, "0")}
+                      </div>
+                    )}
+                    <div onClick={() => {
+                      if (!isRecording) {
+                        setIsRecording(true); setRecSeconds(0);
+                        recInterval.current = setInterval(() => setRecSeconds(s => s + 1), 1000);
+                      } else {
+                        clearInterval(recInterval.current);
+                        setIsRecording(false);
+                        addAllegato("video", "Video " + new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }));
+                        setShowAllegatiModal(null); setRecSeconds(0);
+                      }
+                    }} style={{ width: 70, height: 70, borderRadius: "50%", background: isRecording ? "linear-gradient(135deg, #ff3b30, #cc0000)" : "linear-gradient(135deg, #007aff, #5856d6)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto", cursor: "pointer", boxShadow: isRecording ? "0 0 24px rgba(255,59,48,0.5)" : "0 4px 16px rgba(0,122,255,0.3)", animation: isRecording ? "pulse 1.5s infinite" : "none" }}>
+                      <span style={{ fontSize: 28, color: "#fff" }}>{isRecording ? "⏹" : "🎬"}</span>
                     </div>
-                    <div style={{ fontSize: 12, color: T.sub, marginTop: 10 }}>Tocca per registrare video</div>
-                    <div style={{ fontSize: 10, color: T.sub2, marginTop: 4 }}>(Simulazione — nella versione finale registra davvero)</div>
+                    <div style={{ fontSize: 12, color: isRecording ? T.red : T.sub, marginTop: 10, fontWeight: isRecording ? 700 : 400 }}>
+                      {isRecording ? "Registrazione... tocca per fermare" : "Tocca per registrare"}
+                    </div>
                   </div>
                 </>
               )}
-              <button onClick={() => setShowAllegatiModal(null)} style={S.btnCancel}>Annulla</button>
+              <button onClick={() => { clearInterval(recInterval.current); setIsRecording(false); setRecSeconds(0); setShowAllegatiModal(null); }} style={S.btnCancel}>Annulla</button>
             </div>
           </div>
         )}
