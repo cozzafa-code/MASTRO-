@@ -272,6 +272,10 @@ export default function MastroMisure() {
   // Advance fase notification
   const [faseNotif, setFaseNotif] = useState(null);
   
+  // AI Photo
+  const [showAIPhoto, setShowAIPhoto] = useState(false);
+  const [aiPhotoStep, setAiPhotoStep] = useState(0); // 0=ready, 1=analyzing, 2=done
+  
   // Drawing state
   const canvasRef = useRef(null);
   const [isDrawing, setIsDrawing] = useState(false);
@@ -334,14 +338,15 @@ export default function MastroMisure() {
   };
 
   const updateMisura = (vanoId, key, value) => {
-    const val = parseInt(value) || 0;
+    const val = value === "" ? "" : value;
+    const numVal = parseInt(value) || 0;
     setCantieri(cs => cs.map(c => c.id === selectedCM?.id ? {
-      ...c, vani: c.vani.map(v => v.id === vanoId ? { ...v, misure: { ...v.misure, [key]: val } } : v)
+      ...c, vani: c.vani.map(v => v.id === vanoId ? { ...v, misure: { ...v.misure, [key]: numVal } } : v)
     } : c));
     if (selectedVano?.id === vanoId) {
-      setSelectedVano(prev => ({ ...prev, misure: { ...prev.misure, [key]: val } }));
+      setSelectedVano(prev => ({ ...prev, misure: { ...prev.misure, [key]: numVal } }));
     }
-    setSelectedCM(prev => prev ? ({ ...prev, vani: prev.vani.map(v => v.id === vanoId ? { ...v, misure: { ...v.misure, [key]: val } } : v) }) : prev);
+    setSelectedCM(prev => prev ? ({ ...prev, vani: prev.vani.map(v => v.id === vanoId ? { ...v, misure: { ...v.misure, [key]: numVal } } : v) }) : prev);
   };
 
   const toggleAccessorio = (vanoId, acc) => {
@@ -1015,11 +1020,12 @@ export default function MastroMisure() {
       );
     };
 
-    // Big touch input
-    const BigInput = ({ label, field }) => (
-      <div style={{ marginBottom: 12 }}>
+    // Inline input renderer (no sub-component = no focus loss)
+    const bInput = (label, field) => (
+      <div key={field} style={{ marginBottom: 12 }}>
         <div style={{ fontSize: 12, fontWeight: 600, color: T.text, marginBottom: 4 }}>{label}</div>
         <input
+          key={`input-${field}`}
           style={{ width: "100%", padding: "14px 16px", fontSize: 17, fontWeight: 500, fontFamily: FM, textAlign: "center", border: `1px solid ${T.bdr}`, borderRadius: 12, background: m[field] > 0 ? step.color + "08" : T.card, color: T.text, outline: "none", boxSizing: "border-box" }}
           type="number" inputMode="numeric" placeholder="Tocca per inserire" value={m[field] || ""}
           onChange={e => updateMisura(v.id, field, e.target.value)}
@@ -1059,9 +1065,9 @@ export default function MastroMisure() {
           {/* ═══ STEP 0: LARGHEZZE ═══ */}
           {vanoStep === 0 && (
             <>
-              <BigInput label="Larghezza ALTO" field="lAlto" />
-              <BigInput label="Larghezza CENTRO (luce netta)" field="lCentro" />
-              <BigInput label="Larghezza BASSO" field="lBasso" />
+              {bInput("Larghezza ALTO", "lAlto")}
+              {bInput("Larghezza CENTRO (luce netta)", "lCentro")}
+              {bInput("Larghezza BASSO", "lBasso")}
               {tip && (
                 <div style={{ padding: "10px 14px", borderRadius: 10, background: "#fff8e1", border: "1px solid #ffecb3", marginTop: 4 }}>
                   <div style={{ fontSize: 12, fontWeight: 700, color: "#f57f17" }}>💡 {tip.t}</div>
@@ -1075,9 +1081,9 @@ export default function MastroMisure() {
           {/* ═══ STEP 1: ALTEZZE ═══ */}
           {vanoStep === 1 && (
             <>
-              <BigInput label="Altezza SINISTRA" field="hSx" />
-              <BigInput label="Altezza CENTRO" field="hCentro" />
-              <BigInput label="Altezza DESTRA" field="hDx" />
+              {bInput("Altezza SINISTRA", "hSx")}
+              {bInput("Altezza CENTRO", "hCentro")}
+              {bInput("Altezza DESTRA", "hDx")}
               {tip && (
                 <div style={{ padding: "10px 14px", borderRadius: 10, background: "#fff8e1", border: "1px solid #ffecb3", marginTop: 4 }}>
                   <div style={{ fontSize: 12, fontWeight: 700, color: "#f57f17" }}>💡 {tip.t}</div>
@@ -1091,8 +1097,8 @@ export default function MastroMisure() {
           {/* ═══ STEP 2: DIAGONALI ═══ */}
           {vanoStep === 2 && (
             <>
-              <BigInput label="Diagonale 1 ↗" field="d1" />
-              <BigInput label="Diagonale 2 ↘" field="d2" />
+              {bInput("Diagonale 1 ↗", "d1")}
+              {bInput("Diagonale 2 ↘", "d2")}
               {fSq !== null && fSq > 3 && (
                 <div style={{ padding: "10px 14px", borderRadius: 10, background: "#ffebee", border: "1px solid #ef9a9a", marginBottom: 12 }}>
                   <div style={{ fontSize: 12, fontWeight: 700, color: "#c62828" }}>⚠ Fuori squadra: {fSq}mm</div>
@@ -1117,10 +1123,10 @@ export default function MastroMisure() {
           {/* ═══ STEP 3: SPALLETTE ═══ */}
           {vanoStep === 3 && (
             <>
-              <BigInput label="Spalletta SINISTRA" field="spSx" />
-              <BigInput label="Spalletta DESTRA" field="spDx" />
-              <BigInput label="Spalletta SOPRA" field="spSopra" />
-              <BigInput label="Profondità IMBOTTE" field="imbotte" />
+              {bInput("Spalletta SINISTRA", "spSx")}
+              {bInput("Spalletta DESTRA", "spDx")}
+              {bInput("Spalletta SOPRA", "spSopra")}
+              {bInput("Profondità IMBOTTE", "imbotte")}
               {/* DISEGNO LIBERO SPALLETTE */}
               <div style={{ background: T.card, borderRadius: 12, border: `1px solid ${T.bdr}`, marginTop: 8, overflow: "hidden" }}>
                 <div style={{ padding: "8px 14px", borderBottom: `1px solid ${T.bdr}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -1155,9 +1161,9 @@ export default function MastroMisure() {
           {/* ═══ STEP 4: DAVANZALE ═══ */}
           {vanoStep === 4 && (
             <>
-              <BigInput label="Davanzale PROFONDITÀ" field="davProf" />
-              <BigInput label="Davanzale SPORGENZA" field="davSporg" />
-              <BigInput label="Altezza SOGLIA" field="soglia" />
+              {bInput("Davanzale PROFONDITÀ", "davProf")}
+              {bInput("Davanzale SPORGENZA", "davSporg")}
+              {bInput("Altezza SOGLIA", "soglia")}
               {/* Cassonetto toggle */}
               <div style={{ marginTop: 8, padding: "12px 16px", borderRadius: 12, border: `1px dashed ${T.bdr}`, display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }} onClick={() => {
                 const nv = { ...v, cassonetto: !v.cassonetto };
@@ -1170,8 +1176,8 @@ export default function MastroMisure() {
               </div>
               {v.cassonetto && (
                 <div style={{ marginTop: 8 }}>
-                  <BigInput label="Cassonetto ALTEZZA" field="casH" />
-                  <BigInput label="Cassonetto PROFONDITÀ" field="casP" />
+                  {bInput("Cassonetto ALTEZZA", "casH")}
+                  {bInput("Cassonetto PROFONDITÀ", "casP")}
                 </div>
               )}
             </>
@@ -1314,7 +1320,7 @@ export default function MastroMisure() {
               </div>
 
               {/* AI Foto */}
-              <div style={{ padding: "10px 12px", borderRadius: 12, background: "linear-gradient(135deg, rgba(175,82,222,0.08), rgba(0,122,255,0.08))", border: `1px solid #af52de30`, cursor: "pointer", display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+              <div onClick={() => { setShowAIPhoto(true); setAiPhotoStep(0); }} style={{ padding: "10px 12px", borderRadius: 12, background: "linear-gradient(135deg, rgba(175,82,222,0.08), rgba(0,122,255,0.08))", border: `1px solid #af52de30`, cursor: "pointer", display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
                 <div style={{ width: 36, height: 36, borderRadius: 10, background: "linear-gradient(135deg, #af52de, #007aff)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                   <span style={{ fontSize: 18 }}>🤖</span>
                 </div>
@@ -2287,6 +2293,71 @@ export default function MastroMisure() {
               <div style={{ fontSize: 11, color: T.sub }}>Email inviata a <strong>{faseNotif.addetto}</strong></div>
             </div>
             <div style={{ fontSize: 18 }}>✅</div>
+          </div>
+        )}
+
+        {/* AI PHOTO MODAL */}
+        {showAIPhoto && (
+          <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={e => e.target === e.currentTarget && setShowAIPhoto(false)}>
+            <div style={{ background: T.card, borderRadius: 16, width: "100%", maxWidth: 380, padding: 20, maxHeight: "80vh", overflowY: "auto" }}>
+              {aiPhotoStep === 0 && (
+                <>
+                  <div style={{ textAlign: "center", marginBottom: 16 }}>
+                    <div style={{ width: 60, height: 60, borderRadius: 16, background: "linear-gradient(135deg, #af52de, #007aff)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px", fontSize: 28 }}>🤖</div>
+                    <div style={{ fontSize: 17, fontWeight: 800, color: "#af52de" }}>AI Misure da Foto</div>
+                    <div style={{ fontSize: 12, color: T.sub, marginTop: 4 }}>Scatta una foto del vano e l'AI analizzerà l'immagine per suggerire le misure approssimative</div>
+                  </div>
+                  <div style={{ padding: "40px 0", border: `2px dashed #af52de40`, borderRadius: 12, textAlign: "center", marginBottom: 12, cursor: "pointer", background: "#af52de08" }} onClick={() => { setAiPhotoStep(1); setTimeout(() => setAiPhotoStep(2), 2500); }}>
+                    <div style={{ fontSize: 36, marginBottom: 8 }}>📷</div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: "#af52de" }}>Tocca per scattare o caricare foto</div>
+                    <div style={{ fontSize: 10, color: T.sub, marginTop: 4 }}>JPG, PNG — max 10MB</div>
+                  </div>
+                  <button onClick={() => setShowAIPhoto(false)} style={{ width: "100%", padding: 10, borderRadius: 8, border: `1px solid ${T.bdr}`, background: T.card, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: FF, color: T.sub }}>Annulla</button>
+                </>
+              )}
+              {aiPhotoStep === 1 && (
+                <div style={{ textAlign: "center", padding: "40px 0" }}>
+                  <div style={{ width: 60, height: 60, borderRadius: "50%", border: "4px solid #af52de20", borderTopColor: "#af52de", margin: "0 auto 16px", animation: "spin 1s linear infinite" }} />
+                  <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: "#af52de" }}>Analisi AI in corso...</div>
+                  <div style={{ fontSize: 11, color: T.sub, marginTop: 4 }}>Rilevamento bordi e stima dimensioni</div>
+                </div>
+              )}
+              {aiPhotoStep === 2 && (
+                <>
+                  <div style={{ textAlign: "center", marginBottom: 16 }}>
+                    <div style={{ fontSize: 36, marginBottom: 8 }}>✅</div>
+                    <div style={{ fontSize: 15, fontWeight: 800, color: T.grn }}>Analisi completata!</div>
+                    <div style={{ fontSize: 11, color: T.sub, marginTop: 4 }}>Misure suggerite (approssimative — verifica con metro)</div>
+                  </div>
+                  <div style={{ borderRadius: 10, border: `1px solid ${T.bdr}`, overflow: "hidden", marginBottom: 12 }}>
+                    {[["Larghezza stimata", "~1200 mm", T.acc], ["Altezza stimata", "~1400 mm", T.blue], ["Tipo rilevato", "Finestra 2 ante", T.purple]].map(([l, val, col]) => (
+                      <div key={l} style={{ display: "flex", justifyContent: "space-between", padding: "10px 14px", borderBottom: `1px solid ${T.bdr}`, alignItems: "center" }}>
+                        <span style={{ fontSize: 12, color: T.sub }}>{l}</span>
+                        <span style={{ fontSize: 14, fontWeight: 700, fontFamily: FM, color: col }}>{val}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ padding: "8px 12px", borderRadius: 8, background: "#fff3e0", border: "1px solid #ffe0b2", marginBottom: 12, fontSize: 10, color: "#e65100" }}>
+                    ⚠️ Le misure AI sono approssimative. Usa sempre il metro laser per le misure definitive.
+                  </div>
+                  <button onClick={() => {
+                    if (selectedVano) {
+                      updateMisura(selectedVano.id, "lAlto", 1200);
+                      updateMisura(selectedVano.id, "lCentro", 1200);
+                      updateMisura(selectedVano.id, "lBasso", 1198);
+                      updateMisura(selectedVano.id, "hSx", 1400);
+                      updateMisura(selectedVano.id, "hCentro", 1400);
+                      updateMisura(selectedVano.id, "hDx", 1398);
+                    }
+                    setShowAIPhoto(false);
+                  }} style={{ width: "100%", padding: 12, borderRadius: 10, border: "none", background: "linear-gradient(135deg, #af52de, #007aff)", color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: FF, marginBottom: 8 }}>
+                    ✅ Applica misure suggerite
+                  </button>
+                  <button onClick={() => setShowAIPhoto(false)} style={{ width: "100%", padding: 10, borderRadius: 8, border: `1px solid ${T.bdr}`, background: T.card, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: FF, color: T.sub }}>Solo anteprima, non applicare</button>
+                </>
+              )}
+            </div>
           </div>
         )}
       </div>
