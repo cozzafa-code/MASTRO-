@@ -336,7 +336,6 @@ export default function MastroMisure() {
   }, []);
   const isTablet = winW >= 768;
   const isDesktop = winW >= 1024;
-  const appMaxW = isDesktop ? 900 : isTablet ? 700 : 430;
 
   const goBack = () => {
     if (showRiepilogo) { setShowRiepilogo(false); return; }
@@ -546,9 +545,9 @@ export default function MastroMisure() {
   };
 
   /* ═══════ STYLES ═══════ */
-  const fs = isDesktop ? 1.15 : isTablet ? 1.08 : 1; // font scale
+  const fs = isDesktop ? 1.1 : isTablet ? 1.05 : 1;
   const S = {
-    app: { fontFamily: FF, background: T.bg, color: T.text, maxWidth: appMaxW, margin: "0 auto", minHeight: "100vh", position: "relative", WebkitFontSmoothing: "antialiased", transition: "max-width 0.3s" },
+    app: { fontFamily: FF, background: T.bg, color: T.text, width: "100%", minHeight: "100vh", position: "relative", WebkitFontSmoothing: "antialiased" },
     header: { padding: `${14*fs}px ${16*fs}px ${12*fs}px`, background: T.card, borderBottom: `1px solid ${T.bdr}`, display: "flex", alignItems: "center", gap: 10 },
     headerTitle: { fontSize: 19*fs, fontWeight: 700, letterSpacing: -0.3, color: T.text },
     headerSub: { fontSize: 12*fs, color: T.sub, marginTop: 1 },
@@ -566,11 +565,11 @@ export default function MastroMisure() {
     select: { width: "100%", padding: `${10*fs}px ${12*fs}px`, borderRadius: 8, border: `1px solid ${T.bdr}`, background: T.card, fontSize: 14*fs, color: T.text, outline: "none", fontFamily: FF, boxSizing: "border-box" },
     btn: { width: "100%", padding: `${14*fs}px`, borderRadius: 10, border: "none", background: T.acc, color: "#fff", fontSize: 15*fs, fontWeight: 700, cursor: "pointer", fontFamily: FF },
     btnCancel: { width: "100%", padding: `${12*fs}px`, borderRadius: 10, border: "none", background: "none", color: T.sub, fontSize: 14*fs, fontWeight: 600, cursor: "pointer", fontFamily: FF },
-    tabBar: { position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)", width: "100%", maxWidth: appMaxW, background: T.card + "ee", backdropFilter: "blur(20px)", borderTop: `1px solid ${T.bdr}`, display: "flex", padding: `${6*fs}px 0 ${8*fs}px`, zIndex: 100, transition: "max-width 0.3s" },
+    tabBar: { position: "fixed", bottom: 0, left: 0, right: 0, width: "100%", background: T.card + "ee", backdropFilter: "blur(20px)", borderTop: `1px solid ${T.bdr}`, display: "flex", padding: `${6*fs}px 0 ${8*fs}px`, zIndex: 100 },
     tabItem: (active) => ({ flex: 1, textAlign: "center", padding: "4px 0", cursor: "pointer", opacity: active ? 1 : 0.5, transition: "opacity 0.15s" }),
     tabLabel: (active) => ({ fontSize: 10*fs, fontWeight: 600, color: active ? T.acc : T.sub, marginTop: 1 }),
     modal: { position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.4)", zIndex: 200, display: "flex", justifyContent: "center", alignItems: "flex-end" },
-    modalInner: { background: T.card, borderRadius: "16px 16px 0 0", width: "100%", maxWidth: appMaxW, padding: `${20*fs}px ${16*fs}px ${30*fs}px`, maxHeight: "85vh", overflowY: "auto" },
+    modalInner: { background: T.card, borderRadius: "16px 16px 0 0", width: "100%", maxWidth: isDesktop ? 600 : 500, padding: `${20*fs}px ${16*fs}px ${30*fs}px`, maxHeight: "85vh", overflowY: "auto" },
     modalTitle: { fontSize: 17*fs, fontWeight: 700, marginBottom: 16, color: T.text },
     fieldLabel: { fontSize: 12*fs, fontWeight: 600, color: T.sub, marginBottom: 4, display: "block" },
     pipeStep: (done, current) => ({ display: "flex", flexDirection: "column", alignItems: "center", minWidth: 52, cursor: "pointer" }),
@@ -915,8 +914,8 @@ export default function MastroMisure() {
           <input style={{ ...S.input, flex: 1 }} placeholder="Cerca commessa..." value={searchQ} onChange={e => setSearchQ(e.target.value)} />
         </div>
 
-        <div style={isTablet ? { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, padding: "0 16px" } : {}}>
-          {filtered.map(c => renderCMCard(c, isTablet))}
+        <div style={isDesktop ? { display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, padding: "0 16px" } : isTablet ? { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, padding: "0 16px" } : {}}>
+          {filtered.map(c => renderCMCard(c, isTablet || isDesktop))}
         </div>
       </div>
     );
@@ -1030,7 +1029,7 @@ export default function MastroMisure() {
           <div style={S.sectionTitle}>Vani ({c.vani.length})</div>
           <button style={S.sectionBtn} onClick={() => setShowModal("vano")}>+ Nuovo vano</button>
         </div>
-        <div style={{ padding: "0 16px", ...(isTablet && c.vani.length > 0 ? { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 } : {}) }}>
+        <div style={{ padding: "0 16px", ...((isTablet || isDesktop) && c.vani.length > 0 ? { display: "grid", gridTemplateColumns: isDesktop ? "1fr 1fr 1fr" : "1fr 1fr", gap: 8 } : {}) }}>
           {c.vani.length === 0 ? (
             <div onClick={() => setShowModal("vano")} style={{ padding: "20px", textAlign: "center", background: T.card, borderRadius: T.r, border: `1px dashed ${T.bdr}`, cursor: "pointer", color: T.sub, fontSize: 13 }}>
               Nessun vano. Tocca per aggiungerne uno.
@@ -2435,16 +2434,10 @@ export default function MastroMisure() {
       <link href={FONT} rel="stylesheet" />
       <style>{`
         * { box-sizing: border-box; }
-        body { margin: 0; background: ${isDesktop ? '#e5e5ea' : isTablet ? '#f0f0f5' : T.bg}; }
-        @media (min-width: 768px) {
-          .mastro-app-wrap { box-shadow: 0 0 40px rgba(0,0,0,0.12); border-radius: 16px; margin-top: 16px; margin-bottom: 16px; overflow: hidden; min-height: calc(100vh - 32px); }
-        }
-        @media (min-width: 1024px) {
-          .mastro-app-wrap { margin-top: 20px; margin-bottom: 20px; min-height: calc(100vh - 40px); border-radius: 20px; }
-        }
+        body { margin: 0; background: ${T.bg}; }
         input, select, textarea, button { font-size: inherit; }
       `}</style>
-      <div style={S.app} className="mastro-app-wrap">
+      <div style={S.app}>
         {/* Content */}
         {tab === "home" && !selectedCM && !selectedMsg && renderHome()}
         {tab === "commesse" && renderCommesse()}
@@ -2493,8 +2486,8 @@ export default function MastroMisure() {
             <div style={{ borderTop: `1px solid ${T.bdr}`, background: T.card }}>
               <div style={{ display: "flex", gap: 2, padding: "6px 16px 0" }}>
                 {["email", "whatsapp", "sms", "telegram"].map(ch => (
-                  <div key={ch} onClick={() => setReplyChannelX(ch)} style={{ padding: "4px 10px", borderRadius: "8px 8px 0 0", fontSize: 10, fontWeight: 700, cursor: "pointer", background: replyChannel === ch ? chCol[ch] + "18" : "transparent", color: replyChannel === ch ? chCol[ch] : T.sub, borderBottom: replyChannel === ch ? `2px solid ${chCol[ch]}` : "2px solid transparent" }}>
-                    {chIco[ch]} {ch}
+                  <div key={ch} onClick={() => setReplyChannelX(ch)} style={{ padding: "4px 8px", borderRadius: "8px 8px 0 0", fontSize: 14, cursor: "pointer", background: replyChannel === ch ? chCol[ch] + "18" : "transparent", borderBottom: replyChannel === ch ? `2px solid ${chCol[ch]}` : "2px solid transparent" }}>
+                    {chIco[ch]}
                   </div>
                 ))}
               </div>
