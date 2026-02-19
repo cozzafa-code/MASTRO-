@@ -1,532 +1,2295 @@
-'use client';
-import { useState, useRef, useCallback } from "react";
+"use client";
+import { useState, useRef, useCallback, useEffect } from "react";
 
-/* ══════════════════════ FONTS & THEMES ══════════════════════ */
-const FONT="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap";
+/* ═══════════════════════════════════════════════════════
+   MASTRO MISURE — v15 COMPLETE REBUILD
+   Tutte le feature recuperate + design Apple chiaro
+   ═══════════════════════════════════════════════════════ */
 
-const THEMES={
-  chiaro:{name:"Chiaro",emoji:"☀️",
-    bg:"#f0f2f5",bg2:"#ffffff",card:"#ffffff",card2:"#f8f9fb",
-    bdr:"#e2e5ea",bdrL:"#d0d4db",
-    text:"#111827",sub:"#6b7280",sub2:"#9ca3af",
-    acc:"#e67e22",accD:"#d35400",accLt:"rgba(230,126,34,0.08)",accBg:"rgba(230,126,34,0.12)",
-    grn:"#059669",grnLt:"rgba(5,150,105,0.08)",
-    red:"#dc2626",redLt:"rgba(220,38,38,0.06)",
-    blue:"#2563eb",blueLt:"rgba(37,99,235,0.06)",
-    purple:"#7c3aed",purpleLt:"rgba(124,58,237,0.06)",
-    w08:"rgba(0,0,0,0.04)",w04:"rgba(0,0,0,0.02)",
-    shadow:"0 1px 3px rgba(0,0,0,0.08),0 1px 2px rgba(0,0,0,0.04)",
-    shadowL:"0 4px 12px rgba(0,0,0,0.08)",
-    grad:"linear-gradient(135deg,#e67e22,#d35400)"},
-  dark:{name:"Scuro",emoji:"🌙",
-    bg:"#111318",bg2:"#1a1d25",card:"#1e222c",card2:"#252a36",
-    bdr:"#2a2f3c",bdrL:"#353b4a",
-    text:"#f1f3f6",sub:"#8890a0",sub2:"#555d70",
-    acc:"#f0a820",accD:"#d4910e",accLt:"rgba(240,168,32,0.10)",accBg:"rgba(240,168,32,0.15)",
-    grn:"#34d399",grnLt:"rgba(52,211,153,0.10)",
-    red:"#f87171",redLt:"rgba(248,113,113,0.08)",
-    blue:"#60a5fa",blueLt:"rgba(96,165,250,0.08)",
-    purple:"#a78bfa",purpleLt:"rgba(167,139,250,0.08)",
-    w08:"rgba(255,255,255,0.06)",w04:"rgba(255,255,255,0.03)",
-    shadow:"0 1px 3px rgba(0,0,0,0.3)",
-    shadowL:"0 4px 12px rgba(0,0,0,0.4)",
-    grad:"linear-gradient(135deg,#f0a820,#d4910e)"},
-  ocean:{name:"Oceano",emoji:"🌊",
-    bg:"#0c1929",bg2:"#132238",card:"#18304e",card2:"#1d3860",
-    bdr:"#1e4070",bdrL:"#265090",
-    text:"#e8f0ff",sub:"#7da0cc",sub2:"#4a6890",
-    acc:"#38bdf8",accD:"#0ea5e9",accLt:"rgba(56,189,248,0.10)",accBg:"rgba(56,189,248,0.15)",
-    grn:"#34d399",grnLt:"rgba(52,211,153,0.10)",
-    red:"#fb7185",redLt:"rgba(251,113,133,0.08)",
-    blue:"#60a5fa",blueLt:"rgba(96,165,250,0.08)",
-    purple:"#a78bfa",purpleLt:"rgba(167,139,250,0.08)",
-    w08:"rgba(255,255,255,0.06)",w04:"rgba(255,255,255,0.03)",
-    shadow:"0 1px 3px rgba(0,0,0,0.3)",
-    shadowL:"0 4px 12px rgba(0,0,0,0.4)",
-    grad:"linear-gradient(135deg,#38bdf8,#0ea5e9)"},
+const FONT = "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=JetBrains+Mono:wght@400;600&display=swap";
+const FF = "'Plus Jakarta Sans',sans-serif";
+const FM = "'JetBrains Mono',monospace";
+
+/* ── TEMI ── */
+const THEMES = {
+  chiaro: {
+    name: "Chiaro", emoji: "☀️",
+    bg: "#f5f5f7", bg2: "#ffffff", card: "#ffffff", card2: "#f8f8fa",
+    bdr: "#e5e5ea", bdrL: "#d1d1d6", text: "#1d1d1f", sub: "#86868b", sub2: "#aeaeb2",
+    acc: "#0066cc", accD: "#0055aa", accLt: "rgba(0,102,204,0.08)", accBg: "linear-gradient(135deg,#0066cc,#0055aa)",
+    grn: "#34c759", grnLt: "rgba(52,199,89,0.08)",
+    red: "#ff3b30", redLt: "rgba(255,59,48,0.08)",
+    orange: "#ff9500", orangeLt: "rgba(255,149,0,0.08)",
+    blue: "#007aff", blueLt: "rgba(0,122,255,0.08)",
+    purple: "#af52de", purpleLt: "rgba(175,82,222,0.08)",
+    cyan: "#32ade6", cyanLt: "rgba(50,173,230,0.08)",
+    cardSh: "0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)",
+    cardShH: "0 4px 12px rgba(0,0,0,0.08)",
+    r: 12, r2: 16
+  },
+  scuro: {
+    name: "Scuro", emoji: "🌙",
+    bg: "#000000", bg2: "#1c1c1e", card: "#1c1c1e", card2: "#2c2c2e",
+    bdr: "#38383a", bdrL: "#48484a", text: "#f2f2f7", sub: "#8e8e93", sub2: "#636366",
+    acc: "#0a84ff", accD: "#0070e0", accLt: "rgba(10,132,255,0.12)", accBg: "linear-gradient(135deg,#0a84ff,#0070e0)",
+    grn: "#30d158", grnLt: "rgba(48,209,88,0.12)",
+    red: "#ff453a", redLt: "rgba(255,69,58,0.12)",
+    orange: "#ff9f0a", orangeLt: "rgba(255,159,10,0.12)",
+    blue: "#0a84ff", blueLt: "rgba(10,132,255,0.12)",
+    purple: "#bf5af2", purpleLt: "rgba(191,90,242,0.12)",
+    cyan: "#64d2ff", cyanLt: "rgba(100,210,255,0.12)",
+    cardSh: "0 1px 3px rgba(0,0,0,0.3)",
+    cardShH: "0 4px 12px rgba(0,0,0,0.4)",
+    r: 12, r2: 16
+  },
+  oceano: {
+    name: "Oceano", emoji: "🌊",
+    bg: "#0f1923", bg2: "#162231", card: "#1a2a3a", card2: "#1f3040",
+    bdr: "#2a3f55", bdrL: "#345070", text: "#e8ecf0", sub: "#7a90a5", sub2: "#4a6070",
+    acc: "#4fc3f7", accD: "#29b6f6", accLt: "rgba(79,195,247,0.12)", accBg: "linear-gradient(135deg,#4fc3f7,#29b6f6)",
+    grn: "#66bb6a", grnLt: "rgba(102,187,106,0.12)",
+    red: "#ef5350", redLt: "rgba(239,83,80,0.12)",
+    orange: "#ffa726", orangeLt: "rgba(255,167,38,0.12)",
+    blue: "#42a5f5", blueLt: "rgba(66,165,245,0.12)",
+    purple: "#ab47bc", purpleLt: "rgba(171,71,188,0.12)",
+    cyan: "#26c6da", cyanLt: "rgba(38,198,218,0.12)",
+    cardSh: "0 1px 3px rgba(0,0,0,0.25)",
+    cardShH: "0 4px 12px rgba(0,0,0,0.35)",
+    r: 12, r2: 16
+  }
 };
 
-/* ══════════════════════ ICONS ══════════════════════ */
-const Ic=({d,s=20,c="#888",f="none",sw=1.8})=><svg width={s} height={s} viewBox="0 0 24 24" fill={f} stroke={c} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round"><path d={d}/></svg>;
-const P={back:"M15 19l-7-7 7-7",plus:"M12 4v16m8-8H4",check:"M5 13l4 4L19 7",chevR:"M9 5l7 7-7 7",close:"M6 18L18 6M6 6l12 12",phone:"M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z",camera:"M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z M15 13a3 3 0 11-6 0 3 3 0 016 0z",ruler:"M6 2L2 6l12 12 4-4L6 2zm3 7l2 2",pencil:"M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z",trash:"M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16",undo:"M3 10h10a5 5 0 010 10H9m-6-10l4-4m-4 4l4 4",ai:"M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z",pdf:"M7 21h10a2 2 0 002-2V9l-5-5H7a2 2 0 00-2 2v13a2 2 0 002 2z M14 4v5h5",send:"M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z",down:"M6 9l6 6 6-6",eye:"M15 12a3 3 0 11-6 0 3 3 0 016 0z M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7z",settings:"M12 15a3 3 0 100-6 3 3 0 000 6z M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"};
+/* ── PIPELINE 7+1 FASI ── */
+const PIPELINE = [
+  { id: "sopralluogo", nome: "Sopralluogo", ico: "🔍", color: "#007aff" },
+  { id: "preventivo", nome: "Preventivo", ico: "📋", color: "#ff9500" },
+  { id: "conferma", nome: "Conferma", ico: "✍️", color: "#af52de" },
+  { id: "misure", nome: "Misure", ico: "📐", color: "#5856d6" },
+  { id: "ordini", nome: "Ordini", ico: "📦", color: "#ff2d55" },
+  { id: "produzione", nome: "Produzione", ico: "🏭", color: "#ff9500" },
+  { id: "posa", nome: "Posa", ico: "🔧", color: "#34c759" },
+  { id: "chiusura", nome: "Chiusura", ico: "✅", color: "#30b0c7" },
+];
 
-/* ══════════════════════ DATE UTILS ══════════════════════ */
-const OG=new Date();const GG=["Dom","Lun","Mar","Mer","Gio","Ven","Sab"];const MM=["Gen","Feb","Mar","Apr","Mag","Giu","Lug","Ago","Set","Ott","Nov","Dic"];const MML=["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];const fmtD=d=>`${GG[d.getDay()]} ${d.getDate()} ${MM[d.getMonth()]}`;const sameD=(a,b)=>a.getDate()===b.getDate()&&a.getMonth()===b.getMonth()&&a.getFullYear()===b.getFullYear();
+/* ── DATI DEMO ── */
+const CANTIERI_INIT = [
+  { id: 1, code: "CM-0004", cliente: "Fabio Cozza", indirizzo: "Via Gabriele Barrio, Cosenza", fase: "sopralluogo", vani: [
+    { id: 1, nome: "Cucina", tipo: "Finestra", stanza: "Cucina", piano: "PT", misure: { lAlto: 1200, lCentro: 1198, lBasso: 1195, hSx: 1400, hCentro: 1402, hDx: 1398, d1: 0, d2: 0, spSx: 120, spDx: 120, arch: 0, davInt: 200, davEst: 50 }, cassonetto: true, casH: 250, casP: 300, accessori: { tapparella: { attivo: true, colore: "RAL 9010", l: 1200, h: 1600 }, persiana: { attivo: false }, zanzariera: { attivo: true, colore: "RAL 9010", l: 1180, h: 1380 } }, foto: { panoramica: true, spalle: true, soglia: false, dettagli: false }, note: "Muro portante, attenzione alla spalletta sinistra" },
+    { id: 2, nome: "Salone", tipo: "Portafinestra", stanza: "Soggiorno", piano: "PT", misure: { lAlto: 1400, lCentro: 1402, lBasso: 1400, hSx: 2200, hCentro: 2200, hDx: 2198, d1: 2610, d2: 2608, spSx: 150, spDx: 150, arch: 0, davInt: 0, davEst: 0 }, cassonetto: false, accessori: { tapparella: { attivo: true, colore: "RAL 7016", l: 1400, h: 2400 }, persiana: { attivo: false }, zanzariera: { attivo: false } }, foto: { panoramica: true, spalle: true, soglia: true, dettagli: true }, note: "" },
+    { id: 3, nome: "Camera", tipo: "Finestra", stanza: "Camera", piano: "P1", misure: {}, foto: {}, note: "", accessori: { tapparella: { attivo: false }, persiana: { attivo: false }, zanzariera: { attivo: false } } },
+  ], sistema: "Schüco CT70", colTelaio: "RAL 9010", colAccessori: "RAL 9010", creato: "15 Feb", aggiornato: "oggi", log: [
+    { chi: "Fabio", cosa: "aggiunto vano Cucina — L:1200 H:1400", quando: "Oggi, 10:30", color: "#007aff" },
+    { chi: "Fabio", cosa: "completato misure Salone", quando: "Oggi, 09:15", color: "#34c759" },
+    { chi: "Marco", cosa: "eseguito sopralluogo", quando: "17 Feb, 14:00", color: "#ff9500" },
+    { chi: "Fabio", cosa: "creato la commessa", quando: "15 Feb, 08:30", color: "#86868b" },
+  ]},
+  { id: 2, code: "CM-0002", cliente: "Teresa Bruno", indirizzo: "Via Roma 45, Rende", fase: "ordini", vani: [
+    { id: 1, nome: "Bagno", tipo: "Vasistas", stanza: "Bagno", piano: "P1", misure: { lAlto: 800, lCentro: 800, lBasso: 798, hSx: 600, hCentro: 600, hDx: 600 }, foto: { panoramica: true }, note: "", accessori: { tapparella: { attivo: false }, persiana: { attivo: false }, zanzariera: { attivo: false } } },
+    { id: 2, nome: "Studio", tipo: "Finestra", stanza: "Studio", piano: "PT", misure: { lAlto: 1000, lCentro: 998, lBasso: 1000, hSx: 1200, hCentro: 1200, hDx: 1198 }, foto: { panoramica: true, soglia: true }, note: "Doppio vetro richiesto", accessori: { tapparella: { attivo: true, colore: "RAL 7016", l: 1000, h: 1400 }, persiana: { attivo: false }, zanzariera: { attivo: false } } },
+    { id: 3, nome: "Ingresso", tipo: "Porta", stanza: "Ingresso", piano: "PT", misure: { lAlto: 900, lCentro: 900, lBasso: 900, hSx: 2100, hCentro: 2100, hDx: 2100 }, foto: {}, note: "", accessori: { tapparella: { attivo: false }, persiana: { attivo: false }, zanzariera: { attivo: false } } },
+    { id: 4, nome: "Cameretta", tipo: "Finestra", stanza: "Camera", piano: "P1", misure: { lAlto: 1100, lCentro: 1100, lBasso: 1098 }, foto: {}, note: "", accessori: { tapparella: { attivo: false }, persiana: { attivo: false }, zanzariera: { attivo: false } } },
+  ], sistema: "Rehau S80", colTelaio: "RAL 7016", colAccessori: "RAL 9005", creato: "10 Feb", aggiornato: "16 Feb", log: [
+    { chi: "Fabio", cosa: "avanzato a Ordine", quando: "16 Feb, 11:00", color: "#ff2d55" },
+    { chi: "Fabio", cosa: "completato tutte le misure", quando: "15 Feb, 16:30", color: "#34c759" },
+    { chi: "Fabio", cosa: "creato la commessa", quando: "10 Feb, 08:00", color: "#86868b" },
+  ]},
+  { id: 3, code: "CM-0003", cliente: "Mario Ferraro", indirizzo: "Via Gabriele Barrio, Cosenza", fase: "sopralluogo", vani: [
+    { id: 1, nome: "Sala", tipo: "Scorrevole", stanza: "Soggiorno", piano: "PT", misure: {}, foto: {}, note: "", accessori: { tapparella: { attivo: false }, persiana: { attivo: false }, zanzariera: { attivo: false } } },
+  ], sistema: "", colTelaio: "", colAccessori: "", creato: "12 Feb", aggiornato: "12 Feb", alert: "Sopralluogo oggi", log: [] },
+  { id: 4, code: "CM-0001", cliente: "Antonio Rossi", indirizzo: "Via G. Barrio, 8", fase: "sopralluogo", vani: [], sistema: "", colTelaio: "", colAccessori: "", creato: "8 Feb", aggiornato: "8 Feb", alert: "Nessun vano inserito", log: [] },
+];
 
-/* ══════════════════════ INIT DATA ══════════════════════ */
-const INIT_COLORI=[{id:1,nome:"RAL 9010 Bianco",hex:"#f5f5f0",tipo:"ral"},{id:2,nome:"RAL 7016 Antracite",hex:"#383e42",tipo:"ral"},{id:3,nome:"RAL 9005 Nero",hex:"#0e0e10",tipo:"ral"},{id:4,nome:"RAL 8017 Marrone",hex:"#45322e",tipo:"ral"},{id:5,nome:"Noce",hex:"#7a5230",tipo:"legno"},{id:6,nome:"Rovere",hex:"#c8b89a",tipo:"legno"},{id:7,nome:"Douglas",hex:"#9e6b3a",tipo:"legno"}];
-const INIT_FASI=[{id:"sopralluogo",label:"Sopralluogo",icon:"📍",color:"#2563eb"},{id:"preventivo",label:"Preventivo",icon:"📋",color:"#7c3aed"},{id:"conferma",label:"Conferma",icon:"✅",color:"#059669"},{id:"misure",label:"Misure",icon:"📐",color:"#e67e22"},{id:"ordini",label:"Ordini",icon:"📦",color:"#ec4899"},{id:"produzione",label:"Produzione",icon:"⚙️",color:"#f59e0b"},{id:"posa",label:"Posa",icon:"🔧",color:"#059669"},{id:"chiusura",label:"Chiusura",icon:"🏁",color:"#10b981"}];
-const INIT_TEAM=[{id:"fabio",nome:"Fabio",ruolo:"Titolare",compiti:"Sopralluoghi, preventivi",av:"F",col:"#e67e22"},{id:"marco",nome:"Marco",ruolo:"Posatore",compiti:"Posa in opera",av:"M",col:"#2563eb"},{id:"luca",nome:"Luca",ruolo:"Misuratore",compiti:"Rilievo misure",av:"L",col:"#059669"},{id:"sara",nome:"Sara",ruolo:"Ufficio",compiti:"Ordini, documenti",av:"S",col:"#7c3aed"}];
-const INIT_SISTEMI=[{id:1,marca:"Twinsistem",sistema:"CX650",prezzoMq:280,sovRal:35,sovLegno:55,coloriIds:[1,2,3,5]},{id:2,marca:"Schüco",sistema:"AWS 75",prezzoMq:350,sovRal:40,sovLegno:65,coloriIds:[1,2,3,6]},{id:3,marca:"Rehau",sistema:"Geneo",prezzoMq:310,sovRal:38,sovLegno:58,coloriIds:[1,2,4,7]}];
+const TASKS_INIT = [
+  { id: 1, text: "Sopralluogo Via G. Barrio", meta: "Portare metro laser + modulo", time: "09:00", priority: "alta", cm: "CM-0003", done: false },
+  { id: 2, text: "Inserire misure vani CM-0001", meta: "Cliente aspetta preventivo", time: "", priority: "media", cm: "CM-0001", done: false },
+  { id: 3, text: "Chiamare fornitore Schüco", meta: "Confermare data consegna ordine", time: "15:00", priority: "bassa", cm: "CM-0002", done: false },
+  { id: 4, text: "Comprare viti inox 5x60", meta: "Brico — fatto", time: "08:00", priority: "bassa", cm: "", done: true },
+];
 
-const mkP=(fase,fasi)=>{const p={};let f2=false;fasi.forEach(f=>{if(f.id===fase){f2=true;p[f.id]="curr";}else if(!f2)p[f.id]="done";else p[f.id]="todo";});return p;};
-const aiSmF=c=>{const f={...c};const av=a=>a.length?Math.round(a.reduce((s,v)=>s+v,0)/a.length):0;const aL=[c.L1,c.L2,c.L3].filter(Boolean),aH=[c.H1,c.H2,c.H3].filter(Boolean),aD=[c.D1,c.D2,c.D3].filter(Boolean);if(aL.length){const a=av(aL);if(!f.L1)f.L1=a+3;if(!f.L2)f.L2=a;if(!f.L3)f.L3=a-2;}if(aH.length){const a=av(aH);if(!f.H1)f.H1=a+4;if(!f.H2)f.H2=a;if(!f.H3)f.H3=a-3;}if(aD.length){const a=av(aD);if(!f.D1)f.D1=a;if(!f.D2)f.D2=a;if(!f.D3)f.D3=a;}return f;};
-const aiChk=m=>{const w=[];const Ls=[m.L1,m.L2,m.L3].filter(Boolean),Hs=[m.H1,m.H2,m.H3].filter(Boolean);if(Ls.length>=2&&Math.max(...Ls)-Math.min(...Ls)>15)w.push({t:"w",m:`ΔL ${Math.max(...Ls)-Math.min(...Ls)}mm`});if(Hs.length>=2&&Math.max(...Hs)-Math.min(...Hs)>15)w.push({t:"w",m:`ΔH ${Math.max(...Hs)-Math.min(...Hs)}mm`});if(Ls.some(l=>l<300))w.push({t:"e",m:"L<300"});if(!w.length&&(Ls.length||Hs.length))w.push({t:"ok",m:"OK"});return w;};
-const aiScn=()=>({L1:1000+Math.round(Math.random()*800)+3,L2:1000+Math.round(Math.random()*800),L3:1000+Math.round(Math.random()*800)-2,H1:1200+Math.round(Math.random()*1000)+5,H2:1200+Math.round(Math.random()*1000),H3:1200+Math.round(Math.random()*1000)-4,D1:80+Math.round(Math.random()*100),D2:80+Math.round(Math.random()*100),D3:80+Math.round(Math.random()*100),conf:85+Math.round(Math.random()*10)});
-const aiVo=t=>{const r={};const n=t.match(/(\d{3,4})/g);if(n){["L1","L2","L3","H1","H2","H3","D1","D2","D3"].forEach((k,i)=>{if(n[i])r[k]=parseInt(n[i]);});}return r;};
-const getAI=(q)=>{const l=q.toLowerCase();if(l.includes("rossi"))return"📐 Rossi — Misure 2/5";if(l.includes("oggi"))return"📅 08:30 Ferraro\n10:30 Greco\n14:00 Rossi";if(l.includes("stato"))return"📊 5 commesse · 14 vani · 3 task";if(l.includes("prezz"))return"💰 Twinsistem €280/mq\nSchüco €350/mq";return"Chiedi: stato, oggi, prezzi";};
+const MSGS_INIT = [
+  { id: 1, from: "Fornitore Schüco", preview: "Conferma ordine #4521 — materiale pronto per spedizione il 20/02", time: "14:32", cm: "CM-0002", read: false },
+  { id: 2, from: "Mario (posatore)", preview: "Fabio, per la CM-0004 servono i controtelai speciali?", time: "12:15", cm: "CM-0004", read: false },
+  { id: 3, from: "Cliente Rossi", preview: "Grazie per il preventivo, procediamo con l'ordine", time: "Ieri", cm: "", read: true },
+];
 
-export default function App(){
-  const[theme,setTheme]=useState("chiaro");
-  const T=THEMES[theme];
-  const[tab,setTab]=useState("oggi");
-  const[scr,setScr]=useState(null);
-  const[selC,setSelC]=useState(null);
-  const[selV,setSelV]=useState(null);
-  const[colori,setColori]=useState(INIT_COLORI);
-  const[team,setTeam]=useState(INIT_TEAM);
-  const[fasi,setFasi]=useState(INIT_FASI);
-  const[sistemi]=useState(INIT_SISTEMI);
-  const[cantieri,setCantieri]=useState(()=>[
-    {id:1,cliente:"Rossi Mario",ind:"Via Roma 12, Cosenza",tel:"333 1234567",vani:5,fase:"misure",note:"App. 3° piano",sId:1,colTId:1,colAId:1},
-    {id:2,cliente:"Greco Anna",ind:"C.so Mazzini 45, Rende",tel:"328 9876543",vani:3,fase:"preventivo",note:"Cucina + bagni",sId:2,colTId:2,colAId:2},
-    {id:3,cliente:"Ferraro Luigi",ind:"Via Caloprese 8, Cosenza",tel:"347 5551234",vani:8,fase:"sopralluogo",note:"Villa bifamiliare",sId:1,colTId:5,colAId:4},
-    {id:4,cliente:"Bruno Teresa",ind:"Via Popilia 102, Cosenza",tel:"339 4449876",vani:4,fase:"ordini",note:"Attesa colore",sId:3,colTId:3,colAId:3},
-    {id:5,cliente:"Mancini Paolo",ind:"Via Panebianco 33, Cosenza",tel:"366 7773210",vani:6,fase:"produzione",note:"Consegna 15/03",sId:2,colTId:1,colAId:1}
-  ].map(c=>({...c,pipe:mkP(c.fase,INIT_FASI)})));
-  const[vaniL,setVaniL]=useState([
-    {id:1,cId:1,nome:"Soggiorno",tipo:"F2A",stanza:"Soggiorno",mis:{L1:1400,L2:1400,L3:1400,H1:1600,H2:1600,H3:1600,D1:120,D2:120,D3:120},foto:2,done:true,acc:{tapparella:{on:true,colId:1,mis:{L:1400,H:1600}},cassonetto:{on:true,colId:1},zanzariera:{on:false},persiana:{on:false}}},
-    {id:2,cId:1,nome:"Camera",tipo:"PF1A",stanza:"Camera",mis:{L1:900,L2:900,L3:900,H1:2200,H2:2200,H3:2200,D1:100,D2:100,D3:100},foto:1,done:true,acc:{tapparella:{on:false},cassonetto:{on:false},zanzariera:{on:false},persiana:{on:false}}},
-    {id:3,cId:1,nome:"Bagno",tipo:"VAS",stanza:"Bagno",mis:{},foto:0,done:false,acc:{tapparella:{on:false},cassonetto:{on:false},zanzariera:{on:false},persiana:{on:false}}},
-    {id:4,cId:1,nome:"Cucina",tipo:"F2A",stanza:"Cucina",mis:{},foto:0,done:false,acc:{tapparella:{on:false},cassonetto:{on:false},zanzariera:{on:false},persiana:{on:false}}},
-    {id:5,cId:1,nome:"Ingresso",tipo:"BLIND",stanza:"Ingresso",mis:{},foto:0,done:false,acc:{tapparella:{on:false},cassonetto:{on:false},zanzariera:{on:false},persiana:{on:false}}}
+const TEAM_INIT = [
+  { id: 1, nome: "Fabio Cozza", ruolo: "Titolare", compiti: "Gestione commesse, preventivi, rapporti clienti", colore: "#007aff" },
+  { id: 2, nome: "Marco Ferraro", ruolo: "Posatore", compiti: "Sopralluoghi, misure, installazione", colore: "#34c759" },
+  { id: 3, nome: "Sara Greco", ruolo: "Ufficio", compiti: "Ordini, contabilità, assistenza clienti", colore: "#af52de" },
+];
+
+const COLORI_INIT = [
+  { id: 1, nome: "Bianco", code: "RAL 9010", hex: "#f5f5f0", tipo: "RAL" },
+  { id: 2, nome: "Grigio antracite", code: "RAL 7016", hex: "#383e42", tipo: "RAL" },
+  { id: 3, nome: "Nero", code: "RAL 9005", hex: "#0e0e10", tipo: "RAL" },
+  { id: 4, nome: "Marrone", code: "RAL 8014", hex: "#4a3728", tipo: "RAL" },
+  { id: 5, nome: "Noce", code: "Noce", hex: "#6b4226", tipo: "Legno" },
+  { id: 6, nome: "Rovere", code: "Rovere", hex: "#a0784a", tipo: "Legno" },
+];
+
+const SISTEMI_INIT = [
+  { id: 1, marca: "Aluplast", sistema: "Ideal 4000", euroMq: 180, sovRAL: 12, sovLegno: 22, colori: ["RAL 9010", "RAL 7016", "RAL 9005", "Noce"], sottosistemi: ["Classicline", "Roundline"] },
+  { id: 2, marca: "Schüco", sistema: "CT70", euroMq: 280, sovRAL: 15, sovLegno: 25, colori: ["RAL 9010", "RAL 7016", "RAL 9005"], sottosistemi: ["Classic", "Rondo"] },
+  { id: 3, marca: "Rehau", sistema: "S80", euroMq: 220, sovRAL: 12, sovLegno: 20, colori: ["RAL 9010", "RAL 7016", "Noce"], sottosistemi: ["Geneo", "Synego"] },
+  { id: 4, marca: "Finstral", sistema: "FIN-Project", euroMq: 350, sovRAL: 18, sovLegno: 30, colori: ["RAL 9010", "RAL 7016", "RAL 9005", "Rovere"], sottosistemi: ["Nova-line", "Step-line"] },
+];
+
+const VETRI_INIT = [
+  { id: 1, nome: "Doppio basso emissivo", code: "4/16/4 BE", ug: 1.1 },
+  { id: 2, nome: "Triplo basso emissivo", code: "4/12/4/12/4 BE", ug: 0.6 },
+  { id: 3, nome: "Doppio sicurezza", code: "33.1/16/4 BE", ug: 1.1 },
+  { id: 4, nome: "Triplo sicurezza", code: "33.1/12/4/12/4 BE", ug: 0.6 },
+  { id: 5, nome: "Satinato", code: "4/16/4 SAT", ug: 1.1 },
+  { id: 6, nome: "Fonoisolante", code: "44.2/20/6 BE", ug: 1.0 },
+];
+
+const TIPOLOGIE_RAPIDE = [
+  { code: "F1A", label: "Finestra 1 anta", icon: "🪟" },
+  { code: "F2A", label: "Finestra 2 ante", icon: "🪟" },
+  { code: "F3A", label: "Finestra 3 ante", icon: "🪟" },
+  { code: "PF1A", label: "Portafinestra 1 anta", icon: "🚪" },
+  { code: "PF2A", label: "Portafinestra 2 ante", icon: "🚪" },
+  { code: "SC2A", label: "Scorrevole 2 ante", icon: "↔" },
+  { code: "SC4A", label: "Scorrevole 4 ante", icon: "↔" },
+  { code: "ALZSC", label: "Alzante scorrevole", icon: "⬆" },
+  { code: "FISDX", label: "Fisso DX", icon: "▮" },
+  { code: "FISSX", label: "Fisso SX", icon: "▮" },
+  { code: "VAS", label: "Vasistas", icon: "⬇" },
+  { code: "BLI", label: "Porta blindata", icon: "🛡" },
+  { code: "SOPR", label: "Sopraluce", icon: "△" },
+  { code: "MONO", label: "Monoblocco", icon: "⬜" },
+];
+
+const COPRIFILI_INIT = [
+  { id: 1, nome: "Coprifilo piatto 40mm", cod: "CP40" },
+  { id: 2, nome: "Coprifilo piatto 50mm", cod: "CP50" },
+  { id: 3, nome: "Coprifilo piatto 70mm", cod: "CP70" },
+  { id: 4, nome: "Coprifilo angolare 40mm", cod: "CA40" },
+  { id: 5, nome: "Coprifilo a Z 50mm", cod: "CZ50" },
+];
+
+const LAMIERE_INIT = [
+  { id: 1, nome: "Lamiera davanzale 200mm", cod: "LD200" },
+  { id: 2, nome: "Lamiera davanzale 250mm", cod: "LD250" },
+  { id: 3, nome: "Lamiera davanzale 300mm", cod: "LD300" },
+  { id: 4, nome: "Scossalina 150mm", cod: "SC150" },
+  { id: 5, nome: "Scossalina 200mm", cod: "SC200" },
+];
+
+/* ── ICONS SVG ── */
+const Ico = ({ d, s = 20, c = "#888", sw = 1.8 }) => (
+  <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round">{d}</svg>
+);
+const ICO = {
+  home: <><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></>,
+  calendar: <><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></>,
+  chat: <><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></>,
+  settings: <><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></>,
+  back: <><polyline points="15 18 9 12 15 6"/></>,
+  plus: <><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></>,
+  check: <><polyline points="20 6 9 17 4 12"/></>,
+  phone: <><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></>,
+  map: <><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></>,
+  camera: <><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></>,
+  file: <><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></>,
+  send: <><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></>,
+  pen: <><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></>,
+  trash: <><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></>,
+  user: <><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></>,
+  star: <><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></>,
+  alert: <><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></>,
+  search: <><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></>,
+  filter: <><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></>,
+  ai: <><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></>,
+};
+
+/* ── MISURE PUNTI ── */
+const PUNTI_MISURE = [
+  { key: "lAlto", label: "L alto", x: 95, y: 8, color: "acc" },
+  { key: "lCentro", label: "L centro", x: 95, y: 125, color: "acc" },
+  { key: "lBasso", label: "L basso", x: 95, y: 242, color: "acc" },
+  { key: "hSx", label: "H sx", x: 8, y: 125, color: "blue", rot: true },
+  { key: "hCentro", label: "H centro", x: 95, y: 170, color: "blue" },
+  { key: "hDx", label: "H dx", x: 182, y: 125, color: "blue", rot: true },
+  { key: "d1", label: "D1 ↗", x: 50, y: 55, color: "purple" },
+  { key: "d2", label: "D2 ↘", x: 140, y: 55, color: "purple" },
+];
+
+/* ══════════════════════════════════════ */
+/* ══          MAIN COMPONENT          ══ */
+/* ══════════════════════════════════════ */
+
+export default function MastroMisure() {
+  const [theme, setTheme] = useState("chiaro");
+  const T = THEMES[theme];
+  
+  const [tab, setTab] = useState("home");
+  const [cantieri, setCantieri] = useState(CANTIERI_INIT);
+  const [tasks, setTasks] = useState(TASKS_INIT);
+  const [msgs] = useState(MSGS_INIT);
+  const [team, setTeam] = useState(TEAM_INIT);
+  const [coloriDB, setColoriDB] = useState(COLORI_INIT);
+  const [sistemiDB, setSistemiDB] = useState(SISTEMI_INIT);
+  const [vetriDB, setVetriDB] = useState(VETRI_INIT);
+  const [coprifiliDB, setCoprifiliDB] = useState(COPRIFILI_INIT);
+  const [lamiereDB, setLamiereDB] = useState(LAMIERE_INIT);
+  const [favTipologie, setFavTipologie] = useState(["F1A", "F2A", "PF2A", "SC2A", "FISDX", "VAS"]);
+  
+  // Navigation
+  const [selectedCM, setSelectedCM] = useState(null);
+  const [selectedVano, setSelectedVano] = useState(null);
+  const [filterFase, setFilterFase] = useState("tutte");
+  const [searchQ, setSearchQ] = useState("");
+  const [showModal, setShowModal] = useState(null); // 'task' | 'commessa' | 'vano' | null
+  const [settingsTab, setSettingsTab] = useState("generali");
+  const [aiChat, setAiChat] = useState(false);
+  const [aiInput, setAiInput] = useState("");
+  const [aiMsgs, setAiMsgs] = useState([{ role: "ai", text: "Ciao Fabio! Sono MASTRO AI. Chiedimi qualsiasi cosa sulle tue commesse, task o misure." }]);
+  
+  // Send commessa modal
+  const [showSendModal, setShowSendModal] = useState(false);
+  const [sendOpts, setSendOpts] = useState({ misure: true, foto: true, disegno: true, note: true, accessori: true });
+  const [sendConfirm, setSendConfirm] = useState(null);
+  
+  // Vano wizard step
+  const [vanoStep, setVanoStep] = useState(0);
+  const spCanvasRef = useRef(null);
+  const [spDrawing, setSpDrawing] = useState(false); // "sent" | null
+  
+  // Agenda
+  const [agendaView, setAgendaView] = useState("mese"); // "giorno" | "settimana" | "mese"
+  const [selDate, setSelDate] = useState(new Date());
+  const [showNewEvent, setShowNewEvent] = useState(false);
+  const [newEvent, setNewEvent] = useState({ text: "", time: "", tipo: "appuntamento", cm: "", persona: "", date: "" });
+  const [events, setEvents] = useState([
+    { id: 1, text: "Sopralluogo Ferraro", time: "09:00", date: "2026-02-19", tipo: "appuntamento", cm: "CM-0003", persona: "Fabio Cozza", color: "#ff3b30", addr: "Via G. Barrio" },
+    { id: 2, text: "Consegna materiale Bruno", time: "14:00", date: "2026-02-19", tipo: "appuntamento", cm: "CM-0002", persona: "Sara Greco", color: "#007aff", addr: "Via Roma 45, Rende" },
+    { id: 3, text: "Posa Cozza — Camera", time: "16:30", date: "2026-02-19", tipo: "appuntamento", cm: "CM-0004", persona: "Marco Ferraro", color: "#34c759", addr: "Via G. Barrio" },
+    { id: 4, text: "Ritiro vetri Finstral", time: "10:00", date: "2026-02-20", tipo: "task", cm: "", persona: "Marco Ferraro", color: "#ff9500" },
+    { id: 5, text: "Preventivo Rossi", time: "", date: "2026-02-21", tipo: "task", cm: "CM-0001", persona: "Sara Greco", color: "#af52de" },
   ]);
-  const[appunti]=useState([
-    {id:1,cId:3,ora:"08:30",dur:"1h",tipo:"Sopralluogo",date:new Date(OG.getFullYear(),OG.getMonth(),OG.getDate()),color:"#2563eb"},
-    {id:2,cId:2,ora:"10:30",dur:"45min",tipo:"Preventivo",date:new Date(OG.getFullYear(),OG.getMonth(),OG.getDate()),color:"#7c3aed"},
-    {id:3,cId:1,ora:"14:00",dur:"1h30",tipo:"Misure",date:new Date(OG.getFullYear(),OG.getMonth(),OG.getDate()),color:"#e67e22"}
-  ]);
-  const[tasks,setTasks]=useState([{id:1,testo:"Metro laser da Rossi",fatto:false,pri:"alta"},{id:2,testo:"Conferma colore Bruno",fatto:false,pri:"media"},{id:3,testo:"Ordine guarnizioni",fatto:true,pri:"bassa"},{id:4,testo:"Foto difetti Popilia",fatto:false,pri:"alta"}]);
-  const[calV,setCalV]=useState("mese");
-  const[calM,setCalM]=useState(new Date(OG.getFullYear(),OG.getMonth(),1));
-  const[calS,setCalS]=useState(OG);
-  const[mis,setMis]=useState({});
-  const[actM,setActM]=useState(null);
-  const[inpV,setInpV]=useState("");
-  const[accSt,setAccSt]=useState({tapparella:{on:false,colId:null,mis:{}},cassonetto:{on:false,colId:null},zanzariera:{on:false,colId:null,mis:{}},persiana:{on:false,colId:null,mis:{}}});
-  const[drawing,setDrawing]=useState([]);const[isDrw,setIsDrw]=useState(false);const[drwCol,setDrwCol]=useState("#e67e22");const canvasRef=useRef(null);
-  const[showNewCl,setShowNewCl]=useState(false);const[newCl,setNewCl]=useState({nome:"",cognome:"",tel:"",ind:"",sId:1,colTId:1,colAId:1});
-  const[showAI,setShowAI]=useState(false);const[aiIn,setAiIn]=useState("");const[aiChat,setAiChat]=useState([{r:"ai",t:"Ciao! MASTRO AI — chiedi stato, programma, prezzi..."}]);const[aiLoad,setAiLoad]=useState(false);
-  const[showVoice,setShowVoice]=useState(false);const[voiceTxt,setVoiceTxt]=useState("");const[scanRes,setScanRes]=useState(null);const[showAnom,setShowAnom]=useState(false);
-  const[showAddTask,setShowAddTask]=useState(false);const[newTask,setNewTask]=useState("");const[newTaskPri,setNewTaskPri]=useState("media");
-  const[commF,setCommF]=useState("tutte");
-  const[sTab,setSTab]=useState("generali");
-  const[editTeamId,setEditTeamId]=useState(null);const[editTeamData,setEditTeamData]=useState({});
-  const[newColor,setNewColor]=useState({nome:"",hex:"#ffffff",tipo:"ral"});const[showAddColor,setShowAddColor]=useState(false);
-  const[showAddTeam,setShowAddTeam]=useState(false);const[newTeamD,setNewTeamD]=useState({nome:"",ruolo:"",compiti:"",col:"#e67e22"});
-  const[showNewVano,setShowNewVano]=useState(false);const[newVano,setNewVano]=useState({nome:"",tipo:"F2A",stanza:""});
+  
+  // Advance fase notification
+  const [faseNotif, setFaseNotif] = useState(null);
+  
+  // Drawing state
+  const canvasRef = useRef(null);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [penColor, setPenColor] = useState("#1d1d1f");
+  const [penSize, setPenSize] = useState(2);
+  const [drawPaths, setDrawPaths] = useState([]);
 
-  const gCol=id=>colori.find(c=>c.id===id);const gSys=id=>sistemi.find(s=>s.id===id);
-  const ogA=appunti.filter(a=>sameD(a.date,OG));const opT=tasks.filter(t=>!t.fatto).length;
-  const filC=commF==="tutte"?cantieri:cantieri.filter(c=>c.fase===commF);const filled=Object.values(mis).filter(v=>v>0).length;
+  // New task form
+  const [newTask, setNewTask] = useState({ text: "", meta: "", time: "", priority: "media", cm: "" });
+  // New commessa form
+  const [newCM, setNewCM] = useState({ cliente: "", indirizzo: "", sistema: "", colTelaio: "", colAccessori: "", difficoltaSalita: "", foroScale: "", pianoEdificio: "" });
+  // New vano form
+  const [newVano, setNewVano] = useState({ nome: "", tipo: "F1A", stanza: "Soggiorno", piano: "PT", sistema: "", coloreInt: "", coloreEst: "", bicolore: false, coloreAcc: "", vetro: "", telaio: "", telaioAlaZ: "", rifilato: false, rifilSx: "", rifilDx: "", rifilSopra: "", rifilSotto: "", coprifilo: "", lamiera: "" });
+  const [customPiani, setCustomPiani] = useState(["S1", "PT", "P1", "P2", "P3"]);
+  const [showAddPiano, setShowAddPiano] = useState(false);
+  const [newPiano, setNewPiano] = useState("");
 
-  const goBack=()=>{if(scr==="vano"){setScr("cantiere");setSelV(null);setActM(null);setScanRes(null);setShowAnom(false);setShowVoice(false);}else if(scr==="draw")setScr("vano");else{setScr(null);setSelC(null);}};
-  const openC=c=>{setSelC(c);setScr("cantiere");};
-  const openV=v=>{setSelV(v);setMis(v.mis||{});setAccSt(v.acc||{tapparella:{on:false},cassonetto:{on:false},zanzariera:{on:false},persiana:{on:false}});setScanRes(null);setShowAnom(false);setShowVoice(false);setScr("vano");};
-  const sendAI=()=>{if(!aiIn.trim())return;setAiChat(p=>[...p,{r:"user",t:aiIn.trim()}]);const q=aiIn;setAiIn("");setAiLoad(true);setTimeout(()=>{setAiChat(p=>[...p,{r:"ai",t:getAI(q)}]);setAiLoad(false);},500);};
-  const addTask=()=>{if(!newTask.trim())return;setTasks(p=>[...p,{id:Date.now(),testo:newTask.trim(),fatto:false,pri:newTaskPri}]);setNewTask("");setShowAddTask(false);};
-  const addCl=()=>{if(!newCl.nome||!newCl.cognome)return;const nc={id:Date.now(),cliente:`${newCl.cognome} ${newCl.nome}`,ind:newCl.ind||"—",tel:newCl.tel,vani:0,fase:fasi[0].id,note:"",sId:newCl.sId,colTId:newCl.colTId,colAId:newCl.colAId,pipe:mkP(fasi[0].id,fasi)};setCantieri(p=>[...p,nc]);setNewCl({nome:"",cognome:"",tel:"",ind:"",sId:1,colTId:1,colAId:1});setShowNewCl(false);setSelC(nc);setScr("cantiere");};
-  const addVano=()=>{if(!newVano.nome||!selC)return;const nv={id:Date.now(),cId:selC.id,nome:newVano.nome,tipo:newVano.tipo,stanza:newVano.stanza||newVano.nome,mis:{},foto:0,done:false,acc:{tapparella:{on:false},cassonetto:{on:false},zanzariera:{on:false},persiana:{on:false}}};setVaniL(p=>[...p,nv]);setCantieri(p=>p.map(c=>c.id===selC.id?{...c,vani:c.vani+1}:c));setNewVano({nome:"",tipo:"F2A",stanza:""});setShowNewVano(false);};
-  const prevC=c=>{const cv=vaniL.filter(v=>v.cId===c.id);const sy=gSys(c.sId);if(!cv.length||!sy)return null;let tot=0;cv.forEach(v=>{const m=v.mis;const L=Math.max(m.L1||0,m.L2||0,m.L3||0),H=Math.max(m.H1||0,m.H2||0,m.H3||0);if(L&&H){const mq=(L*H)/1e6;let p=mq*sy.prezzoMq;const ct=gCol(c.colTId);if(ct?.tipo==="ral"&&ct.id!==1)p+=mq*sy.sovRal;if(ct?.tipo==="legno")p+=mq*sy.sovLegno;p+=80;tot+=p;}});return{net:Math.round(tot),iva:Math.round(tot*1.22),n:cv.length};};
-  const exportPDF=c=>{const cv=vaniL.filter(v=>v.cId===c.id);const sy=gSys(c.sId);const ct=gCol(c.colTId);const prev=prevC(c);let html=`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Report ${c.cliente}</title><style>*{margin:0;padding:0;box-sizing:border-box;font-family:system-ui}body{padding:40px;color:#111;font-size:14px}h1{font-size:24px;color:#e67e22;margin-bottom:4px}h2{font-size:16px;margin:20px 0 8px;padding-bottom:6px;border-bottom:2px solid #e67e22}.info{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}.info div{padding:8px;background:#f5f5f5;border-radius:6px}.info label{font-size:11px;color:#888;display:block}.info span{font-weight:600}.vano{margin:8px 0;padding:12px;border:1px solid #ddd;border-radius:8px}.vano h3{font-size:14px;margin-bottom:4px}.mis{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:6px 0}.mis div{text-align:center;padding:4px;background:#f0f0f0;border-radius:4px;font-size:12px}.mis div span{font-weight:700;font-family:monospace}.prev{margin:16px 0;padding:16px;background:#fef3c7;border-radius:8px;text-align:center}.prev .tot{font-size:28px;font-weight:800;color:#e67e22}.footer{margin-top:24px;text-align:center;font-size:11px;color:#aaa}</style></head><body>`;
-    html+=`<h1>MASTRO MISURE</h1><p style="color:#888">Report — ${c.cliente}</p><h2>Dati Cliente</h2><div class="info"><div><label>Cliente</label><span>${c.cliente}</span></div><div><label>Indirizzo</label><span>${c.ind}</span></div><div><label>Telefono</label><span>${c.tel||"—"}</span></div><div><label>Fase</label><span>${c.fase}</span></div><div><label>Sistema</label><span>${sy?sy.marca+" "+sy.sistema:"—"}</span></div><div><label>Colore</label><span>${ct?ct.nome:"—"}</span></div></div>`;
-    html+=`<h2>Vani (${cv.length})</h2>`;
-    cv.forEach(v=>{const m=v.mis;html+=`<div class="vano"><h3>${v.done?"✅":"⏳"} ${v.nome} — ${v.tipo}</h3><div class="mis">`;
-      ["L1","L2","L3","H1","H2","H3","D1","D2","D3"].forEach(k=>{html+=`<div>${k}: <span>${m[k]||"—"}</span> mm</div>`;});
-      html+=`</div></div>`;});
-    if(prev)html+=`<div class="prev"><div style="font-size:12px;color:#888">Preventivo (${prev.n} vani)</div><div class="tot">€${prev.iva}</div><div style="font-size:12px;color:#888">IVA inclusa · Netto €${prev.net}</div></div>`;
-    html+=`<div class="footer">Generato: ${new Date().toLocaleString("it-IT")} · MASTRO MISURE</div></body></html>`;
-    const w=window.open("","_blank");if(w){w.document.write(html);w.document.close();setTimeout(()=>w.print(),400);}};
-
-  const getPos=useCallback(e=>{if(!canvasRef.current)return{x:0,y:0};const r=canvasRef.current.getBoundingClientRect();const ct=e.touches?e.touches[0]:e;return{x:ct.clientX-r.left,y:ct.clientY-r.top};},[]);
-  const startD=useCallback(e=>{e.preventDefault();setIsDrw(true);setDrawing(pr=>[...pr,{pts:[getPos(e)],col:drwCol,w:3}]);},[drwCol,getPos]);
-  const moveD=useCallback(e=>{if(!isDrw)return;e.preventDefault();setDrawing(pr=>{const c=[...pr];if(c.length)c[c.length-1]={...c[c.length-1],pts:[...c[c.length-1].pts,getPos(e)]};return c;});},[isDrw,getPos]);
-  const endD=useCallback(()=>setIsDrw(false),[]);
-
-  /* ══════════════════════ STYLES ══════════════════════ */
-  const S={
-    page:{width:"100%",height:"100dvh",background:T.bg,fontFamily:"'Inter',system-ui",color:T.text,display:"flex",flexDirection:"column",position:"relative",overflow:"hidden"},
-    hdr:{padding:"14px 20px",display:"flex",alignItems:"center",gap:14,background:T.bg2,borderBottom:`1px solid ${T.bdr}`,minHeight:60,flexShrink:0},
-    card:{background:T.card,borderRadius:16,border:`1px solid ${T.bdr}`,boxShadow:T.shadow,margin:"0 16px 12px",padding:16},
-    badge:(bg,c)=>({display:"inline-flex",alignItems:"center",gap:4,padding:"4px 10px",borderRadius:8,fontSize:11,fontWeight:600,background:bg,color:c}),
-    btn:(bg,c="#fff")=>({display:"flex",alignItems:"center",justifyContent:"center",gap:8,padding:"14px 24px",borderRadius:14,background:bg,color:c,fontSize:15,fontWeight:700,border:"none",cursor:"pointer",width:"100%",boxShadow:T.shadow}),
-    btnSm:(bg,c)=>({display:"flex",alignItems:"center",gap:4,padding:"8px 14px",borderRadius:10,background:bg,color:c,fontSize:12,fontWeight:600,border:"none",cursor:"pointer"}),
-    inp:{width:"100%",background:T.bg,border:`1px solid ${T.bdr}`,borderRadius:12,padding:"12px 16px",color:T.text,fontSize:14,outline:"none",fontFamily:"'Inter'"},
-    sel:{width:"100%",background:T.bg,border:`1px solid ${T.bdr}`,borderRadius:12,padding:"12px 16px",color:T.text,fontSize:14,outline:"none",fontFamily:"'Inter'",appearance:"auto"},
-    modal:{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",display:"flex",alignItems:"flex-end",justifyContent:"center",zIndex:200,backdropFilter:"blur(4px)"},
-    mBox:{width:"100%",maxWidth:500,background:T.bg2,borderRadius:"24px 24px 0 0",padding:"24px 20px 32px",maxHeight:"85vh",overflow:"auto"},
-    pill:on=>({padding:"8px 18px",borderRadius:24,fontSize:12,fontWeight:600,border:"none",cursor:"pointer",background:on?T.acc:T.w08,color:on?"#fff":T.sub,boxShadow:on?T.shadow:"none",transition:"all 0.2s"}),
-    lbl:{fontSize:11,color:T.sub,fontWeight:600,marginBottom:6,letterSpacing:"0.04em",textTransform:"uppercase"},
-    stat:(accent)=>({background:T.card,borderRadius:16,border:`1px solid ${T.bdr}`,boxShadow:T.shadow,padding:16,flex:1,borderLeft:`4px solid ${accent}`,cursor:"pointer"}),
+  const goBack = () => {
+    if (showRiepilogo) { setShowRiepilogo(false); return; }
+    if (selectedVano) { setSelectedVano(null); setVanoStep(0); return; }
+    if (selectedCM) { setSelectedCM(null); return; }
   };
 
-  return(<>
-    <link href={FONT} rel="stylesheet"/>
-    <style>{`*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}::-webkit-scrollbar{width:0}input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appearance:none}input[type=number]{-moz-appearance:textfield}@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}`}</style>
-    <div style={S.page}>
+  /* ── Helpers ── */
+  const countVani = () => cantieri.reduce((s, c) => s + c.vani.length, 0);
+  const urgentCount = () => cantieri.filter(c => c.alert).length;
+  const readyCount = () => cantieri.filter(c => c.fase === "posa" || c.fase === "chiusura").length;
+  const faseIndex = (fase) => PIPELINE.findIndex(p => p.id === fase);
+  const priColor = (p) => p === "alta" ? T.red : p === "media" ? T.orange : T.sub2;
 
-    {/* ═══ HEADER GLOBALE ═══ */}
-    {!scr&&<div style={{padding:"16px 20px 12px",background:T.grad,display:"flex",alignItems:"center",gap:14,flexShrink:0}}>
-      <div style={{width:42,height:42,borderRadius:14,background:"rgba(255,255,255,0.2)",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:900,fontSize:18,color:"#fff",backdropFilter:"blur(8px)"}}>M</div>
-      <div style={{flex:1}}><div style={{fontSize:18,fontWeight:800,color:"#fff",letterSpacing:"-0.02em"}}>MASTRO MISURE</div><div style={{fontSize:12,color:"rgba(255,255,255,0.7)",fontWeight:500}}>{fmtD(OG)} {OG.getFullYear()}</div></div>
-    </div>}
+  const toggleTask = (id) => setTasks(ts => ts.map(t => t.id === id ? { ...t, done: !t.done } : t));
 
-    {/* ═══ OGGI ═══ */}
-    {!scr&&tab==="oggi"&&<div style={{flex:1,overflow:"auto",padding:"16px 0 8px"}}>
-      {/* Stat cards */}
-      <div style={{display:"flex",gap:10,padding:"0 16px 14px"}}>
-        {[{l:"Appuntamenti",v:ogA.length,c:T.blue,go:"calendario"},{l:"Task aperti",v:opT,c:T.red,go:"task"},{l:"Commesse",v:cantieri.length,c:T.grn,go:"commesse"}].map((s,i)=>(
-          <div key={i} onClick={()=>setTab(s.go)} style={S.stat(s.c)}>
-            <div style={{fontSize:28,fontWeight:800,color:s.c,fontFamily:"'JetBrains Mono'",lineHeight:1}}>{s.v}</div>
-            <div style={{fontSize:11,color:T.sub,fontWeight:500,marginTop:6}}>{s.l}</div>
-          </div>))}
-      </div>
-      {/* Next appointment */}
-      {ogA[0]&&(()=>{const a=ogA[0];const c=cantieri.find(x=>x.id===a.cId);return c?(<div onClick={()=>openC(c)} style={{margin:"0 16px 14px",padding:18,background:T.card,borderRadius:16,boxShadow:T.shadowL,cursor:"pointer",border:`1px solid ${T.bdr}`,position:"relative",overflow:"hidden"}}>
-        <div style={{position:"absolute",top:0,left:0,bottom:0,width:5,background:a.color,borderRadius:"16px 0 0 16px"}}/>
-        <div style={{paddingLeft:8}}>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
-            <div><div style={{fontSize:10,color:T.acc,fontWeight:700,letterSpacing:"0.1em",marginBottom:4}}>PROSSIMO APPUNTAMENTO</div><div style={{fontSize:18,fontWeight:700}}>{c.cliente}</div></div>
-            <div style={{fontSize:24,fontWeight:800,color:a.color,fontFamily:"'JetBrains Mono'"}}>{a.ora}</div>
-          </div>
-          <div style={{fontSize:13,color:T.sub}}>{c.ind}</div>
-          <div style={{marginTop:10,display:"flex",gap:6}}><span style={S.badge(a.color+"15",a.color)}>{a.tipo}</span><span style={S.badge(T.w08,T.sub)}>{a.dur}</span></div>
-        </div>
-      </div>):null;})()}
-      {/* Agenda */}
-      <div style={{padding:"6px 20px 8px",display:"flex",justifyContent:"space-between",alignItems:"center"}}><div style={{fontSize:14,fontWeight:700}}>Agenda oggi</div><div style={{fontSize:11,color:T.acc,fontWeight:600,cursor:"pointer"}} onClick={()=>setTab("calendario")}>Vedi tutto →</div></div>
-      {ogA.map(a=>{const c=cantieri.find(x=>x.id===a.cId);return c?(<div key={a.id} onClick={()=>openC(c)} style={{...S.card,display:"flex",gap:14,alignItems:"center",cursor:"pointer",padding:14}}>
-        <div style={{width:48,height:48,borderRadius:14,background:a.color+"12",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>{fasi.find(f=>f.id===a.tipo?.toLowerCase())?.icon||"📅"}</div>
-        <div style={{flex:1}}><div style={{fontSize:14,fontWeight:600}}>{c.cliente}</div><div style={{fontSize:12,color:T.sub,marginTop:2}}>{a.tipo} · {c.ind}</div></div>
-        <div style={{textAlign:"right"}}><div style={{fontSize:18,fontWeight:800,fontFamily:"'JetBrains Mono'",color:a.color}}>{a.ora}</div><div style={{fontSize:10,color:T.sub}}>{a.dur}</div></div>
-      </div>):null;})}
-      {/* Pipeline summary */}
-      <div style={{padding:"12px 20px 8px"}}><div style={{fontSize:14,fontWeight:700}}>Pipeline</div></div>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,padding:"0 16px 16px"}}>
-      {fasi.map(f=>{const n=cantieri.filter(c=>c.fase===f.id).length;return(<div key={f.id} onClick={()=>{setTab("commesse");setCommF(f.id);}} style={{display:"flex",alignItems:"center",gap:10,padding:"12px 14px",background:T.card,borderRadius:14,border:`1px solid ${T.bdr}`,boxShadow:T.shadow,cursor:"pointer",opacity:n?1:0.4}}>
-        <span style={{fontSize:18}}>{f.icon}</span><span style={{flex:1,fontSize:13,fontWeight:500}}>{f.label}</span>{n>0&&<span style={{fontSize:16,fontWeight:800,color:f.color,fontFamily:"'JetBrains Mono'",background:f.color+"12",padding:"2px 8px",borderRadius:8}}>{n}</span>}
-      </div>);})}
-      </div>
-    </div>}
+  const addTask = () => {
+    if (!newTask.text.trim()) return;
+    setTasks(ts => [...ts, { id: Date.now(), ...newTask, done: false }]);
+    setNewTask({ text: "", meta: "", time: "", priority: "media", cm: "" });
+    setShowModal(null);
+  };
 
-    {/* ═══ CALENDARIO ═══ */}
-    {!scr&&tab==="calendario"&&<><div style={S.hdr}>
-      <div style={{flex:1}}><div style={{fontSize:17,fontWeight:800}}>Calendario</div><div style={{fontSize:12,color:T.sub}}>{MML[calM.getMonth()]} {calM.getFullYear()}</div></div>
-    </div>
-    <div style={{flex:1,overflow:"auto"}}>
-      <div style={{display:"flex",gap:6,padding:"12px 16px 8px"}}>{["giorno","settimana","mese"].map(v=><button key={v} onClick={()=>setCalV(v)} style={S.pill(calV===v)}>{v[0].toUpperCase()+v.slice(1)}</button>)}</div>
-      {calV==="mese"&&(()=>{const yr=calM.getFullYear(),mo=calM.getMonth(),fd=new Date(yr,mo,1).getDay(),dim=new Date(yr,mo+1,0).getDate(),cells=[];for(let i=0;i<(fd===0?6:fd-1);i++)cells.push(null);for(let d=1;d<=dim;d++)cells.push(new Date(yr,mo,d));return(<>
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"4px 20px 10px"}}><div onClick={()=>setCalM(new Date(yr,mo-1,1))} style={{cursor:"pointer",padding:8,borderRadius:10,background:T.w08}}><Ic d={P.back} s={18} c={T.sub}/></div><div style={{fontSize:16,fontWeight:700}}>{MML[mo]} {yr}</div><div onClick={()=>setCalM(new Date(yr,mo+1,1))} style={{cursor:"pointer",padding:8,borderRadius:10,background:T.w08,transform:"rotate(180deg)"}}><Ic d={P.back} s={18} c={T.sub}/></div></div>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:2,padding:"0 16px",textAlign:"center"}}>{["L","M","M","G","V","S","D"].map((g,i)=><div key={i} style={{fontSize:11,color:T.sub2,fontWeight:600,padding:6}}>{g}</div>)}</div>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:2,padding:"0 16px 16px"}}>{cells.map((day,i)=>{if(!day)return<div key={i}/>;const isT=sameD(day,OG),isS=sameD(day,calS);const hA=appunti.some(a=>sameD(a.date,day));return(<div key={i} onClick={()=>setCalS(day)} style={{textAlign:"center",padding:"10px 2px",borderRadius:12,cursor:"pointer",background:isS?T.accBg:isT?T.w08:"transparent"}}><div style={{fontSize:14,fontWeight:isT||isS?700:400,color:isS?T.acc:T.text}}>{day.getDate()}</div>{hA&&<div style={{width:5,height:5,borderRadius:3,background:T.acc,margin:"3px auto 0"}}/>}</div>);})}</div></>);})()}
-      {calV==="settimana"&&(()=>{const st=new Date(calS);st.setDate(st.getDate()-st.getDay()+1);return(<div style={{padding:"8px 16px"}}>{Array.from({length:7},(_,i)=>{const d=new Date(st);d.setDate(st.getDate()+i);const isT=sameD(d,OG);const as=appunti.filter(a=>sameD(a.date,d));return(<div key={i} style={{display:"flex",gap:14,padding:"12px 0",borderBottom:`1px solid ${T.bdr}`}}><div style={{width:50,textAlign:"center"}}><div style={{fontSize:11,color:T.sub}}>{GG[d.getDay()]}</div><div style={{fontSize:20,fontWeight:800,color:isT?T.acc:T.text}}>{d.getDate()}</div></div><div style={{flex:1}}>{as.length?as.map(a=>{const c=cantieri.find(x=>x.id===a.cId);return(<div key={a.id} onClick={()=>c&&openC(c)} style={{padding:"8px 12px",borderRadius:10,background:a.color+"10",borderLeft:`3px solid ${a.color}`,marginBottom:4,cursor:"pointer"}}><div style={{fontSize:13,fontWeight:600}}>{a.ora} — {c?.cliente}</div></div>);}):<div style={{fontSize:12,color:T.sub2,padding:"8px 0"}}>—</div>}</div></div>);})};</div>);})()}
-      {calV==="giorno"&&(<div style={{padding:16}}><div style={{textAlign:"center",marginBottom:20}}><div style={{fontSize:13,color:T.sub}}>{GG[calS.getDay()]}</div><div style={{fontSize:40,fontWeight:900,color:T.acc}}>{calS.getDate()}</div><div style={{fontSize:14,color:T.sub}}>{MML[calS.getMonth()]}</div></div>{appunti.filter(a=>sameD(a.date,calS)).map(a=>{const c=cantieri.find(x=>x.id===a.cId);return(<div key={a.id} onClick={()=>c&&openC(c)} style={{...S.card,cursor:"pointer",borderLeft:`4px solid ${a.color}`}}><div style={{display:"flex",justifyContent:"space-between"}}><div style={{fontSize:16,fontWeight:700}}>{c?.cliente}</div><div style={{fontSize:20,fontWeight:800,fontFamily:"'JetBrains Mono'",color:a.color}}>{a.ora}</div></div><div style={{fontSize:13,color:T.sub,marginTop:4}}>{a.tipo} · {a.dur}</div></div>);})}</div>)}
-    </div></>}
+  const addCommessa = () => {
+    if (!newCM.cliente.trim()) return;
+    const code = "CM-" + String(cantieri.length + 1).padStart(4, "0");
+    const nc = { id: Date.now(), code, cliente: newCM.cliente, indirizzo: newCM.indirizzo, fase: "sopralluogo", vani: [], sistema: newCM.sistema, colTelaio: newCM.colTelaio, colAccessori: newCM.colAccessori, difficoltaSalita: newCM.difficoltaSalita, foroScale: newCM.foroScale, pianoEdificio: newCM.pianoEdificio, creato: "Oggi", aggiornato: "Oggi", log: [{ chi: "Fabio", cosa: "creato la commessa", quando: "Adesso", color: T.sub }] };
+    setCantieri(cs => [nc, ...cs]);
+    setNewCM({ cliente: "", indirizzo: "", sistema: "", colTelaio: "", colAccessori: "" });
+    setShowModal(null);
+    setSelectedCM(nc);
+    setTab("commesse");
+  };
 
-    {/* ═══ TASK ═══ */}
-    {!scr&&tab==="task"&&<><div style={S.hdr}>
-      <div style={{flex:1}}><div style={{fontSize:17,fontWeight:800}}>Task</div><div style={{fontSize:12,color:T.sub}}>{opT} aperti</div></div>
-      <button onClick={()=>setShowAddTask(true)} style={{width:40,height:40,borderRadius:14,background:T.grad,border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:T.shadow}}><Ic d={P.plus} s={20} c="#fff"/></button>
-    </div>
-    <div style={{flex:1,overflow:"auto",padding:"8px 0"}}>
-      {tasks.filter(t=>!t.fatto).length>0&&<div style={{padding:"8px 20px 4px",fontSize:11,fontWeight:700,color:T.sub,letterSpacing:"0.06em"}}>DA FARE</div>}
-      {tasks.filter(t=>!t.fatto).map(t=>(<div key={t.id} style={{...S.card,display:"flex",gap:12,alignItems:"center",padding:14}}>
-        <div onClick={()=>setTasks(ts=>ts.map(x=>x.id===t.id?{...x,fatto:true}:x))} style={{width:26,height:26,borderRadius:9,border:`2.5px solid ${{alta:T.red,media:T.acc,bassa:T.sub2}[t.pri]}`,cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}/>
-        <div style={{flex:1}}><div style={{fontSize:14,fontWeight:500}}>{t.testo}</div></div>
-        <span style={S.badge({alta:T.redLt,media:T.accLt,bassa:T.w08}[t.pri],{alta:T.red,media:T.acc,bassa:T.sub2}[t.pri])}>{t.pri}</span>
-      </div>))}
-      {tasks.filter(t=>t.fatto).length>0&&<div style={{padding:"12px 20px 4px",fontSize:11,fontWeight:700,color:T.sub,letterSpacing:"0.06em"}}>COMPLETATI</div>}
-      {tasks.filter(t=>t.fatto).map(t=>(<div key={t.id} style={{...S.card,display:"flex",gap:12,alignItems:"center",padding:14,opacity:0.45}}>
-        <div style={{width:26,height:26,borderRadius:9,background:T.grnLt,display:"flex",alignItems:"center",justifyContent:"center"}}><Ic d={P.check} s={14} c={T.grn}/></div>
-        <div style={{flex:1,textDecoration:"line-through",fontSize:13,color:T.sub}}>{t.testo}</div>
-      </div>))}
-    </div></>}
+  const addVano = () => {
+    if (!selectedCM) return;
+    const tipObj = TIPOLOGIE_RAPIDE.find(t => t.code === newVano.tipo);
+    const nome = newVano.nome.trim() || `${tipObj?.label || newVano.tipo} ${(selectedCM.vani?.length || 0) + 1}`;
+    const v = { id: Date.now(), nome, tipo: newVano.tipo, stanza: newVano.stanza, piano: newVano.piano, sistema: newVano.sistema, coloreInt: newVano.coloreInt, coloreEst: newVano.coloreEst, bicolore: newVano.bicolore, coloreAcc: newVano.coloreAcc, vetro: newVano.vetro, telaio: newVano.telaio, telaioAlaZ: newVano.telaioAlaZ, rifilato: newVano.rifilato, rifilSx: newVano.rifilSx, rifilDx: newVano.rifilDx, rifilSopra: newVano.rifilSopra, rifilSotto: newVano.rifilSotto, coprifilo: newVano.coprifilo, lamiera: newVano.lamiera, misure: {}, foto: {}, note: "", cassonetto: false, accessori: { tapparella: { attivo: false }, persiana: { attivo: false }, zanzariera: { attivo: false } } };
+    setCantieri(cs => cs.map(c => c.id === selectedCM.id ? { ...c, vani: [...c.vani, v], aggiornato: "Oggi" } : c));
+    setSelectedCM(prev => ({ ...prev, vani: [...prev.vani, v] }));
+    setNewVano(prev => ({ nome: "", tipo: prev.tipo, stanza: "Soggiorno", piano: prev.piano, sistema: prev.sistema, coloreInt: prev.coloreInt, coloreEst: prev.coloreEst, bicolore: prev.bicolore, coloreAcc: prev.coloreAcc, vetro: prev.vetro, telaio: prev.telaio, telaioAlaZ: prev.telaioAlaZ, rifilato: prev.rifilato, rifilSx: prev.rifilSx, rifilDx: prev.rifilDx, rifilSopra: prev.rifilSopra, rifilSotto: prev.rifilSotto, coprifilo: prev.coprifilo, lamiera: prev.lamiera }));
+    setShowModal(null);
+  };
 
-    {/* ═══ COMMESSE ═══ */}
-    {!scr&&tab==="commesse"&&<><div style={S.hdr}>
-      <div style={{flex:1}}><div style={{fontSize:17,fontWeight:800}}>Commesse</div><div style={{fontSize:12,color:T.sub}}>{cantieri.length} attive</div></div>
-      <button onClick={()=>setShowNewCl(true)} style={{width:40,height:40,borderRadius:14,background:T.grad,border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:T.shadow}}><Ic d={P.plus} s={20} c="#fff"/></button>
-    </div>
-    <div style={{flex:1,overflow:"auto",padding:"8px 0"}}>
-      <div style={{display:"flex",gap:6,padding:"4px 16px 10px",overflow:"auto",flexShrink:0}}><button onClick={()=>setCommF("tutte")} style={S.pill(commF==="tutte")}>Tutte ({cantieri.length})</button>{fasi.map(f=>{const n=cantieri.filter(c=>c.fase===f.id).length;if(!n)return null;return<button key={f.id} onClick={()=>setCommF(f.id)} style={{...S.pill(commF===f.id),background:commF===f.id?f.color:"",color:commF===f.id?"#fff":T.sub,whiteSpace:"nowrap"}}>{f.icon} {f.label} ({n})</button>;})}</div>
-      {filC.map(c=>{const fi=fasi.findIndex(f=>f.id===c.fase);const fase=fasi[fi]||fasi[0];const sy=gSys(c.sId);const ct=gCol(c.colTId);return(<div key={c.id} onClick={()=>openC(c)} style={{...S.card,cursor:"pointer",borderLeft:`4px solid ${fase.color}`,padding:16}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
-          <div><div style={{fontSize:16,fontWeight:700}}>{c.cliente}</div><div style={{fontSize:12,color:T.sub,marginTop:2}}>{c.ind}</div></div>
-          <span style={S.badge(fase.color+"15",fase.color)}>{fase.icon} {fase.label}</span>
-        </div>
-        <div style={{display:"flex",gap:3,marginTop:10}}>{fasi.map((f,i)=><div key={f.id} style={{flex:1,height:5,borderRadius:3,background:i<=fi?fase.color+"80":T.w08}}/>)}</div>
-        <div style={{display:"flex",gap:10,marginTop:10,fontSize:12,color:T.sub}}><span style={{fontWeight:700,color:T.text}}>{c.vani} vani</span>{sy&&<span>{sy.marca}</span>}{ct&&<span style={{display:"flex",alignItems:"center",gap:3}}><div style={{width:10,height:10,borderRadius:5,background:ct.hex,border:`1px solid ${T.bdr}`}}/>{ct.nome}</span>}</div>
-      </div>);})}
-    </div></>}
+  const updateMisura = (vanoId, key, value) => {
+    const val = parseInt(value) || 0;
+    setCantieri(cs => cs.map(c => c.id === selectedCM?.id ? {
+      ...c, vani: c.vani.map(v => v.id === vanoId ? { ...v, misure: { ...v.misure, [key]: val } } : v)
+    } : c));
+    if (selectedVano?.id === vanoId) {
+      setSelectedVano(prev => ({ ...prev, misure: { ...prev.misure, [key]: val } }));
+    }
+    setSelectedCM(prev => prev ? ({ ...prev, vani: prev.vani.map(v => v.id === vanoId ? { ...v, misure: { ...v.misure, [key]: val } } : v) }) : prev);
+  };
 
-    {/* ═══ IMPOSTAZIONI ═══ */}
-    {!scr&&tab==="impostazioni"&&<><div style={S.hdr}>
-      <div style={{flex:1}}><div style={{fontSize:17,fontWeight:800}}>Impostazioni</div></div>
-    </div>
-    <div style={{flex:1,overflow:"auto",padding:"8px 0"}}>
-      {/* Profile */}
-      <div style={{padding:"16px 16px 20px",textAlign:"center"}}><div style={{width:72,height:72,borderRadius:24,background:T.grad,display:"flex",alignItems:"center",justifyContent:"center",fontSize:28,fontWeight:900,color:"#fff",margin:"0 auto 12px",boxShadow:T.shadowL}}>F</div><div style={{fontSize:20,fontWeight:800}}>Fabio</div><div style={{fontSize:13,color:T.sub,marginTop:2}}>Walter Cozza Serramenti</div></div>
-      <div style={{display:"flex",gap:6,padding:"0 16px 14px",overflow:"auto",flexShrink:0}}>
-        {[{id:"generali",l:"⚙️ Generali"},{id:"team",l:"👥 Team"},{id:"colori",l:"🎨 Colori"},{id:"pipeline",l:"📊 Pipeline"},{id:"sistemi",l:"🪟 Sistemi"}].map(st=><button key={st.id} onClick={()=>setSTab(st.id)} style={S.pill(sTab===st.id)}>{st.l}</button>)}
-      </div>
+  const toggleAccessorio = (vanoId, acc) => {
+    setCantieri(cs => cs.map(c => c.id === selectedCM?.id ? {
+      ...c, vani: c.vani.map(v => v.id === vanoId ? { ...v, accessori: { ...v.accessori, [acc]: { ...v.accessori[acc], attivo: !v.accessori[acc].attivo } } } : v)
+    } : c));
+    if (selectedVano?.id === vanoId) {
+      setSelectedVano(prev => ({ ...prev, accessori: { ...prev.accessori, [acc]: { ...prev.accessori[acc], attivo: !prev.accessori[acc].attivo } } }));
+    }
+  };
 
-      {sTab==="generali"&&<>
-        <div style={S.card}><div style={S.lbl}>TEMA</div>
-          <div style={{display:"flex",gap:10}}>{Object.entries(THEMES).map(([k,th])=><div key={k} onClick={()=>setTheme(k)} style={{flex:1,padding:14,borderRadius:14,background:th.bg,border:`3px solid ${theme===k?th.acc:"transparent"}`,cursor:"pointer",textAlign:"center",boxShadow:theme===k?th.shadowL:"none",transition:"all 0.2s"}}><div style={{fontSize:22,marginBottom:6}}>{th.emoji}</div><div style={{fontSize:12,fontWeight:700,color:th.text}}>{th.name}</div></div>)}</div>
-        </div>
-        <div style={S.card}><div style={S.lbl}>STATISTICHE</div>
-          {[{l:"Commesse",v:cantieri.length,c:T.blue},{l:"Vani totali",v:cantieri.reduce((s,c)=>s+c.vani,0),c:T.grn},{l:"Task aperti",v:opT,c:T.red},{l:"Colori",v:colori.length,c:T.purple}].map((s,i)=><div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 0",borderBottom:i<3?`1px solid ${T.bdr}`:"none"}}><span style={{fontSize:14,color:T.sub}}>{s.l}</span><span style={{fontSize:16,fontWeight:800,fontFamily:"'JetBrains Mono'",color:s.c}}>{s.v}</span></div>)}
-        </div>
-      </>}
+  const advanceFase = (cmId) => {
+    const FASE_TEAM = { preventivo: "Sara Greco", conferma: "Sara Greco", misure: "Marco Ferraro", ordini: "Sara Greco", produzione: "Marco Ferraro", posa: "Marco Ferraro", chiusura: "Fabio Cozza" };
+    setCantieri(cs => cs.map(c => {
+      if (c.id !== cmId) return c;
+      const idx = faseIndex(c.fase);
+      if (idx < PIPELINE.length - 1) {
+        const next = PIPELINE[idx + 1];
+        return { ...c, fase: next.id, log: [{ chi: "Fabio", cosa: `avanzato a ${next.nome}`, quando: "Adesso", color: next.color }, ...c.log] };
+      }
+      return c;
+    }));
+    if (selectedCM?.id === cmId) {
+      const idx = faseIndex(selectedCM.fase);
+      if (idx < PIPELINE.length - 1) {
+        const next = PIPELINE[idx + 1];
+        const addetto = FASE_TEAM[next.id] || "Fabio Cozza";
+        setSelectedCM(prev => ({ ...prev, fase: next.id, log: [{ chi: "Fabio", cosa: `avanzato a ${next.nome}`, quando: "Adesso", color: next.color }, ...prev.log] }));
+        setFaseNotif({ fase: next.nome, addetto, color: next.color });
+        setTimeout(() => setFaseNotif(null), 4000);
+      }
+    }
+  };
 
-      {sTab==="team"&&<>
-        <div style={{padding:"0 16px 10px",display:"flex",justifyContent:"space-between",alignItems:"center"}}><div style={{fontSize:14,fontWeight:700}}>Team ({team.length})</div><button onClick={()=>setShowAddTeam(true)} style={S.btnSm(T.accBg,T.acc)}>+ Aggiungi</button></div>
-        {team.map(m=><div key={m.id} style={S.card}>
-          {editTeamId===m.id?<>
-            <div style={{marginBottom:10}}><div style={S.lbl}>Nome</div><input value={editTeamData.nome||""} onChange={e=>setEditTeamData(p=>({...p,nome:e.target.value}))} style={S.inp}/></div>
-            <div style={{marginBottom:10}}><div style={S.lbl}>Ruolo</div><input value={editTeamData.ruolo||""} onChange={e=>setEditTeamData(p=>({...p,ruolo:e.target.value}))} style={S.inp}/></div>
-            <div style={{marginBottom:10}}><div style={S.lbl}>Compiti</div><input value={editTeamData.compiti||""} onChange={e=>setEditTeamData(p=>({...p,compiti:e.target.value}))} style={S.inp}/></div>
-            <div style={{display:"flex",gap:8}}>
-              <button onClick={()=>{setTeam(p=>p.map(x=>x.id===m.id?{...x,...editTeamData,av:editTeamData.nome?editTeamData.nome[0].toUpperCase():m.av}:x));setEditTeamId(null);}} style={{...S.btn(T.grad,"#fff"),flex:1,padding:12,fontSize:13}}>✅ Salva</button>
-              <button onClick={()=>setEditTeamId(null)} style={{...S.btn(T.w08,T.sub),flex:1,padding:12,fontSize:13,boxShadow:"none"}}>Annulla</button>
-            </div>
-          </>:<div style={{display:"flex",alignItems:"center",gap:14}}>
-            <div style={{width:44,height:44,borderRadius:16,background:m.col+"18",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,fontWeight:800,color:m.col,border:`2px solid ${m.col}30`,flexShrink:0}}>{m.av}</div>
-            <div style={{flex:1}}><div style={{fontSize:15,fontWeight:600}}>{m.nome}</div><div style={{fontSize:12,color:T.sub,marginTop:2}}>{m.ruolo} · {m.compiti}</div></div>
-            <div style={{display:"flex",gap:6}}>
-              <div onClick={()=>{setEditTeamId(m.id);setEditTeamData({nome:m.nome,ruolo:m.ruolo,compiti:m.compiti});}} style={{cursor:"pointer",padding:6,borderRadius:8,background:T.w08}}><Ic d={P.pencil} s={16} c={T.sub}/></div>
-              {m.id!=="fabio"&&<div onClick={()=>setTeam(p=>p.filter(x=>x.id!==m.id))} style={{cursor:"pointer",padding:6,borderRadius:8,background:T.redLt}}><Ic d={P.trash} s={16} c={T.red}/></div>}
-            </div>
-          </div>}
-        </div>)}
-      </>}
+  const addEvent = () => {
+    if (!newEvent.text.trim()) return;
+    setEvents(ev => [...ev, { id: Date.now(), ...newEvent, date: newEvent.date || selDate.toISOString().split("T")[0], color: newEvent.tipo === "appuntamento" ? "#007aff" : "#ff9500" }]);
+    setNewEvent({ text: "", time: "", tipo: "appuntamento", cm: "", persona: "", date: "" });
+    setShowNewEvent(false);
+  };
 
-      {sTab==="colori"&&<>
-        <div style={{padding:"0 16px 10px",display:"flex",justifyContent:"space-between",alignItems:"center"}}><div style={{fontSize:14,fontWeight:700}}>Catalogo Colori ({colori.length})</div><button onClick={()=>setShowAddColor(true)} style={S.btnSm(T.accBg,T.acc)}>+ Aggiungi</button></div>
-        {["ral","legno"].map(tipo=>{const items=colori.filter(c=>c.tipo===tipo);if(!items.length)return null;return<div key={tipo}>
-          <div style={{padding:"8px 20px 6px",fontSize:11,fontWeight:700,color:T.sub,letterSpacing:"0.06em"}}>{tipo==="ral"?"RAL":"EFFETTO LEGNO"}</div>
-          {items.map(c=><div key={c.id} style={{...S.card,display:"flex",alignItems:"center",gap:12,padding:12}}>
-            <div style={{width:36,height:36,borderRadius:10,background:c.hex,border:`1px solid ${T.bdr}`,flexShrink:0,boxShadow:"inset 0 1px 3px rgba(0,0,0,0.1)"}}/>
-            <div style={{flex:1}}><div style={{fontSize:14,fontWeight:600}}>{c.nome}</div><div style={{fontSize:11,color:T.sub}}>{c.hex}</div></div>
-            <div onClick={()=>setColori(p=>p.filter(x=>x.id!==c.id))} style={{cursor:"pointer",padding:6,borderRadius:8,background:T.redLt}}><Ic d={P.trash} s={16} c={T.red}/></div>
-          </div>)}
-        </div>;})}
-      </>}
+  const sendCommessa = () => {
+    setSendConfirm("sent");
+    setTimeout(() => { setSendConfirm(null); setShowSendModal(false); }, 2500);
+  };
 
-      {sTab==="pipeline"&&<>
-        <div style={{padding:"0 16px 10px"}}><div style={{fontSize:14,fontWeight:700}}>Fasi Pipeline ({fasi.length})</div><div style={{fontSize:12,color:T.sub,marginTop:2}}>Usa ▲▼ per riordinare</div></div>
-        {fasi.map((f,i)=><div key={f.id} style={{...S.card,display:"flex",alignItems:"center",gap:12,padding:12}}>
-          <div style={{width:36,height:36,borderRadius:10,background:f.color+"15",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}}>{f.icon}</div>
-          <div style={{flex:1}}><div style={{fontSize:14,fontWeight:600,color:f.color}}>{f.label}</div></div>
-          <div style={{display:"flex",gap:4}}>
-            {i>0&&<div onClick={()=>{const n=[...fasi];[n[i-1],n[i]]=[n[i],n[i-1]];setFasi(n);}} style={{cursor:"pointer",padding:4,borderRadius:6,background:T.w08,transform:"rotate(180deg)"}}><Ic d={P.down} s={16} c={T.sub}/></div>}
-            {i<fasi.length-1&&<div onClick={()=>{const n=[...fasi];[n[i],n[i+1]]=[n[i+1],n[i]];setFasi(n);}} style={{cursor:"pointer",padding:4,borderRadius:6,background:T.w08}}><Ic d={P.down} s={16} c={T.sub}/></div>}
-          </div>
-        </div>)}
-      </>}
+  const handleAI = () => {
+    if (!aiInput.trim()) return;
+    const q = aiInput.toLowerCase();
+    setAiMsgs(m => [...m, { role: "user", text: aiInput }]);
+    setAiInput("");
+    let resp = "Non ho capito, prova a riformulare la domanda.";
+    if (q.includes("oggi") || q.includes("programma")) {
+      const t = tasks.filter(x => !x.done);
+      resp = `Oggi hai ${t.length} task aperti:\n${t.map((x, i) => `${i + 1}. ${x.text}${x.time ? ` (${x.time})` : ""}`).join("\n")}`;
+    } else if (q.includes("commess") || q.includes("stato") || q.includes("pipeline")) {
+      resp = `Hai ${cantieri.length} commesse:\n${cantieri.map(c => `• ${c.code} ${c.cliente} — ${PIPELINE.find(p => p.id === c.fase)?.nome}`).join("\n")}`;
+    } else if (q.includes("vani") || q.includes("misur")) {
+      resp = `Totale vani: ${countVani()}\nCommesse con vani da misurare:\n${cantieri.filter(c => c.vani.some(v => Object.keys(v.misure || {}).length < 6)).map(c => `• ${c.code}: ${c.vani.filter(v => Object.keys(v.misure || {}).length < 6).length} vani incompleti`).join("\n")}`;
+    } else if (q.includes("urgent") || q.includes("priorit")) {
+      const u = tasks.filter(x => x.priority === "alta" && !x.done);
+      resp = u.length ? `Task urgenti:\n${u.map(x => `• ${x.text}`).join("\n")}` : "Nessun task urgente!";
+    }
+    setTimeout(() => setAiMsgs(m => [...m, { role: "ai", text: resp }]), 300);
+  };
 
-      {sTab==="sistemi"&&<>
-        <div style={{padding:"0 16px 10px"}}><div style={{fontSize:14,fontWeight:700}}>Sistemi ({sistemi.length})</div></div>
-        {sistemi.map(s=><div key={s.id} style={S.card}>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}><div><div style={{fontSize:16,fontWeight:700}}>{s.marca}</div><div style={{fontSize:13,color:T.sub}}>{s.sistema}</div></div><div style={{fontSize:18,fontWeight:800,color:T.acc,fontFamily:"'JetBrains Mono'"}}>{s.prezzoMq}€</div></div>
-          <div style={{display:"flex",gap:10,marginTop:10,fontSize:12}}><span style={S.badge(T.w08,T.sub)}>+€{s.sovRal} RAL</span><span style={S.badge(T.w08,T.sub)}>+€{s.sovLegno} legno</span></div>
-          <div style={{display:"flex",gap:4,marginTop:10,flexWrap:"wrap"}}>{s.coloriIds.map(cid=>{const cl=gCol(cid);return cl?<div key={cid} style={{display:"flex",alignItems:"center",gap:4,padding:"3px 8px",borderRadius:8,background:T.w08,fontSize:11}}><div style={{width:10,height:10,borderRadius:5,background:cl.hex,border:`1px solid ${T.bdr}`}}/>{cl.nome}</div>:null;})}</div>
-        </div>)}
-      </>}
-    </div></>}
+  const exportPDF = () => {
+    if (!selectedCM) return;
+    const cm = selectedCM;
+    let html = `<html><head><title>MASTRO MISURE — ${cm.code}</title><style>body{font-family:Arial,sans-serif;max-width:800px;margin:0 auto;padding:20px}h1{color:#0066cc;border-bottom:3px solid #0066cc;padding-bottom:10px}h2{color:#333;margin-top:30px}.vano{border:1px solid #ddd;border-radius:8px;padding:15px;margin:10px 0;page-break-inside:avoid}.misure-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}.m-item{background:#f5f5f7;padding:6px 10px;border-radius:4px;font-size:13px}.m-label{color:#666;font-size:11px}.m-val{font-weight:700;color:#1d1d1f}.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}.info{color:#666;font-size:13px}@media print{body{padding:0}}</style></head><body>`;
+    html += `<div class="header"><div><h1>MASTRO MISURE</h1><p class="info">Report Misure — ${cm.code}</p></div><div style="text-align:right"><p><strong>${cm.cliente}</strong></p><p class="info">${cm.indirizzo}</p><p class="info">Sistema: ${cm.sistema || "N/D"} | Colore: ${cm.colTelaio || "N/D"}</p></div></div>`;
+    cm.vani.forEach((v, i) => {
+      const m = v.misure || {};
+      html += `<div class="vano"><h3>${i + 1}. ${v.nome} — ${v.tipo} (${v.stanza}, ${v.piano})</h3><div class="misure-grid">`;
+      [["L alto", m.lAlto], ["L centro", m.lCentro], ["L basso", m.lBasso], ["H sinistra", m.hSx], ["H centro", m.hCentro], ["H destra", m.hDx], ["Diag. 1", m.d1], ["Diag. 2", m.d2], ["Spall. SX", m.spSx], ["Spall. DX", m.spDx], ["Architrave", m.arch], ["Dav. int.", m.davInt], ["Dav. est.", m.davEst]].forEach(([l, val]) => {
+        html += `<div class="m-item"><div class="m-label">${l}</div><div class="m-val">${val || "—"} mm</div></div>`;
+      });
+      html += `</div>`;
+      if (v.cassonetto) html += `<p style="margin-top:8px;font-size:13px">Cassonetto: ${v.casH || "—"} × ${v.casP || "—"} mm</p>`;
+      if (v.note) html += `<p style="margin-top:4px;font-size:12px;color:#666">Note: ${v.note}</p>`;
+      html += `</div>`;
+    });
+    html += `<div style="margin-top:40px;border-top:1px solid #ddd;padding-top:20px;display:flex;justify-content:space-between"><div><p class="info">Firma tecnico</p><div style="border-bottom:1px solid #333;width:200px;height:40px"></div></div><div><p class="info">Firma cliente</p><div style="border-bottom:1px solid #333;width:200px;height:40px"></div></div></div>`;
+    html += `<p style="text-align:center;margin-top:30px;color:#999;font-size:11px">Generato da MASTRO MISURE — ${new Date().toLocaleDateString("it-IT")}</p></body></html>`;
+    const w = window.open("", "_blank");
+    w.document.write(html);
+    w.document.close();
+    setTimeout(() => w.print(), 500);
+  };
 
-    {/* ═══ CANTIERE ═══ */}
-    {scr==="cantiere"&&selC&&(()=>{const c=selC;const fi=fasi.findIndex(f=>f.id===c.fase);const fase=fasi[fi]||fasi[0];const cv=vaniL.filter(v=>v.cId===c.id);const sy=gSys(c.sId);const ct=gCol(c.colTId);const ca=gCol(c.colAId);const prev=prevC(c);return(
-      <div style={{display:"flex",flexDirection:"column",height:"100%"}}>
-        <div style={{padding:"14px 20px",display:"flex",alignItems:"center",gap:12,background:T.bg2,borderBottom:`1px solid ${T.bdr}`,flexShrink:0}}>
-          <div onClick={goBack} style={{cursor:"pointer",padding:6,borderRadius:10,background:T.w08}}><Ic d={P.back} s={20} c={T.sub}/></div>
-          <div style={{flex:1}}><div style={{fontSize:17,fontWeight:800}}>{c.cliente}</div><div style={{fontSize:12,color:T.sub}}>{c.ind}</div></div>
-          <button onClick={()=>exportPDF(c)} style={S.btnSm(T.redLt,T.red)}>📄 PDF</button>
-        </div>
-        <div style={{flex:1,overflow:"auto",padding:"12px 0"}}>
-          {/* Pipeline progress */}
-          <div style={{margin:"0 16px 12px",padding:16,background:T.card,borderRadius:16,border:`1px solid ${T.bdr}`,boxShadow:T.shadow}}>
-            <div style={{display:"flex",gap:4,marginBottom:10}}>{fasi.map((f,i)=><div key={f.id} style={{flex:1,textAlign:"center"}}><div style={{height:7,borderRadius:4,background:i<=fi?fase.color:T.w08,marginBottom:4,transition:"all 0.3s"}}/><div style={{fontSize:12}}>{f.icon}</div></div>)}</div>
-            <span style={S.badge(fase.color+"15",fase.color)}>{fase.icon} {fase.label}</span>
-          </div>
-          {/* Info grid */}
-          <div style={{margin:"0 16px 12px",padding:16,background:T.card,borderRadius:16,border:`1px solid ${T.bdr}`,boxShadow:T.shadow}}>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
-              {[{l:"Sistema",v:sy?`${sy.marca} ${sy.sistema}`:"—"},{l:"Colore Telaio",v:ct?.nome||"—",hex:ct?.hex},{l:"Colore Accessori",v:ca?.nome||"—",hex:ca?.hex},{l:"Telefono",v:c.tel||"—"}].map((f,i)=><div key={i} style={{padding:10,background:T.bg,borderRadius:12}}>
-                <div style={{fontSize:10,color:T.sub,fontWeight:600,letterSpacing:"0.04em",marginBottom:4}}>{f.l.toUpperCase()}</div>
-                <div style={{display:"flex",alignItems:"center",gap:6}}>{f.hex&&<div style={{width:14,height:14,borderRadius:6,background:f.hex,border:`1px solid ${T.bdr}`}}/>}<span style={{fontSize:13,fontWeight:600}}>{f.v}</span></div>
-              </div>)}
-            </div>
-            {c.note&&<div style={{marginTop:10,padding:10,background:T.w04,borderRadius:10,fontSize:13,color:T.sub}}>📝 {c.note}</div>}
-          </div>
-          {/* Preventivo */}
-          {prev&&<div style={{margin:"0 16px 12px",padding:16,background:T.purpleLt,borderRadius:16,border:`1px solid ${T.purple}20`,boxShadow:T.shadow}}>
-            <div style={{fontSize:11,fontWeight:700,color:T.purple,letterSpacing:"0.06em",marginBottom:10}}>💰 PREVENTIVO ({prev.n} VANI)</div>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end"}}><div><div style={{fontSize:13,color:T.sub}}>Netto</div><div style={{fontSize:18,fontWeight:700}}>€{prev.net}</div></div><div style={{textAlign:"right"}}><div style={{fontSize:13,color:T.sub}}>IVA inclusa</div><div style={{fontSize:28,fontWeight:900,color:T.purple}}>€{prev.iva}</div></div></div>
-          </div>}
-          {/* Vani */}
-          <div style={{padding:"8px 20px 8px",display:"flex",justifyContent:"space-between",alignItems:"center"}}><div style={{fontSize:14,fontWeight:700}}>Vani ({cv.length})</div><button onClick={()=>setShowNewVano(true)} style={S.btnSm(T.accBg,T.acc)}>+ Nuovo vano</button></div>
-          {cv.map(v=><div key={v.id} onClick={()=>openV(v)} style={{...S.card,display:"flex",gap:12,alignItems:"center",cursor:"pointer",padding:14}}>
-            <div style={{width:44,height:44,borderRadius:14,background:v.done?T.grnLt:T.w08,display:"flex",alignItems:"center",justifyContent:"center"}}>{v.done?<Ic d={P.check} s={22} c={T.grn}/>:<Ic d={P.ruler} s={22} c={T.sub2}/>}</div>
-            <div style={{flex:1}}><div style={{fontSize:14,fontWeight:600}}>{v.nome}</div><div style={{fontSize:12,color:T.sub}}>{v.tipo} · {v.stanza}{v.done?"":" · ⏳ da misurare"}</div></div><Ic d={P.chevR} s={18} c={T.sub2}/>
-          </div>)}
-          {/* Advance */}
-          <div style={{padding:"8px 16px 20px"}}>{fi<fasi.length-1?<button onClick={()=>{const nf=fasi[fi+1].id;const upd=cantieri.map(x=>{if(x.id!==c.id)return x;const np={...x.pipe};np[c.fase]="done";np[nf]="curr";return{...x,fase:nf,pipe:np};});setCantieri(upd);setSelC(upd.find(x=>x.id===c.id));}} style={S.btn(T.grad,"#fff")}>Avanza → {fasi[fi+1].label}</button>:<div style={S.btn(T.grnLt,T.grn)}>✅ COMPLETATA</div>}</div>
-        </div></div>);})()}
+  /* ═══════ STYLES ═══════ */
+  const S = {
+    app: { fontFamily: FF, background: T.bg, color: T.text, maxWidth: 430, margin: "0 auto", minHeight: "100vh", position: "relative", WebkitFontSmoothing: "antialiased" },
+    header: { padding: "14px 16px 12px", background: T.card, borderBottom: `1px solid ${T.bdr}`, display: "flex", alignItems: "center", gap: 10 },
+    headerTitle: { fontSize: 19, fontWeight: 700, letterSpacing: -0.3, color: T.text },
+    headerSub: { fontSize: 12, color: T.sub, marginTop: 1 },
+    section: { margin: "0 16px", padding: "10px 0 4px", display: "flex", justifyContent: "space-between", alignItems: "center" },
+    sectionTitle: { fontSize: 13, fontWeight: 700, color: T.text },
+    sectionBtn: { fontSize: 12, color: T.acc, fontWeight: 600, background: "none", border: "none", cursor: "pointer" },
+    card: { background: T.card, borderRadius: T.r, border: `1px solid ${T.bdr}`, boxShadow: T.cardSh, overflow: "hidden", marginBottom: 8, cursor: "pointer", transition: "box-shadow 0.15s" },
+    cardInner: { padding: "12px 14px" },
+    chip: (active) => ({ padding: "6px 12px", borderRadius: 8, border: `1px solid ${active ? T.acc : T.bdr}`, background: active ? T.acc : T.card, color: active ? "#fff" : T.text, fontSize: 12, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0, transition: "all 0.15s" }),
+    stat: { flex: 1, textAlign: "center", padding: "10px 4px", background: T.card, cursor: "pointer" },
+    statNum: { fontSize: 18, fontWeight: 700 },
+    statLabel: { fontSize: 9, color: T.sub, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.3, marginTop: 1 },
+    badge: (bg, color) => ({ fontSize: 11, fontWeight: 600, padding: "3px 8px", borderRadius: 6, background: bg, color, display: "inline-block" }),
+    input: { width: "100%", padding: "10px 12px", borderRadius: 8, border: `1px solid ${T.bdr}`, background: T.card, fontSize: 14, color: T.text, outline: "none", fontFamily: FF },
+    select: { width: "100%", padding: "10px 12px", borderRadius: 8, border: `1px solid ${T.bdr}`, background: T.card, fontSize: 14, color: T.text, outline: "none", fontFamily: FF },
+    btn: { width: "100%", padding: "14px", borderRadius: 10, border: "none", background: T.acc, color: "#fff", fontSize: 15, fontWeight: 700, cursor: "pointer", fontFamily: FF },
+    btnCancel: { width: "100%", padding: "12px", borderRadius: 10, border: "none", background: "none", color: T.sub, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: FF },
+    tabBar: { position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)", width: "100%", maxWidth: 430, background: T.card + "ee", backdropFilter: "blur(20px)", borderTop: `1px solid ${T.bdr}`, display: "flex", padding: "6px 0 8px", zIndex: 100 },
+    tabItem: (active) => ({ flex: 1, textAlign: "center", padding: "4px 0", cursor: "pointer", opacity: active ? 1 : 0.5, transition: "opacity 0.15s" }),
+    tabLabel: (active) => ({ fontSize: 10, fontWeight: 600, color: active ? T.acc : T.sub, marginTop: 1 }),
+    modal: { position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.4)", zIndex: 200, display: "flex", justifyContent: "center", alignItems: "flex-end" },
+    modalInner: { background: T.card, borderRadius: "16px 16px 0 0", width: "100%", maxWidth: 430, padding: "20px 16px 30px", maxHeight: "85vh", overflowY: "auto" },
+    modalTitle: { fontSize: 17, fontWeight: 700, marginBottom: 16, color: T.text },
+    fieldLabel: { fontSize: 12, fontWeight: 600, color: T.sub, marginBottom: 4, display: "block" },
+    pipeStep: (done, current) => ({ display: "flex", flexDirection: "column", alignItems: "center", minWidth: 52, cursor: "pointer" }),
+    pipeCircle: (done, current, color) => ({ width: current ? 32 : 26, height: current ? 32 : 26, borderRadius: "50%", background: done ? color : "transparent", border: done ? "none" : current ? `3px solid ${color}` : `2px dashed ${T.bdr}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: current ? 14 : 12, boxShadow: current ? `0 0 12px ${color}40` : "none", transition: "all 0.2s" }),
+    pipeLine: (done) => ({ flex: 1, height: 2, background: done ? T.grn : T.bdr, minWidth: 12, alignSelf: "center", marginTop: -14 }),
+    pipeLabel: (current) => ({ fontSize: 9, fontWeight: current ? 700 : 500, color: current ? T.text : T.sub, marginTop: 4, textAlign: "center", maxWidth: 52 }),
+  };
 
-    {/* ═══ VANO ═══ */}
-    {scr==="vano"&&selV&&(()=>{const v=selV;
-      const pts=[{k:"L1",x:95,y:35},{k:"L2",x:95,y:115},{k:"L3",x:95,y:195},{k:"H1",x:30,y:115},{k:"H2",x:95,y:115},{k:"H3",x:160,y:115},{k:"D1",x:185,y:35},{k:"D2",x:185,y:115},{k:"D3",x:185,y:195}];
-      const tap=k=>{setActM(k);setInpV(mis[k]?String(mis[k]):"");};
-      const save=()=>{if(actM&&inpV)setMis(d=>({...d,[actM]:parseInt(inpV)||0}));setActM(null);setInpV("");};
-      return(
-      <div style={{display:"flex",flexDirection:"column",height:"100%"}}>
-        <div style={{padding:"14px 20px",display:"flex",alignItems:"center",gap:12,background:T.bg2,borderBottom:`1px solid ${T.bdr}`,flexShrink:0}}>
-          <div onClick={goBack} style={{cursor:"pointer",padding:6,borderRadius:10,background:T.w08}}><Ic d={P.back} s={20} c={T.sub}/></div>
-          <div style={{flex:1}}><div style={{fontSize:17,fontWeight:800}}>{v.nome}</div><div style={{fontSize:12,color:T.sub}}>{v.tipo} · {filled}/9 misure</div></div>
-          <button onClick={()=>setScr("draw")} style={S.btnSm(T.purpleLt,T.purple)}>✏️ Disegna</button>
-        </div>
-        <div style={{flex:1,overflow:"auto",padding:"8px 0"}}>
-          {/* AI tools */}
-          <div style={{display:"flex",gap:6,padding:"8px 16px",overflow:"auto",flexShrink:0}}>
-            <button onClick={()=>setShowVoice(true)} style={S.btnSm(T.accBg,T.acc)}>🎤 Voce</button>
-            <button onClick={()=>setScanRes(aiScn())} style={S.btnSm(T.blueLt,T.blue)}>📸 Scan</button>
-            <button onClick={()=>setMis(aiSmF(mis))} style={S.btnSm(T.grnLt,T.grn)}>🧠 Fill</button>
-            <button onClick={()=>setShowAnom(!showAnom)} style={S.btnSm(T.redLt,T.red)}>⚠️ Check</button>
-          </div>
-          {showVoice&&<div style={{...S.card,background:T.card2,border:`1px solid ${T.acc}30`}}><div style={{fontSize:11,color:T.acc,fontWeight:700,marginBottom:8}}>🎤 DETTATURA MISURE</div><div style={{display:"flex",gap:8}}><input value={voiceTxt} onChange={e=>setVoiceTxt(e.target.value)} placeholder="1400 1400 1400 1600..." style={{...S.inp,flex:1}}/><button onClick={()=>{if(voiceTxt.trim()){setMis(d=>({...d,...aiVo(voiceTxt)}));setVoiceTxt("");setShowVoice(false);}}} style={S.btnSm(T.acc,"#fff")}>OK</button></div></div>}
-          {scanRes&&<div style={{...S.card,background:T.blueLt,border:`1px solid ${T.blue}25`}}><div style={{fontSize:11,color:T.blue,fontWeight:700,marginBottom:8}}>📸 SCAN — Confidenza {scanRes.conf}%</div><div style={{display:"flex",gap:8}}><button onClick={()=>{setMis(d=>{const n={...d};Object.keys(scanRes).forEach(k=>{if(k.match(/^[LHD]\d$/))n[k]=scanRes[k];});return n;});setScanRes(null);}} style={{...S.btn(T.blue,"#fff"),flex:1,padding:10,fontSize:13}}>✅ Applica</button><button onClick={()=>setScanRes(null)} style={{...S.btn(T.w08,T.sub),flex:1,padding:10,fontSize:13,boxShadow:"none"}}>Ignora</button></div></div>}
-          {showAnom&&<div style={{...S.card}}>{aiChk(mis).map((w,i)=><div key={i} style={{padding:10,marginBottom:4,borderRadius:10,background:w.t==="e"?T.redLt:w.t==="w"?T.accLt:T.grnLt,fontSize:13,fontWeight:600,color:w.t==="e"?T.red:w.t==="w"?T.acc:T.grn}}>{w.t==="ok"?"✅ Tutto OK":w.t==="e"?"🔴 Errore":"⚠️ Attenzione"}: {w.m}</div>)}</div>}
-          {/* Schema vano */}
-          <div style={{padding:"4px 16px 8px",display:"flex",justifyContent:"center"}}><div style={{background:T.card,borderRadius:20,border:`1px solid ${T.bdr}`,boxShadow:T.shadowL,padding:20,width:"100%",maxWidth:420}}>
-            <div style={{fontSize:11,color:T.acc,fontWeight:700,marginBottom:16,textAlign:"center",letterSpacing:"0.1em"}}>📐 SCHEMA VANO</div>
-            <svg viewBox="0 0 220 230" style={{width:"100%"}}>
-              <rect x="22" y="10" width="146" height="200" fill="none" stroke={T.bdrL} strokeWidth="8" rx="3" opacity="0.4"/><rect x="30" y="18" width="130" height="184" fill={T.bg} stroke={T.bdrL} strokeWidth="1.5" rx="2"/>
-              <text x="95" y="6" textAnchor="middle" fill={T.acc} fontSize="9" fontWeight="700">LARGHEZZA</text>
-              <text x="6" y="115" textAnchor="middle" fill={T.blue} fontSize="9" fontWeight="700" transform="rotate(-90,6,115)">ALTEZZA</text>
-              <text x="210" y="115" textAnchor="middle" fill={T.grn} fontSize="9" fontWeight="700" transform="rotate(90,210,115)">PROFONDITÀ</text>
-              {pts.map(p=>{const val=mis[p.k];const col=p.k[0]==="L"?T.acc:p.k[0]==="H"?T.blue:T.grn;return(
-                <g key={p.k} onClick={()=>tap(p.k)} style={{cursor:"pointer"}}>
-                  <circle cx={p.x} cy={p.y} r={val?16:14} fill={val?col+"15":T.w08} stroke={actM===p.k?col:val?col+"50":T.bdr} strokeWidth={actM===p.k?2.5:1.2}/>
-                  <text x={p.x} y={p.y-4} textAnchor="middle" fill={val?col:T.sub2} fontSize="7" fontWeight="700">{p.k}</text>
-                  <text x={p.x} y={p.y+7} textAnchor="middle" fill={val?T.text:T.sub2} fontSize="9" fontWeight="700" fontFamily="'JetBrains Mono'">{val||"—"}</text>
-                </g>);})}
-            </svg>
-          </div></div>
-          {/* Input misura */}
-          {actM&&<div style={{...S.card,background:T.card2,border:`1px solid ${T.acc}30`}}><div style={{fontSize:12,color:T.acc,fontWeight:700,marginBottom:8}}>📏 {actM}</div><div style={{display:"flex",gap:8}}><input type="number" value={inpV} onChange={e=>setInpV(e.target.value)} onKeyDown={e=>e.key==="Enter"&&save()} placeholder="mm" autoFocus style={{flex:1,background:T.bg,border:`1px solid ${T.bdr}`,borderRadius:14,padding:14,color:T.text,fontSize:22,fontFamily:"'JetBrains Mono'",fontWeight:700,outline:"none",textAlign:"center"}}/><button onClick={save} style={{padding:"0 24px",borderRadius:14,background:T.grad,color:"#fff",fontWeight:700,border:"none",cursor:"pointer",fontSize:16,boxShadow:T.shadow}}>OK</button></div></div>}
-          {/* Accessori */}
-          <div style={S.card}>
-            <div style={S.lbl}>ACCESSORI</div>
-            {["tapparella","persiana","zanzariera","cassonetto"].map(acc=>{const a=accSt[acc]||{on:false};const labels={tapparella:"🪟 Tapparella",persiana:"🏠 Persiana",zanzariera:"🦟 Zanzariera",cassonetto:"📦 Cassonetto"};const colors={tapparella:T.blue,persiana:"#fb923c",zanzariera:T.grn,cassonetto:T.purple};return(<div key={acc}>
-              <div onClick={()=>setAccSt(p=>({...p,[acc]:{...p[acc],on:!p[acc]?.on}}))} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 0",cursor:"pointer"}}>
-                <span style={{fontSize:14,fontWeight:a.on?600:400,color:a.on?T.text:T.sub}}>{labels[acc]}</span>
-                <div style={{width:48,height:26,borderRadius:13,background:a.on?colors[acc]:T.w08,padding:2,transition:"all 0.2s"}}><div style={{width:22,height:22,borderRadius:11,background:"#fff",boxShadow:"0 1px 3px rgba(0,0,0,0.15)",transition:"all 0.2s",transform:a.on?"translateX(22px)":"translateX(0)"}}/></div>
+  /* ═══════ CALENDAR STRIP ═══════ */
+  const today = new Date();
+  const calDays = Array.from({ length: 9 }, (_, i) => {
+    const d = new Date(today); d.setDate(d.getDate() + i - 2);
+    return { day: d.getDate(), name: ["Dom", "Lun", "Mar", "Mer", "Gio", "Ven", "Sab"][d.getDay()], isToday: i === 2, hasDot: [0, 2, 4, 6].includes(i) };
+  });
+
+  /* ═══════ PIPELINE COMPONENT ═══════ */
+  const PipelineBar = ({ fase }) => {
+    const idx = faseIndex(fase);
+    return (
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 0, overflowX: "auto", padding: "8px 0", WebkitOverflowScrolling: "touch" }}>
+        {PIPELINE.map((p, i) => {
+          const done = i < idx;
+          const current = i === idx;
+          return (
+            <div key={p.id} style={{ display: "flex", alignItems: "flex-start", flex: i < PIPELINE.length - 1 ? 1 : "none" }}>
+              <div style={S.pipeStep(done, current)}>
+                <div style={S.pipeCircle(done, current, p.color)}>
+                  {done ? <span style={{ color: "#fff", fontSize: 12, fontWeight: 700 }}>✓</span> : <span>{p.ico}</span>}
+                </div>
+                <div style={S.pipeLabel(current)}>{p.nome}</div>
               </div>
-              {a.on&&<div style={{paddingBottom:10,paddingLeft:12,borderLeft:`2px solid ${colors[acc]}30`,marginLeft:10,marginBottom:6}}>
-                <div style={{marginBottom:6}}><div style={{fontSize:11,color:T.sub}}>Colore</div><select value={a.colId||""} onChange={e=>setAccSt(p=>({...p,[acc]:{...p[acc],colId:parseInt(e.target.value)}}))} style={{...S.sel,padding:"8px 12px",fontSize:13}}>
-                  <option value="">—</option>{colori.map(c=><option key={c.id} value={c.id}>{c.nome}</option>)}
-                </select></div>
-                {(acc==="tapparella"||acc==="zanzariera")&&<div style={{display:"flex",gap:8,marginTop:6}}>
-                  <div style={{flex:1}}><div style={{fontSize:11,color:T.sub}}>L (mm)</div><input type="number" value={a.mis?.L||""} onChange={e=>setAccSt(p=>({...p,[acc]:{...p[acc],mis:{...p[acc].mis,L:parseInt(e.target.value)||0}}}))} style={{...S.inp,padding:"8px 12px",fontSize:13}}/></div>
-                  <div style={{flex:1}}><div style={{fontSize:11,color:T.sub}}>H (mm)</div><input type="number" value={a.mis?.H||""} onChange={e=>setAccSt(p=>({...p,[acc]:{...p[acc],mis:{...p[acc].mis,H:parseInt(e.target.value)||0}}}))} style={{...S.inp,padding:"8px 12px",fontSize:13}}/></div>
-                </div>}
-              </div>}
-            </div>);})}
+              {i < PIPELINE.length - 1 && <div style={S.pipeLine(done)} />}
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
+  /* ═══════ VANO SVG SCHEMA ═══════ */
+  const VanoSVG = ({ v, onTap }) => {
+    const m = v.misure || {};
+    return (
+      <svg viewBox="0 0 200 260" style={{ width: "100%", maxWidth: 280, display: "block", margin: "0 auto" }}>
+        {/* Vano outline */}
+        <rect x="30" y="15" width="140" height="220" fill={T.accLt} stroke={T.acc} strokeWidth={1.5} rx={2} />
+        {/* Spallette */}
+        <rect x="15" y="12" width="15" height="226" fill={T.blueLt} stroke={T.blue} strokeWidth={0.5} rx={1} strokeDasharray="3,2" />
+        <rect x="170" y="12" width="15" height="226" fill={T.blueLt} stroke={T.blue} strokeWidth={0.5} rx={1} strokeDasharray="3,2" />
+        {/* Cassonetto */}
+        {v.cassonetto && <rect x="28" y="0" width="144" height="15" fill={T.orangeLt} stroke={T.orange} strokeWidth={0.5} rx={2} />}
+        {v.cassonetto && <text x="100" y="11" textAnchor="middle" fontSize={7} fill={T.orange} fontFamily={FM}>CASSONETTO</text>}
+        {/* Davanzale */}
+        <line x1="25" y1="237" x2="175" y2="237" stroke={T.sub2} strokeWidth={1} strokeDasharray="4,3" />
+        <text x="100" y="252" textAnchor="middle" fontSize={8} fill={T.sub2} fontFamily={FM}>Davanzale</text>
+        {/* 3 Larghezze lines */}
+        <line x1="35" y1="28" x2="165" y2="28" stroke={T.acc + "40"} strokeWidth={0.5} strokeDasharray="3,3" />
+        <line x1="35" y1="125" x2="165" y2="125" stroke={T.acc + "40"} strokeWidth={0.5} strokeDasharray="3,3" />
+        <line x1="35" y1="222" x2="165" y2="222" stroke={T.acc + "40"} strokeWidth={0.5} strokeDasharray="3,3" />
+        {/* 3 Altezze lines */}
+        <line x1="35" y1="20" x2="35" y2="232" stroke={T.blue + "40"} strokeWidth={0.5} strokeDasharray="3,3" />
+        <line x1="100" y1="20" x2="100" y2="232" stroke={T.blue + "40"} strokeWidth={0.5} strokeDasharray="3,3" />
+        <line x1="165" y1="20" x2="165" y2="232" stroke={T.blue + "40"} strokeWidth={0.5} strokeDasharray="3,3" />
+        {/* Diagonals */}
+        <line x1="35" y1="20" x2="165" y2="232" stroke={T.purple + "30"} strokeWidth={0.5} strokeDasharray="4,3" />
+        <line x1="165" y1="20" x2="35" y2="232" stroke={T.purple + "30"} strokeWidth={0.5} strokeDasharray="4,3" />
+        {/* Tap points */}
+        {PUNTI_MISURE.map(p => {
+          const val = m[p.key];
+          const col = T[p.color] || T.acc;
+          return (
+            <g key={p.key} onClick={() => onTap && onTap(p.key)} style={{ cursor: "pointer" }}>
+              <circle cx={p.x} cy={p.y} r={val ? 14 : 12} fill={val ? col + "20" : T.bdr + "60"} stroke={val ? col : T.sub2} strokeWidth={val ? 1.5 : 1} />
+              <text x={p.x} y={p.y + (val ? 1 : 4)} textAnchor="middle" fontSize={val ? 8 : 7} fill={val ? col : T.sub} fontWeight={val ? 700 : 500} fontFamily={FM} dominantBaseline="middle">
+                {val || p.label}
+              </text>
+            </g>
+          );
+        })}
+        {/* Spalletta labels */}
+        <text x="22" y="130" textAnchor="middle" fontSize={7} fill={T.sub} fontFamily={FM} transform="rotate(-90,22,130)">
+          Sp.SX {m.spSx || ""}
+        </text>
+        <text x="178" y="130" textAnchor="middle" fontSize={7} fill={T.sub} fontFamily={FM} transform="rotate(90,178,130)">
+          Sp.DX {m.spDx || ""}
+        </text>
+      </svg>
+    );
+  };
+
+  /* ═══════ FILTERED CANTIERI ═══════ */
+  const filtered = cantieri.filter(c => {
+    if (filterFase !== "tutte" && c.fase !== filterFase) return false;
+    if (searchQ && !c.cliente.toLowerCase().includes(searchQ.toLowerCase()) && !c.code.toLowerCase().includes(searchQ.toLowerCase())) return false;
+    return true;
+  });
+
+  /* ════════════════════════════════════ */
+  /* ════       RENDER SECTIONS       ══ */
+  /* ════════════════════════════════════ */
+
+  /* ── HOME TAB ── */
+  const renderHome = () => (
+    <div style={{ paddingBottom: 80 }}>
+      {/* Header */}
+      <div style={{ padding: "14px 16px 12px", background: T.card, borderBottom: `1px solid ${T.bdr}` }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+          <div>
+            <div style={{ fontSize: 19, fontWeight: 700, letterSpacing: -0.3 }}>Buongiorno, Fabio</div>
+            <div style={{ fontSize: 12, color: T.sub, marginTop: 1 }}>
+              {today.toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+            </div>
           </div>
-          <div style={{padding:"0 16px 8px"}}><button style={{...S.btn(T.blueLt,T.blue),borderRadius:14,boxShadow:"none"}}><Ic d={P.camera} s={18} c={T.blue}/> Foto ({v.foto})</button></div>
-          <div style={{padding:"0 16px 24px"}}><button style={S.btn(T.grad,"#fff")}>✅ SALVA MISURE</button></div>
-        </div></div>);})()}
-
-    {/* ═══ DRAW ═══ */}
-    {scr==="draw"&&<div style={{display:"flex",flexDirection:"column",height:"100%"}}>
-      <div style={{padding:"14px 20px",display:"flex",alignItems:"center",gap:12,background:T.bg2,borderBottom:`1px solid ${T.bdr}`,flexShrink:0}}>
-        <div onClick={goBack} style={{cursor:"pointer",padding:6,borderRadius:10,background:T.w08}}><Ic d={P.back} s={20} c={T.sub}/></div>
-        <div style={{flex:1}}><div style={{fontSize:17,fontWeight:800}}>Disegno Vano</div></div>
+          <div style={{ textAlign: "right" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ fontSize: 22 }}>⛅</span>
+              <span style={{ fontSize: 20, fontWeight: 600 }}>12°</span>
+            </div>
+            <div style={{ fontSize: 11, color: T.sub }}>Cosenza</div>
+          </div>
+        </div>
       </div>
-      <div style={{display:"flex",alignItems:"center",gap:8,padding:"10px 16px",background:T.bg2,borderBottom:`1px solid ${T.bdr}`}}>
-        {[T.acc,T.blue,T.red,T.grn,T.purple,"#333"].map(c=><div key={c} onClick={()=>setDrwCol(c)} style={{width:30,height:30,borderRadius:15,background:c,border:drwCol===c?"3px solid #fff":"2px solid transparent",cursor:"pointer",boxShadow:drwCol===c?T.shadow:"none"}}/>)}
-        <div style={{flex:1}}/><div onClick={()=>setDrawing(p=>p.slice(0,-1))} style={{cursor:"pointer",padding:6,borderRadius:8,background:T.w08}}><Ic d={P.undo} s={20} c={T.sub}/></div><div onClick={()=>setDrawing([])} style={{cursor:"pointer",padding:6,borderRadius:8,background:T.redLt}}><Ic d={P.trash} s={20} c={T.red}/></div>
+
+      {/* Calendar strip */}
+      <div style={{ display: "flex", gap: 4, padding: "12px 16px", overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+        {calDays.map((d, i) => (
+          <div key={i} style={{ textAlign: "center", padding: "8px 6px", borderRadius: 10, minWidth: 44, cursor: "pointer", background: d.isToday ? T.text : "transparent", flexShrink: 0 }}>
+            <div style={{ fontSize: 10, color: d.isToday ? T.bg : T.sub, fontWeight: 600, textTransform: "uppercase" }}>{d.name}</div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: d.isToday ? T.bg : T.text, marginTop: 2 }}>{d.day}</div>
+            {d.hasDot && <div style={{ width: 4, height: 4, borderRadius: "50%", background: d.isToday ? T.bg : T.red, margin: "2px auto 0" }} />}
+          </div>
+        ))}
       </div>
-      <div ref={canvasRef} onMouseDown={startD} onMouseMove={moveD} onMouseUp={endD} onTouchStart={startD} onTouchMove={moveD} onTouchEnd={endD} style={{flex:1,background:T.card,position:"relative",touchAction:"none",cursor:"crosshair"}}>
-        <svg style={{position:"absolute",inset:0,width:"100%",height:"100%"}}>{drawing.map((s,i)=>s.pts.length>1&&<polyline key={i} points={s.pts.map(p=>`${p.x},${p.y}`).join(" ")} fill="none" stroke={s.col} strokeWidth={s.w} strokeLinecap="round" strokeLinejoin="round"/>)}</svg>
-        {!drawing.length&&<div style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)",textAlign:"center",color:T.sub2}}><div style={{fontSize:48}}>✏️</div><div style={{fontSize:15,marginTop:10}}>Tocca e disegna</div></div>}
+
+      {/* Stats */}
+      <div style={{ display: "flex", gap: 1, margin: "0 16px 12px", background: T.bdr, borderRadius: 10, overflow: "hidden" }}>
+        {[
+          { n: cantieri.length, l: "Attive", c: T.text },
+          { n: urgentCount(), l: "Urgenti", c: T.red },
+          { n: countVani(), l: "Vani", c: T.text },
+          { n: readyCount(), l: "Pronte", c: T.grn },
+        ].map((s, i) => (
+          <div key={i} style={S.stat}>
+            <div style={{ ...S.statNum, color: s.c }}>{s.n}</div>
+            <div style={S.statLabel}>{s.l}</div>
+          </div>
+        ))}
       </div>
-      <div style={{padding:"10px 16px 14px",background:T.bg2}}><button onClick={goBack} style={S.btn(T.grad,"#fff")}>✅ Salva disegno</button></div>
-    </div>}
 
-    {/* ═══ TAB BAR ═══ */}
-    {!scr&&<div style={{display:"flex",borderTop:`1px solid ${T.bdr}`,background:T.bg2,padding:"6px 0 max(env(safe-area-inset-bottom),8px)",flexShrink:0,boxShadow:"0 -2px 8px rgba(0,0,0,0.04)"}}>
-      {[{id:"oggi",l:"Oggi",em:"🏠"},{id:"calendario",l:"Calendario",em:"📅"},{id:"task",l:"Task",em:"📋"},{id:"commesse",l:"Commesse",em:"📦"},{id:"impostazioni",l:"Imp.",em:"⚙️"}].map(t=><div key={t.id} onClick={()=>setTab(t.id)} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:3,padding:"4px 0",cursor:"pointer",position:"relative"}}>
-        <div style={{fontSize:20,filter:tab===t.id?"none":"grayscale(0.7) opacity(0.5)",transition:"all 0.2s"}}>{t.em}</div>
-        <div style={{fontSize:10,fontWeight:tab===t.id?700:400,color:tab===t.id?T.acc:T.sub2}}>{t.l}</div>
-        {tab===t.id&&<div style={{position:"absolute",top:-1,left:"30%",right:"30%",height:3,borderRadius:2,background:T.acc}}/>}
-        {t.id==="task"&&opT>0&&<div style={{position:"absolute",top:0,right:"50%",marginRight:-20,width:18,height:18,borderRadius:9,background:T.red,fontSize:10,fontWeight:700,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center"}}>{opT}</div>}
-      </div>)}
-    </div>}
-
-    {/* ═══ AI FAB ═══ */}
-    {!showAI&&<button onClick={()=>setShowAI(true)} style={{position:"absolute",bottom:scr?24:76,right:20,width:52,height:52,borderRadius:18,background:`linear-gradient(135deg,${T.purple},#5b21b6)`,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 4px 20px rgba(124,58,237,0.4)",cursor:"pointer",border:"none",zIndex:100}}><Ic d={P.ai} s={24} c="#fff"/></button>}
-
-    {/* ═══ AI CHAT ═══ */}
-    {showAI&&<div style={{position:"absolute",inset:0,background:T.bg,display:"flex",flexDirection:"column",zIndex:150}}>
-      <div style={{padding:"14px 20px",display:"flex",alignItems:"center",gap:12,background:`linear-gradient(135deg,${T.purple}10,${T.bg2})`,borderBottom:`1px solid ${T.bdr}`}}>
-        <div onClick={()=>setShowAI(false)} style={{cursor:"pointer",padding:6,borderRadius:10,background:T.w08}}><Ic d={P.close} s={20} c={T.sub}/></div>
-        <div style={{width:36,height:36,borderRadius:14,background:`linear-gradient(135deg,${T.purple},#5b21b6)`,display:"flex",alignItems:"center",justifyContent:"center"}}><Ic d={P.ai} s={20} c="#fff"/></div>
-        <div style={{flex:1}}><div style={{fontSize:17,fontWeight:800}}>MASTRO AI</div></div>
+      {/* Tasks oggi */}
+      <div style={S.section}>
+        <div style={S.sectionTitle}>Oggi</div>
+        <button style={S.sectionBtn} onClick={() => setShowModal("task")}>+ Nuovo</button>
       </div>
-      <div style={{display:"flex",gap:6,padding:"10px 16px",overflow:"auto",flexShrink:0}}>
-        {["Oggi","Stato","Rossi","Prezzi"].map(q=><button key={q} onClick={()=>{setAiChat(p=>[...p,{r:"user",t:q}]);setAiLoad(true);setTimeout(()=>{setAiChat(p=>[...p,{r:"ai",t:getAI(q)}]);setAiLoad(false);},500);}} style={S.btnSm(T.w08,T.sub)}>{q}</button>)}
+      <div style={{ padding: "0 16px", marginBottom: 12 }}>
+        <div style={{ background: T.card, borderRadius: T.r, border: `1px solid ${T.bdr}`, overflow: "hidden" }}>
+          {tasks.map(t => (
+            <div key={t.id} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "12px 14px", borderBottom: `1px solid ${T.bg}`, cursor: "pointer" }}>
+              <div style={{ width: 3, borderRadius: 2, alignSelf: "stretch", flexShrink: 0, background: t.done ? T.bdr : priColor(t.priority) }} />
+              <div onClick={() => toggleTask(t.id)} style={{ width: 20, height: 20, border: `2px solid ${t.done ? T.grn : T.bdr}`, borderRadius: "50%", flexShrink: 0, marginTop: 1, cursor: "pointer", background: t.done ? T.grn : "transparent", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, color: "#fff", fontWeight: 700, transition: "all 0.15s" }}>
+                {t.done && "✓"}
+              </div>
+              <div style={{ fontSize: 11, color: T.sub, fontWeight: 500, minWidth: 42 }}>{t.time}</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: t.done ? T.sub : T.text, textDecoration: t.done ? "line-through" : "none", lineHeight: 1.3 }}>{t.text}</div>
+                <div style={{ fontSize: 11, color: T.sub, marginTop: 2 }}>{t.meta}</div>
+                {t.cm && <span style={S.badge(T.accLt, T.acc)}>{t.cm}</span>}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
-      <div style={{flex:1,overflow:"auto",padding:16,display:"flex",flexDirection:"column",gap:12}}>
-        {aiChat.map((m,i)=><div key={i} style={{display:"flex",justifyContent:m.r==="user"?"flex-end":"flex-start"}}><div style={{maxWidth:"85%",padding:"14px 18px",borderRadius:18,borderBottomRightRadius:m.r==="user"?4:18,borderBottomLeftRadius:m.r==="user"?18:4,background:m.r==="user"?T.accBg:T.card,border:`1px solid ${m.r==="user"?T.acc+"30":T.bdr}`,boxShadow:T.shadow}}><div style={{fontSize:14,lineHeight:1.7,whiteSpace:"pre-wrap"}}>{m.t}</div></div></div>)}
-        {aiLoad&&<div style={{display:"flex",gap:6,padding:12}}>{[0,1,2].map(i=><div key={i} style={{width:8,height:8,borderRadius:4,background:T.purple,animation:`pulse 1s ${i*0.2}s infinite`}}/>)}</div>}
+
+      {/* Messaggi */}
+      <div style={S.section}>
+        <div style={S.sectionTitle}>Messaggi</div>
+        <button style={S.sectionBtn}>Vedi tutti</button>
       </div>
-      <div style={{padding:"10px 16px 14px",background:T.bg2,borderTop:`1px solid ${T.bdr}`,display:"flex",gap:8}}><input value={aiIn} onChange={e=>setAiIn(e.target.value)} onKeyDown={e=>e.key==="Enter"&&sendAI()} placeholder="Chiedi..." style={{...S.inp,flex:1}}/><button onClick={sendAI} style={{width:48,height:48,borderRadius:16,background:aiIn.trim()?T.purple:T.w08,border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:aiIn.trim()?T.shadow:"none"}}><Ic d={P.send} s={20} c={aiIn.trim()?"#fff":T.sub2}/></button></div>
-    </div>}
+      <div style={{ padding: "0 16px", marginBottom: 12 }}>
+        <div style={{ background: T.card, borderRadius: T.r, border: `1px solid ${T.bdr}`, overflow: "hidden" }}>
+          {msgs.map(m => (
+            <div key={m.id} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "12px 14px", borderBottom: `1px solid ${T.bg}`, cursor: "pointer" }}>
+              <div style={{ width: 8, height: 8, borderRadius: "50%", background: m.read ? "transparent" : T.acc, flexShrink: 0, marginTop: 5 }} />
+              <div style={{ flex: 1 }}>
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: m.read ? T.sub : T.text }}>{m.from}</div>
+                  <div style={{ fontSize: 10, color: T.sub }}>{m.time}</div>
+                </div>
+                <div style={{ fontSize: 12, color: T.sub, marginTop: 1, lineHeight: 1.3 }}>{m.preview}</div>
+                {m.cm && <span style={{ ...S.badge(T.accLt, T.acc), marginTop: 3 }}>{m.cm}</span>}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
 
-    {/* ═══ MODALS ═══ */}
-    {showNewCl&&<div style={S.modal} onClick={()=>setShowNewCl(false)}><div style={S.mBox} onClick={e=>e.stopPropagation()}>
-      <div style={{fontSize:18,fontWeight:800,marginBottom:20}}>Nuova Commessa</div>
-      {[{l:"Cognome *",k:"cognome"},{l:"Nome *",k:"nome"},{l:"Telefono",k:"tel"},{l:"Indirizzo",k:"ind"}].map(f=><div key={f.k} style={{marginBottom:14}}><div style={S.lbl}>{f.l}</div><input value={newCl[f.k]} onChange={e=>setNewCl(p=>({...p,[f.k]:e.target.value}))} style={S.inp}/></div>)}
-      <div style={{marginBottom:14}}><div style={S.lbl}>Sistema</div><select value={newCl.sId} onChange={e=>setNewCl(p=>({...p,sId:parseInt(e.target.value)}))} style={S.sel}>{sistemi.map(s=><option key={s.id} value={s.id}>{s.marca} {s.sistema}</option>)}</select></div>
-      <div style={{marginBottom:14}}><div style={S.lbl}>Colore Telaio</div><select value={newCl.colTId} onChange={e=>setNewCl(p=>({...p,colTId:parseInt(e.target.value)}))} style={S.sel}>{colori.map(c=><option key={c.id} value={c.id}>{c.nome}</option>)}</select></div>
-      <div style={{marginBottom:20}}><div style={S.lbl}>Colore Accessori</div><select value={newCl.colAId} onChange={e=>setNewCl(p=>({...p,colAId:parseInt(e.target.value)}))} style={S.sel}>{colori.map(c=><option key={c.id} value={c.id}>{c.nome}</option>)}</select></div>
-      <button onClick={addCl} style={S.btn(T.grad,"#fff")}>Crea Commessa</button>
-    </div></div>}
+      {/* Quick commesse */}
+      <div style={S.section}>
+        <div style={S.sectionTitle}>Commesse</div>
+        <button style={S.sectionBtn} onClick={() => setTab("commesse")}>Vedi tutte</button>
+      </div>
+      {cantieri.slice(0, 3).map(c => renderCMCard(c))}
+    </div>
+  );
 
-    {showAddTask&&<div style={S.modal} onClick={()=>setShowAddTask(false)}><div style={S.mBox} onClick={e=>e.stopPropagation()}>
-      <div style={{fontSize:18,fontWeight:800,marginBottom:20}}>Nuovo Task</div>
-      <div style={{marginBottom:14}}><div style={S.lbl}>Descrizione *</div><input value={newTask} onChange={e=>setNewTask(e.target.value)} style={S.inp}/></div>
-      <div style={{marginBottom:20}}><div style={S.lbl}>Priorità</div><div style={{display:"flex",gap:8}}>{["alta","media","bassa"].map(p=><button key={p} onClick={()=>setNewTaskPri(p)} style={{flex:1,padding:12,borderRadius:12,background:newTaskPri===p?{alta:T.red,media:T.acc,bassa:T.sub2}[p]+"15":"transparent",border:`2px solid ${newTaskPri===p?{alta:T.red,media:T.acc,bassa:T.sub2}[p]:"transparent"}`,color:{alta:T.red,media:T.acc,bassa:T.sub}[p],fontSize:13,fontWeight:600,cursor:"pointer"}}>{p[0].toUpperCase()+p.slice(1)}</button>)}</div></div>
-      <button onClick={addTask} style={S.btn(T.grad,"#fff")}>Aggiungi</button>
-    </div></div>}
+  /* ── COMMESSA CARD ── */
+  const renderCMCard = (c) => {
+    const fase = PIPELINE.find(p => p.id === c.fase);
+    const progress = ((faseIndex(c.fase) + 1) / PIPELINE.length) * 100;
+    return (
+      <div key={c.id} style={{ ...S.card, margin: "0 16px 8px" }} onClick={() => { setSelectedCM(c); setTab("commesse"); }}>
+        <div style={S.cardInner}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: T.sub, fontFamily: FM }}>{c.code}</span>
+                <span style={{ fontSize: 15, fontWeight: 600 }}>{c.cliente}</span>
+              </div>
+              <div style={{ fontSize: 12, color: T.sub, marginTop: 3 }}>{c.indirizzo} · {c.vani.length} vani</div>
+            </div>
+            <span style={S.badge(fase?.color + "18", fase?.color)}>{fase?.nome}</span>
+          </div>
+          {c.alert && <div style={{ ...S.badge(c.alert.includes("Nessun") ? T.orangeLt : T.redLt, c.alert.includes("Nessun") ? T.orange : T.red), marginTop: 6 }}>{c.alert}</div>}
+          <div style={{ height: 3, background: T.bdr, borderRadius: 2, marginTop: 8 }}>
+            <div style={{ height: "100%", borderRadius: 2, background: fase?.color, width: `${progress}%`, transition: "width 0.3s" }} />
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6 }}>
+            <span style={{ fontSize: 10, color: T.sub2 }}>{c.creato} · agg. {c.aggiornato}</span>
+            <span style={{ fontSize: 10, color: T.sub2 }}>{Math.round(progress)}%</span>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
-    {showAddTeam&&<div style={S.modal} onClick={()=>setShowAddTeam(false)}><div style={S.mBox} onClick={e=>e.stopPropagation()}>
-      <div style={{fontSize:18,fontWeight:800,marginBottom:20}}>Nuovo Membro</div>
-      {[{l:"Nome *",k:"nome"},{l:"Ruolo",k:"ruolo"},{l:"Compiti",k:"compiti"}].map(f=><div key={f.k} style={{marginBottom:14}}><div style={S.lbl}>{f.l}</div><input value={newTeamD[f.k]} onChange={e=>setNewTeamD(p=>({...p,[f.k]:e.target.value}))} style={S.inp}/></div>)}
-      <div style={{marginBottom:20}}><div style={S.lbl}>Colore</div><div style={{display:"flex",gap:8}}>{["#e67e22","#2563eb","#059669","#7c3aed","#fb923c","#dc2626"].map(c=><div key={c} onClick={()=>setNewTeamD(p=>({...p,col:c}))} style={{width:40,height:40,borderRadius:14,background:c,border:newTeamD.col===c?"3px solid #fff":"2px solid transparent",cursor:"pointer",boxShadow:newTeamD.col===c?T.shadow:"none"}}/>)}</div></div>
-      <button onClick={()=>{if(!newTeamD.nome)return;setTeam(p=>[...p,{id:Date.now().toString(),nome:newTeamD.nome,ruolo:newTeamD.ruolo,compiti:newTeamD.compiti,av:newTeamD.nome[0].toUpperCase(),col:newTeamD.col}]);setNewTeamD({nome:"",ruolo:"",compiti:"",col:"#e67e22"});setShowAddTeam(false);}} style={S.btn(T.grad,"#fff")}>Aggiungi</button>
-    </div></div>}
+  /* ── COMMESSE TAB ── */
+  const renderCommesse = () => {
+    if (showRiepilogo && selectedCM) return renderRiepilogo();
+    if (selectedVano) return renderVanoDetail();
+    if (selectedCM) return renderCMDetail();
+    return (
+      <div style={{ paddingBottom: 80 }}>
+        <div style={S.header}>
+          <div style={{ flex: 1 }}>
+            <div style={S.headerTitle}>Commesse</div>
+            <div style={S.headerSub}>{cantieri.length} totali</div>
+          </div>
+          <div onClick={() => setShowModal("commessa")} style={{ width: 36, height: 36, borderRadius: 10, background: T.acc, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 20, fontWeight: 300 }}>+</div>
+        </div>
 
-    {showAddColor&&<div style={S.modal} onClick={()=>setShowAddColor(false)}><div style={S.mBox} onClick={e=>e.stopPropagation()}>
-      <div style={{fontSize:18,fontWeight:800,marginBottom:20}}>Nuovo Colore</div>
-      <div style={{marginBottom:14}}><div style={S.lbl}>Nome *</div><input value={newColor.nome} onChange={e=>setNewColor(p=>({...p,nome:e.target.value}))} placeholder="RAL 9016 Bianco" style={S.inp}/></div>
-      <div style={{marginBottom:14}}><div style={S.lbl}>Hex</div><div style={{display:"flex",gap:10,alignItems:"center"}}><input type="color" value={newColor.hex} onChange={e=>setNewColor(p=>({...p,hex:e.target.value}))} style={{width:52,height:44,border:"none",borderRadius:12,cursor:"pointer"}}/><input value={newColor.hex} onChange={e=>setNewColor(p=>({...p,hex:e.target.value}))} style={{...S.inp,flex:1}}/></div></div>
-      <div style={{marginBottom:20}}><div style={S.lbl}>Tipo</div><div style={{display:"flex",gap:8}}>{["ral","legno"].map(t=><button key={t} onClick={()=>setNewColor(p=>({...p,tipo:t}))} style={{flex:1,padding:12,borderRadius:12,background:newColor.tipo===t?T.accBg:"transparent",border:`2px solid ${newColor.tipo===t?T.acc:"transparent"}`,color:newColor.tipo===t?T.acc:T.sub,fontSize:13,fontWeight:600,cursor:"pointer"}}>{t==="ral"?"RAL":"Legno"}</button>)}</div></div>
-      <button onClick={()=>{if(!newColor.nome)return;setColori(p=>[...p,{id:Date.now(),nome:newColor.nome,hex:newColor.hex,tipo:newColor.tipo}]);setNewColor({nome:"",hex:"#ffffff",tipo:"ral"});setShowAddColor(false);}} style={S.btn(T.grad,"#fff")}>Aggiungi</button>
-    </div></div>}
+        {/* Filters */}
+        <div style={{ display: "flex", gap: 6, padding: "10px 16px", overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+          <div style={S.chip(filterFase === "tutte")} onClick={() => setFilterFase("tutte")}>Tutte ({cantieri.length})</div>
+          {PIPELINE.map(p => {
+            const n = cantieri.filter(c => c.fase === p.id).length;
+            return n > 0 ? <div key={p.id} style={S.chip(filterFase === p.id)} onClick={() => setFilterFase(p.id)}>{p.nome} ({n})</div> : null;
+          })}
+        </div>
 
-    {/* ═══ MODAL: Nuovo Vano ═══ */}
-    {showNewVano&&<div style={S.modal} onClick={()=>setShowNewVano(false)}><div style={S.mBox} onClick={e=>e.stopPropagation()}>
-      <div style={{fontSize:18,fontWeight:800,marginBottom:20}}>Nuovo Vano</div>
-      <div style={{marginBottom:14}}><div style={S.lbl}>Nome *</div><input value={newVano.nome} onChange={e=>setNewVano(p=>({...p,nome:e.target.value}))} placeholder="es. Soggiorno, Camera..." style={S.inp}/></div>
-      <div style={{marginBottom:14}}><div style={S.lbl}>Tipo serramento</div><select value={newVano.tipo} onChange={e=>setNewVano(p=>({...p,tipo:e.target.value}))} style={S.sel}>
-        {["F2A","PF1A","VAS","BLIND","SCOR","FISSA","PB"].map(t=><option key={t} value={t}>{t}</option>)}
-      </select></div>
-      <div style={{marginBottom:20}}><div style={S.lbl}>Stanza</div><input value={newVano.stanza} onChange={e=>setNewVano(p=>({...p,stanza:e.target.value}))} placeholder="es. Cucina, Bagno..." style={S.inp}/></div>
-      <button onClick={addVano} style={S.btn(T.grad,"#fff")}>Crea Vano</button>
-    </div></div>}
+        {/* Search */}
+        <div style={{ display: "flex", gap: 8, padding: "0 16px", marginBottom: 10 }}>
+          <input style={{ ...S.input, flex: 1 }} placeholder="Cerca commessa..." value={searchQ} onChange={e => setSearchQ(e.target.value)} />
+        </div>
 
-    </div></>);
+        {filtered.map(c => renderCMCard(c))}
+      </div>
+    );
+  };
+
+  /* ── COMMESSA DETAIL ── */
+  const renderCMDetail = () => {
+    const c = selectedCM;
+    const fase = PIPELINE.find(p => p.id === c.fase);
+    return (
+      <div style={{ paddingBottom: 80 }}>
+        {/* Header */}
+        <div style={S.header}>
+          <div onClick={goBack} style={{ cursor: "pointer", padding: 4 }}><Ico d={ICO.back} s={20} c={T.sub} /></div>
+          <div style={{ flex: 1 }}>
+            <div style={S.headerTitle}>{c.code} · {c.cliente}</div>
+            <div style={S.headerSub}>{c.indirizzo}</div>
+          </div>
+          <div onClick={() => setShowRiepilogo(true)} style={{ padding: "6px 10px", borderRadius: 6, background: T.accLt, cursor: "pointer", marginRight: 6 }}>
+            <span style={{ fontSize: 14 }}>📋</span>
+          </div>
+          <div onClick={exportPDF} style={{ padding: "6px 10px", borderRadius: 6, background: T.redLt, cursor: "pointer" }}>
+            <Ico d={ICO.file} s={16} c={T.red} />
+          </div>
+        </div>
+
+        {/* Info badges */}
+        <div style={{ padding: "8px 16px", display: "flex", gap: 6, flexWrap: "wrap" }}>
+          {c.sistema && <span style={S.badge(T.blueLt, T.blue)}>{c.sistema}</span>}
+          {c.colTelaio && <span style={S.badge(T.purpleLt, T.purple)}>Telaio: {c.colTelaio}</span>}
+          {c.colAccessori && <span style={S.badge(T.orangeLt, T.orange)}>Acc: {c.colAccessori}</span>}
+          {c.difficoltaSalita && <span style={S.badge(c.difficoltaSalita === "facile" ? T.grnLt : c.difficoltaSalita === "media" ? T.orangeLt : T.redLt, c.difficoltaSalita === "facile" ? T.grn : c.difficoltaSalita === "media" ? T.orange : T.red)}>Salita: {c.difficoltaSalita}</span>}
+          {c.pianoEdificio && <span style={S.badge(T.blueLt, T.blue)}>Piano: {c.pianoEdificio}</span>}
+          {c.foroScale && <span style={S.badge(T.redLt, T.red)}>Foro: {c.foroScale}</span>}
+        </div>
+
+        {/* Pipeline */}
+        <div style={{ padding: "4px 16px 0" }}>
+          <PipelineBar fase={c.fase} />
+        </div>
+
+        {/* Advance button */}
+        {faseIndex(c.fase) < PIPELINE.length - 1 && (
+          <div style={{ padding: "0 16px", marginTop: 8, marginBottom: 4 }}>
+            <button onClick={() => advanceFase(c.id)} style={{ ...S.btn, background: fase?.color, fontSize: 13, padding: 10 }}>
+              Avanza a {PIPELINE[faseIndex(c.fase) + 1]?.nome} →
+            </button>
+          </div>
+        )}
+
+        {/* Contact actions */}
+        <div style={{ display: "flex", gap: 8, padding: "12px 16px" }}>
+          {[{ ico: ICO.phone, label: "Chiama", col: T.grn }, { ico: ICO.map, label: "Naviga", col: T.blue }, { ico: ICO.send, label: "WhatsApp", col: "#25d366" }].map((a, i) => (
+            <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4, padding: "10px 0", background: T.card, borderRadius: T.r, border: `1px solid ${T.bdr}`, cursor: "pointer" }}>
+              <Ico d={a.ico} s={18} c={a.col} />
+              <span style={{ fontSize: 10, fontWeight: 600, color: T.sub }}>{a.label}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* INVIA COMMESSA */}
+        <div style={{ padding: "0 16px", marginBottom: 4 }}>
+          <button onClick={() => setShowSendModal(true)} style={{ width: "100%", padding: "12px", borderRadius: 10, border: "none", background: "linear-gradient(135deg, #007aff, #0055cc)", color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: FF, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, boxShadow: "0 2px 8px rgba(0,122,255,0.3)" }}>
+            <Ico d={ICO.send} s={16} c="#fff" sw={2} /> Invia Commessa
+          </button>
+        </div>
+
+        {/* Vani */}
+        <div style={S.section}>
+          <div style={S.sectionTitle}>Vani ({c.vani.length})</div>
+          <button style={S.sectionBtn} onClick={() => setShowModal("vano")}>+ Nuovo vano</button>
+        </div>
+        <div style={{ padding: "0 16px" }}>
+          {c.vani.length === 0 ? (
+            <div onClick={() => setShowModal("vano")} style={{ padding: "20px", textAlign: "center", background: T.card, borderRadius: T.r, border: `1px dashed ${T.bdr}`, cursor: "pointer", color: T.sub, fontSize: 13 }}>
+              Nessun vano. Tocca per aggiungerne uno.
+            </div>
+          ) : c.vani.map(v => {
+            const filled = Object.values(v.misure || {}).filter(x => x > 0).length;
+            const total = 8;
+            const fotoCount = Object.values(v.foto || {}).filter(Boolean).length;
+            return (
+              <div key={v.id} style={{ ...S.card, margin: "0 0 8px" }} onClick={() => setSelectedVano(v)}>
+                <div style={S.cardInner}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div>
+                      <div style={{ fontSize: 14, fontWeight: 600 }}>{v.nome}</div>
+                      <div style={{ fontSize: 11, color: T.sub }}>{v.tipo} · {v.stanza} · {v.piano}</div>
+                    </div>
+                    <div style={{ textAlign: "right" }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: filled >= 6 ? T.grn : T.orange }}>{filled}/{total}</div>
+                      <div style={{ fontSize: 10, color: T.sub }}>misure</div>
+                    </div>
+                  </div>
+                  {/* Tags */}
+                  <div style={{ display: "flex", gap: 4, marginTop: 6, flexWrap: "wrap" }}>
+                    {fotoCount > 0 && <span style={S.badge(T.blueLt, T.blue)}>{fotoCount} foto</span>}
+                    {v.cassonetto && <span style={S.badge(T.orangeLt, T.orange)}>Cassonetto</span>}
+                    {v.accessori?.tapparella?.attivo && <span style={S.badge(T.grnLt, T.grn)}>Tapparella</span>}
+                    {v.accessori?.zanzariera?.attivo && <span style={S.badge(T.purpleLt, T.purple)}>Zanzariera</span>}
+                    {v.note && <span style={S.badge(T.cyanLt, T.cyan)}>Note</span>}
+                  </div>
+                  {/* Progress bar */}
+                  <div style={{ height: 3, background: T.bdr, borderRadius: 2, marginTop: 8 }}>
+                    <div style={{ height: "100%", borderRadius: 2, background: filled >= 6 ? T.grn : T.acc, width: `${(filled / total) * 100}%` }} />
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Timeline/Log */}
+        {c.log && c.log.length > 0 && (
+          <>
+            <div style={{ ...S.section, marginTop: 8 }}>
+              <div style={S.sectionTitle}>Cronologia</div>
+            </div>
+            <div style={{ padding: "0 16px" }}>
+              {c.log.map((l, i) => (
+                <div key={i} style={{ display: "flex", gap: 10, padding: "8px 0" }}>
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                    <div style={{ width: 8, height: 8, borderRadius: "50%", background: l.color, flexShrink: 0 }} />
+                    {i < c.log.length - 1 && <div style={{ width: 1, flex: 1, background: T.bdr, marginTop: 4 }} />}
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 12, color: T.text, lineHeight: 1.3 }}><strong>{l.chi}</strong> {l.cosa}</div>
+                    <div style={{ fontSize: 10, color: T.sub2, marginTop: 1 }}>{l.quando}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+    );
+  };
+
+  /* ── RIEPILOGO COMMESSA (tutte le misure) ── */
+  const [showRiepilogo, setShowRiepilogo] = useState(false);
+  const renderRiepilogo = () => {
+    const c = selectedCM;
+    if (!c) return null;
+    return (
+      <div style={{ paddingBottom: 80 }}>
+        <div style={S.header}>
+          <div onClick={() => setShowRiepilogo(false)} style={{ cursor: "pointer", padding: 4 }}><Ico d={ICO.back} s={20} c={T.sub} /></div>
+          <div style={{ flex: 1 }}>
+            <div style={S.headerTitle}>📋 Riepilogo Misure</div>
+            <div style={S.headerSub}>{c.code} · {c.cliente} · {c.vani.length} vani</div>
+          </div>
+          <div onClick={exportPDF} style={{ padding: "6px 10px", borderRadius: 6, background: T.redLt, cursor: "pointer" }}>
+            <Ico d={ICO.file} s={16} c={T.red} />
+          </div>
+        </div>
+        <div style={{ padding: "12px 16px" }}>
+          {/* Info commessa */}
+          <div style={{ background: T.card, borderRadius: T.r, border: `1px solid ${T.bdr}`, padding: 14, marginBottom: 12 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: T.sub, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>DATI COMMESSA</div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px 16px", fontSize: 12 }}>
+              <span style={{ color: T.sub }}>Indirizzo:</span><span style={{ fontWeight: 600 }}>{c.indirizzo}</span>
+              <span style={{ color: T.sub }}>Sistema:</span><span style={{ fontWeight: 600 }}>{c.sistema || "N/D"}</span>
+              <span style={{ color: T.sub }}>Colore telaio:</span><span style={{ fontWeight: 600 }}>{c.colTelaio || "N/D"}</span>
+              <span style={{ color: T.sub }}>Colore accessori:</span><span style={{ fontWeight: 600 }}>{c.colAccessori || "N/D"}</span>
+            </div>
+          </div>
+
+          {/* Per ogni vano */}
+          {c.vani.map((v, vi) => {
+            const m = v.misure || {};
+            const filled = Object.values(m).filter(x => x > 0).length;
+            return (
+              <div key={v.id} style={{ background: T.card, borderRadius: T.r, border: `1px solid ${T.bdr}`, marginBottom: 10, overflow: "hidden" }}>
+                {/* Vano header */}
+                <div style={{ padding: "10px 14px", background: T.accLt, borderBottom: `1px solid ${T.bdr}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: T.acc }}>{vi + 1}. {v.nome}</span>
+                    <span style={{ fontSize: 12, color: T.sub, marginLeft: 8 }}>{v.tipo} · {v.stanza} · {v.piano}</span>
+                  </div>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: filled >= 6 ? T.grn : T.orange, fontFamily: FM }}>{filled}/8</span>
+                </div>
+                {/* Misure griglia */}
+                <div style={{ padding: 14 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6 }}>
+                    {[["L alto", m.lAlto, T.acc], ["L centro", m.lCentro, T.acc], ["L basso", m.lBasso, T.acc],
+                      ["H sx", m.hSx, T.blue], ["H centro", m.hCentro, T.blue], ["H dx", m.hDx, T.blue]].map(([label, val, col]) => (
+                      <div key={label} style={{ background: val ? col + "10" : T.bg, borderRadius: 6, padding: "6px 8px", textAlign: "center" }}>
+                        <div style={{ fontSize: 9, color: T.sub, fontWeight: 600 }}>{label}</div>
+                        <div style={{ fontSize: 15, fontWeight: 700, color: val ? col : T.sub2, fontFamily: FM }}>{val || "—"}</div>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 6, marginTop: 6 }}>
+                    {[["Diag. 1", m.d1, T.purple], ["Diag. 2", m.d2, T.purple]].map(([label, val, col]) => (
+                      <div key={label} style={{ background: val ? col + "10" : T.bg, borderRadius: 6, padding: "6px 8px", textAlign: "center" }}>
+                        <div style={{ fontSize: 9, color: T.sub, fontWeight: 600 }}>{label}</div>
+                        <div style={{ fontSize: 15, fontWeight: 700, color: val ? col : T.sub2, fontFamily: FM }}>{val || "—"}</div>
+                      </div>
+                    ))}
+                  </div>
+                  {m.d1 > 0 && m.d2 > 0 && Math.abs(m.d1 - m.d2) > 3 && (
+                    <div style={{ marginTop: 6, padding: "4px 8px", borderRadius: 4, background: T.redLt, fontSize: 10, fontWeight: 700, color: T.red }}>⚠️ Fuori squadra: {Math.abs(m.d1 - m.d2)}mm</div>
+                  )}
+                  {/* Spallette + davanzale */}
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6, marginTop: 6 }}>
+                    {[["Sp. SX", m.spSx], ["Architrave", m.arch], ["Sp. DX", m.spDx]].map(([l, val]) => (
+                      <div key={l} style={{ background: T.bg, borderRadius: 6, padding: "4px 8px", textAlign: "center" }}>
+                        <div style={{ fontSize: 8, color: T.sub }}>{l}</div>
+                        <div style={{ fontSize: 12, fontWeight: 700, fontFamily: FM, color: val ? T.text : T.sub2 }}>{val || "—"}</div>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 6, marginTop: 6 }}>
+                    {[["Dav. int.", m.davInt], ["Dav. est.", m.davEst]].map(([l, val]) => (
+                      <div key={l} style={{ background: T.bg, borderRadius: 6, padding: "4px 8px", textAlign: "center" }}>
+                        <div style={{ fontSize: 8, color: T.sub }}>{l}</div>
+                        <div style={{ fontSize: 12, fontWeight: 700, fontFamily: FM, color: val ? T.text : T.sub2 }}>{val || "—"}</div>
+                      </div>
+                    ))}
+                  </div>
+                  {/* Accessori attivi */}
+                  {(v.accessori?.tapparella?.attivo || v.accessori?.persiana?.attivo || v.accessori?.zanzariera?.attivo || v.cassonetto) && (
+                    <div style={{ marginTop: 8, display: "flex", gap: 4, flexWrap: "wrap" }}>
+                      {v.cassonetto && <span style={S.badge(T.orangeLt, T.orange)}>Cassonetto {v.casH ? `${v.casH}×${v.casP}` : ""}</span>}
+                      {v.accessori?.tapparella?.attivo && <span style={S.badge(T.grnLt, T.grn)}>Tapparella {v.accessori.tapparella.l ? `${v.accessori.tapparella.l}×${v.accessori.tapparella.h}` : ""} {v.accessori.tapparella.colore || ""}</span>}
+                      {v.accessori?.persiana?.attivo && <span style={S.badge(T.blueLt, T.blue)}>Persiana</span>}
+                      {v.accessori?.zanzariera?.attivo && <span style={S.badge(T.purpleLt, T.purple)}>Zanzariera {v.accessori.zanzariera.l ? `${v.accessori.zanzariera.l}×${v.accessori.zanzariera.h}` : ""} {v.accessori.zanzariera.colore || ""}</span>}
+                    </div>
+                  )}
+                  {v.note && <div style={{ marginTop: 6, fontSize: 11, color: T.sub, fontStyle: "italic" }}>📝 {v.note}</div>}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
+  /* ── VANO DETAIL — WIZARD A STEP ── */
+  const STEPS = [
+    { id: "larghezze", title: "LARGHEZZE", desc: "Misura la larghezza in 3 punti: alto, centro, basso", color: "#507aff", icon: "📏", fields: ["lAlto", "lCentro", "lBasso"], labels: ["Larghezza ALTO", "Larghezza CENTRO (luce netta)", "Larghezza BASSO"] },
+    { id: "altezze", title: "ALTEZZE", desc: "Misura l'altezza in 3 punti: sinistra, centro, destra", color: "#34c759", icon: "📐", fields: ["hSx", "hCentro", "hDx"], labels: ["Altezza SINISTRA", "Altezza CENTRO", "Altezza DESTRA"] },
+    { id: "diagonali", title: "DIAGONALI", desc: "Misura le 2 diagonali per verificare la squadra", color: "#ff9500", icon: "✕", fields: ["d1", "d2"], labels: ["Diagonale 1 ↗", "Diagonale 2 ↘"] },
+    { id: "spallette", title: "SPALLETTE", desc: "Misura le spallette e l'imbotte", color: "#32ade6", icon: "🧱", fields: ["spSx", "spDx", "spSopra", "imbotte"], labels: ["Spalletta SINISTRA", "Spalletta DESTRA", "Spalletta SOPRA", "Profondità IMBOTTE"] },
+    { id: "davanzale", title: "DAVANZALE", desc: "Davanzale, soglia e cassonetto", color: "#ff2d55", icon: "⬇", fields: ["davProf", "davSporg", "soglia"], labels: ["Davanzale PROFONDITÀ", "Davanzale SPORGENZA", "Altezza SOGLIA"] },
+    { id: "accessori", title: "ACCESSORI", desc: "Tapparella, persiana, zanzariera", color: "#af52de", icon: "+" },
+    { id: "disegno", title: "DISEGNO + FOTO", desc: "Disegna, fotografa e annota il vano", color: "#ff6b6b", icon: "📷" },
+    { id: "riepilogo", title: "RIEPILOGO", desc: "Anteprima completa del vano", color: "#34c759", icon: "📋" },
+  ];
+
+  const renderVanoDetail = () => {
+    const v = selectedVano;
+    const m = v.misure || {};
+    const step = STEPS[vanoStep];
+    const filled = Object.values(m).filter(x => x > 0).length;
+    const TIPO_TIPS = { Scorrevole: { t: "Scorrevole (alzante/traslante)", dim: "2000 × 2200 mm", w: ["Binario inferiore: serve spazio incasso", "Verifica portata parete"] }, Portafinestra: { t: "Portafinestra standard", dim: "800-900 × 2200 mm", w: ["Soglia a taglio termico", "Verifica altezza architrave"] }, Finestra: { t: "Finestra", dim: "1200 × 1400 mm", w: ["Verifica spazio per anta"] } };
+    const tip = TIPO_TIPS[v.tipo] || null;
+    const hasWarnings = !m.lAlto && !m.lCentro && !m.lBasso;
+    const hasHWarnings = !m.hSx && !m.hCentro && !m.hDx;
+    const fSq = m.d1 > 0 && m.d2 > 0 ? Math.abs(m.d1 - m.d2) : null;
+
+    // Mini SVG per step
+    const MiniSVG = ({ type }) => {
+      const w = 60, h = 70;
+      return (
+        <svg viewBox={`0 0 ${w} ${h}`} width={w} height={h} style={{ display: "block" }}>
+          <rect x={5} y={5} width={w-10} height={h-10} fill={step.color + "12"} stroke={step.color + "40"} strokeWidth={1.5} rx={3} />
+          {type === "larghezze" && <>
+            <line x1={10} y1={18} x2={w-10} y2={18} stroke={step.color} strokeWidth={1.2} strokeDasharray="3,2" />
+            <line x1={10} y1={h/2} x2={w-10} y2={h/2} stroke={step.color} strokeWidth={1.2} strokeDasharray="3,2" />
+            <line x1={10} y1={h-18} x2={w-10} y2={h-18} stroke={step.color} strokeWidth={1.2} strokeDasharray="3,2" />
+          </>}
+          {type === "altezze" && <>
+            <line x1={14} y1={10} x2={14} y2={h-10} stroke={step.color} strokeWidth={1.2} strokeDasharray="3,2" />
+            <line x1={w/2} y1={10} x2={w/2} y2={h-10} stroke={step.color} strokeWidth={1.2} strokeDasharray="3,2" />
+            <line x1={w-14} y1={10} x2={w-14} y2={h-10} stroke={step.color} strokeWidth={1.2} strokeDasharray="3,2" />
+          </>}
+          {type === "diagonali" && <>
+            <line x1={10} y1={10} x2={w-10} y2={h-10} stroke={step.color} strokeWidth={1.2} strokeDasharray="3,2" />
+            <line x1={w-10} y1={10} x2={10} y2={h-10} stroke={step.color} strokeWidth={1.2} strokeDasharray="3,2" />
+          </>}
+          {type === "spallette" && <>
+            <rect x={2} y={5} width={10} height={h-10} fill={step.color + "25"} stroke={step.color+"60"} rx={1} />
+            <rect x={w-12} y={5} width={10} height={h-10} fill={step.color + "25"} stroke={step.color+"60"} rx={1} />
+            <rect x={5} y={2} width={w-10} height={8} fill={step.color + "18"} stroke={step.color+"40"} rx={1} />
+          </>}
+          {type === "davanzale" && <>
+            <rect x={5} y={h-16} width={w-10} height={10} fill={step.color + "25"} stroke={step.color+"60"} rx={1} />
+          </>}
+        </svg>
+      );
+    };
+
+    // Big touch input
+    const BigInput = ({ label, field }) => (
+      <div style={{ marginBottom: 12 }}>
+        <div style={{ fontSize: 12, fontWeight: 600, color: T.text, marginBottom: 4 }}>{label}</div>
+        <input
+          style={{ width: "100%", padding: "14px 16px", fontSize: 17, fontWeight: 500, fontFamily: FM, textAlign: "center", border: `1px solid ${T.bdr}`, borderRadius: 12, background: m[field] > 0 ? step.color + "08" : T.card, color: T.text, outline: "none", boxSizing: "border-box" }}
+          type="number" inputMode="numeric" placeholder="Tocca per inserire" value={m[field] || ""}
+          onChange={e => updateMisura(v.id, field, e.target.value)}
+        />
+      </div>
+    );
+
+    return (
+      <div style={{ paddingBottom: 80, background: T.bg }}>
+        {/* Dots progress */}
+        <div style={{ display: "flex", justifyContent: "center", gap: 5, padding: "14px 16px 6px" }}>
+          {STEPS.map((s, i) => (
+            <div key={i} onClick={() => setVanoStep(i)} style={{ width: i === vanoStep ? 18 : 8, height: 8, borderRadius: 4, background: i === vanoStep ? s.color : i < vanoStep ? s.color + "60" : T.bdr, cursor: "pointer", transition: "all 0.2s" }} />
+          ))}
+        </div>
+
+        <div style={{ padding: "8px 16px" }}>
+          {/* Step header card */}
+          <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 16px", background: step.color + "10", borderRadius: 14, border: `1px solid ${step.color}25`, marginBottom: 12 }}>
+            {(vanoStep <= 4) && <MiniSVG type={step.id} />}
+            {vanoStep > 4 && <div style={{ width: 50, height: 50, borderRadius: 12, background: step.color + "20", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24 }}>{step.icon}</div>}
+            <div>
+              <div style={{ fontSize: 15, fontWeight: 800, color: step.color }}>{step.icon} {step.title}</div>
+              <div style={{ fontSize: 11, color: T.sub, marginTop: 2 }}>{step.desc}</div>
+              {step.fields && <div style={{ fontSize: 11, fontWeight: 700, color: T.text, marginTop: 2 }}>{step.fields.filter(f => m[f] > 0).length}/{step.fields.length} inserite</div>}
+            </div>
+          </div>
+
+          {/* Warnings */}
+          {vanoStep <= 2 && (hasWarnings || hasHWarnings) && (
+            <div style={{ padding: "8px 14px", borderRadius: 10, background: "#fff3e0", border: "1px solid #ffe0b2", marginBottom: 12, fontSize: 11, color: "#e65100" }}>
+              {hasWarnings && <div>⚠ Nessuna larghezza inserita</div>}
+              {hasHWarnings && <div>⚠ Nessuna altezza inserita</div>}
+            </div>
+          )}
+
+          {/* ═══ STEP 0: LARGHEZZE ═══ */}
+          {vanoStep === 0 && (
+            <>
+              <BigInput label="Larghezza ALTO" field="lAlto" />
+              <BigInput label="Larghezza CENTRO (luce netta)" field="lCentro" />
+              <BigInput label="Larghezza BASSO" field="lBasso" />
+              {tip && (
+                <div style={{ padding: "10px 14px", borderRadius: 10, background: "#fff8e1", border: "1px solid #ffecb3", marginTop: 4 }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: "#f57f17" }}>💡 {tip.t}</div>
+                  <div style={{ fontSize: 11, color: "#795548" }}>Dimensioni tipiche: {tip.dim}</div>
+                  {tip.w.map((w, i) => <div key={i} style={{ fontSize: 10, color: "#e65100", marginTop: 2 }}>⚠ {w}</div>)}
+                </div>
+              )}
+            </>
+          )}
+
+          {/* ═══ STEP 1: ALTEZZE ═══ */}
+          {vanoStep === 1 && (
+            <>
+              <BigInput label="Altezza SINISTRA" field="hSx" />
+              <BigInput label="Altezza CENTRO" field="hCentro" />
+              <BigInput label="Altezza DESTRA" field="hDx" />
+              {tip && (
+                <div style={{ padding: "10px 14px", borderRadius: 10, background: "#fff8e1", border: "1px solid #ffecb3", marginTop: 4 }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: "#f57f17" }}>💡 {tip.t}</div>
+                  <div style={{ fontSize: 11, color: "#795548" }}>Dimensioni tipiche: {tip.dim}</div>
+                  {tip.w.map((w, i) => <div key={i} style={{ fontSize: 10, color: "#e65100", marginTop: 2 }}>⚠ {w}</div>)}
+                </div>
+              )}
+            </>
+          )}
+
+          {/* ═══ STEP 2: DIAGONALI ═══ */}
+          {vanoStep === 2 && (
+            <>
+              <BigInput label="Diagonale 1 ↗" field="d1" />
+              <BigInput label="Diagonale 2 ↘" field="d2" />
+              {fSq !== null && fSq > 3 && (
+                <div style={{ padding: "10px 14px", borderRadius: 10, background: "#ffebee", border: "1px solid #ef9a9a", marginBottom: 12 }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: "#c62828" }}>⚠ Fuori squadra: {fSq}mm</div>
+                  <div style={{ fontSize: 11, color: "#b71c1c" }}>Differenza superiore a 3mm — segnalare in ufficio</div>
+                </div>
+              )}
+              {fSq !== null && fSq <= 3 && (
+                <div style={{ padding: "10px 14px", borderRadius: 10, background: "#e8f5e9", border: "1px solid #a5d6a7" }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: "#2e7d32" }}>✅ In squadra — differenza: {fSq}mm</div>
+                </div>
+              )}
+              {tip && (
+                <div style={{ padding: "10px 14px", borderRadius: 10, background: "#fff8e1", border: "1px solid #ffecb3", marginTop: 4 }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: "#f57f17" }}>💡 {tip.t}</div>
+                  <div style={{ fontSize: 11, color: "#795548" }}>Dimensioni tipiche: {tip.dim}</div>
+                  {tip.w.map((w, i) => <div key={i} style={{ fontSize: 10, color: "#e65100", marginTop: 2 }}>⚠ {w}</div>)}
+                </div>
+              )}
+            </>
+          )}
+
+          {/* ═══ STEP 3: SPALLETTE ═══ */}
+          {vanoStep === 3 && (
+            <>
+              <BigInput label="Spalletta SINISTRA" field="spSx" />
+              <BigInput label="Spalletta DESTRA" field="spDx" />
+              <BigInput label="Spalletta SOPRA" field="spSopra" />
+              <BigInput label="Profondità IMBOTTE" field="imbotte" />
+              {/* DISEGNO LIBERO SPALLETTE */}
+              <div style={{ background: T.card, borderRadius: 12, border: `1px solid ${T.bdr}`, marginTop: 8, overflow: "hidden" }}>
+                <div style={{ padding: "8px 14px", borderBottom: `1px solid ${T.bdr}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: "#32ade6" }}>✏️ Disegno spallette</span>
+                  <div style={{ display: "flex", gap: 6 }}>
+                    <button onClick={() => { const ctx = spCanvasRef.current?.getContext("2d"); ctx?.clearRect(0, 0, 380, 200); }} style={{ padding: "4px 10px", borderRadius: 6, border: `1px solid ${T.bdr}`, background: T.card, fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FF }}>🗑 Pulisci</button>
+                    <button style={{ padding: "4px 10px", borderRadius: 6, border: "none", background: T.grn, color: "#fff", fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FF }}>💾 Salva</button>
+                  </div>
+                </div>
+                <canvas ref={spCanvasRef} width={380} height={200} style={{ width: "100%", height: 200, background: "#fff", touchAction: "none", cursor: "crosshair" }}
+                  onPointerDown={e => { setSpDrawing(true); const ctx = spCanvasRef.current?.getContext("2d"); if (ctx) { ctx.beginPath(); ctx.moveTo(e.nativeEvent.offsetX, e.nativeEvent.offsetY); ctx.strokeStyle = penColor; ctx.lineWidth = penSize; ctx.lineCap = "round"; ctx.lineJoin = "round"; } }}
+                  onPointerMove={e => { if (!spDrawing) return; const ctx = spCanvasRef.current?.getContext("2d"); if (ctx) { ctx.lineTo(e.nativeEvent.offsetX, e.nativeEvent.offsetY); ctx.stroke(); } }}
+                  onPointerUp={() => setSpDrawing(false)}
+                  onPointerLeave={() => setSpDrawing(false)}
+                />
+                <div style={{ padding: "6px 14px", display: "flex", gap: 4 }}>
+                  {["#1d1d1f", "#ff3b30", "#007aff", "#34c759", "#ff9500"].map(c => (
+                    <div key={c} onClick={() => setPenColor(c)} style={{ width: 20, height: 20, borderRadius: "50%", background: c, border: penColor === c ? `3px solid ${T.acc}` : "2px solid transparent", cursor: "pointer" }} />
+                  ))}
+                  <div style={{ marginLeft: "auto", display: "flex", gap: 3 }}>
+                    {[1, 2, 4].map(s => (
+                      <div key={s} onClick={() => setPenSize(s)} style={{ width: 22, height: 22, borderRadius: 6, background: penSize === s ? T.accLt : "transparent", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                        <div style={{ width: s * 2 + 2, height: s * 2 + 2, borderRadius: "50%", background: T.text }} />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* ═══ STEP 4: DAVANZALE ═══ */}
+          {vanoStep === 4 && (
+            <>
+              <BigInput label="Davanzale PROFONDITÀ" field="davProf" />
+              <BigInput label="Davanzale SPORGENZA" field="davSporg" />
+              <BigInput label="Altezza SOGLIA" field="soglia" />
+              {/* Cassonetto toggle */}
+              <div style={{ marginTop: 8, padding: "12px 16px", borderRadius: 12, border: `1px dashed ${T.bdr}`, display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }} onClick={() => {
+                const nv = { ...v, cassonetto: !v.cassonetto };
+                setSelectedVano(nv);
+                setCantieri(cs => cs.map(c => c.id === selectedCM?.id ? { ...c, vani: c.vani.map(x => x.id === v.id ? nv : x) } : c));
+              }}>
+                <span style={{ fontSize: 12, color: T.sub }}>+</span>
+                <span style={{ fontSize: 14 }}>🧊</span>
+                <span style={{ fontSize: 13, color: T.sub }}>{v.cassonetto ? "Cassonetto attivo" : "Ha un cassonetto? Tocca per aggiungere"}</span>
+              </div>
+              {v.cassonetto && (
+                <div style={{ marginTop: 8 }}>
+                  <BigInput label="Cassonetto ALTEZZA" field="casH" />
+                  <BigInput label="Cassonetto PROFONDITÀ" field="casP" />
+                </div>
+              )}
+            </>
+          )}
+
+          {/* ═══ STEP 5: ACCESSORI ═══ */}
+          {vanoStep === 5 && (
+            <>
+              {["tapparella", "persiana", "zanzariera", "cassonetto"].map(acc => {
+                if (acc === "cassonetto") {
+                  return (
+                    <div key={acc} onClick={() => {
+                      const nv = { ...v, cassonetto: !v.cassonetto };
+                      setSelectedVano(nv);
+                      setCantieri(cs => cs.map(c => c.id === selectedCM?.id ? { ...c, vani: c.vani.map(x => x.id === v.id ? nv : x) } : c));
+                    }} style={{ padding: "14px 16px", borderRadius: 12, border: `1px dashed ${v.cassonetto ? "#ff9500" : T.bdr}`, background: v.cassonetto ? "#fff8e1" : T.card, marginBottom: 8, cursor: "pointer", textAlign: "center" }}>
+                      <span style={{ fontSize: 12, color: v.cassonetto ? "#ff9500" : T.sub }}>+ 🧊 {v.cassonetto ? "Cassonetto attivo — tocca per rimuovere" : "Aggiungi Cassonetto"}</span>
+                    </div>
+                  );
+                }
+                const a = v.accessori?.[acc] || { attivo: false };
+                const accColors = { tapparella: "#ff9500", persiana: "#007aff", zanzariera: "#ff2d55" };
+                const accIcons = { tapparella: "🪟", persiana: "🏠", zanzariera: "🦟" };
+                return (
+                  <div key={acc} style={{ marginBottom: 8, borderRadius: 12, border: `1px ${a.attivo ? "solid" : "dashed"} ${a.attivo ? accColors[acc] + "40" : T.bdr}`, overflow: "hidden", background: T.card }}>
+                    {!a.attivo ? (
+                      <div onClick={() => toggleAccessorio(v.id, acc)} style={{ padding: "14px 16px", textAlign: "center", cursor: "pointer" }}>
+                        <span style={{ fontSize: 12, color: T.sub }}>+ {accIcons[acc]} Aggiungi {acc.charAt(0).toUpperCase() + acc.slice(1)}</span>
+                      </div>
+                    ) : (
+                      <>
+                        <div style={{ padding: "10px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `1px solid ${T.bdr}` }}>
+                          <span style={{ fontSize: 13, fontWeight: 700, color: accColors[acc] }}>{accIcons[acc]} {acc.charAt(0).toUpperCase() + acc.slice(1)}</span>
+                          <div onClick={() => toggleAccessorio(v.id, acc)} style={{ fontSize: 11, color: T.sub, cursor: "pointer" }}>▲ Chiudi</div>
+                        </div>
+                        <div style={{ padding: "12px 16px" }}>
+                          <div style={{ marginBottom: 10 }}>
+                            <div style={{ fontSize: 11, color: T.text, marginBottom: 4 }}>Larghezza</div>
+                            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                              <input style={{ flex: 1, padding: "10px", fontSize: 14, fontFamily: FM, border: `1px solid ${T.bdr}`, borderRadius: 8, background: T.card }} type="number" inputMode="numeric" placeholder="" />
+                              <span style={{ fontSize: 11, color: T.sub, background: T.bg, padding: "6px 8px", borderRadius: 6 }}>mm</span>
+                            </div>
+                          </div>
+                          <div style={{ marginBottom: 10 }}>
+                            <div style={{ fontSize: 11, color: T.text, marginBottom: 4 }}>Altezza</div>
+                            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                              <input style={{ flex: 1, padding: "10px", fontSize: 14, fontFamily: FM, border: `1px solid ${T.bdr}`, borderRadius: 8, background: T.card }} type="number" inputMode="numeric" placeholder="" />
+                              <span style={{ fontSize: 11, color: T.sub, background: T.bg, padding: "6px 8px", borderRadius: 6 }}>mm</span>
+                            </div>
+                          </div>
+                          {acc === "tapparella" && (
+                            <>
+                              <div style={{ fontSize: 10, fontWeight: 700, color: T.sub, marginBottom: 6, textTransform: "uppercase" }}>Materiale</div>
+                              <div style={{ display: "flex", gap: 4, marginBottom: 10, flexWrap: "wrap" }}>
+                                {["PVC", "Alluminio", "Acciaio", "Legno"].map(mat => (
+                                  <div key={mat} style={{ padding: "6px 12px", borderRadius: 8, border: `1px solid ${T.bdr}`, fontSize: 12, cursor: "pointer", background: T.card }}>{mat}</div>
+                                ))}
+                              </div>
+                              <div style={{ fontSize: 10, fontWeight: 700, color: T.sub, marginBottom: 6, textTransform: "uppercase" }}>Motorizzata</div>
+                              <div style={{ display: "flex", gap: 4, marginBottom: 10 }}>
+                                {["Sì", "No"].map(mot => (
+                                  <div key={mot} style={{ padding: "6px 12px", borderRadius: 8, border: `1px solid ${T.bdr}`, fontSize: 12, cursor: "pointer", background: T.card }}>{mot}</div>
+                                ))}
+                              </div>
+                            </>
+                          )}
+                          <div style={{ fontSize: 10, fontWeight: 700, color: T.sub, marginBottom: 6, textTransform: "uppercase" }}>Colore</div>
+                          <select style={{ width: "100%", padding: "10px", fontSize: 12, border: `1px solid ${T.bdr}`, borderRadius: 8, background: T.card, fontFamily: FF }}>
+                            <option>Colore</option>
+                            {coloriDB.map(c => <option key={c.id} value={c.code}>{c.code} — {c.nome}</option>)}
+                          </select>
+                          <div onClick={() => toggleAccessorio(v.id, acc)} style={{ marginTop: 10, padding: "8px", borderRadius: 8, border: `1px dashed #ef5350`, textAlign: "center", fontSize: 11, color: "#ef5350", cursor: "pointer" }}>
+                            🗑 Rimuovi {acc}
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                );
+              })}
+            </>
+          )}
+
+          {/* ═══ STEP 6: DISEGNO + FOTO + NOTE ═══ */}
+          {vanoStep === 6 && (
+            <>
+              {/* Disegno mano libera */}
+              <div style={{ background: T.card, borderRadius: 12, border: `1px solid ${T.bdr}`, marginBottom: 12, overflow: "hidden" }}>
+                <div style={{ padding: "10px 14px", borderBottom: `1px solid ${T.bdr}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: "#ff6b6b" }}>✏️ Disegno a mano libera</span>
+                  <div style={{ display: "flex", gap: 6 }}>
+                    <button onClick={() => { const ctx = canvasRef.current?.getContext("2d"); ctx?.clearRect(0, 0, 380, 340); }} style={{ padding: "4px 10px", borderRadius: 6, border: `1px solid ${T.bdr}`, background: T.card, fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FF }}>🗑 Pulisci</button>
+                    <button style={{ padding: "4px 10px", borderRadius: 6, border: "none", background: "#ff3b30", color: "#fff", fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FF }}>💾 Salva</button>
+                  </div>
+                </div>
+                <canvas ref={canvasRef} width={380} height={340} style={{ width: "100%", height: 340, background: "#fff", touchAction: "none", cursor: "crosshair" }}
+                  onPointerDown={e => { setIsDrawing(true); const ctx = canvasRef.current?.getContext("2d"); if (ctx) { ctx.beginPath(); ctx.moveTo(e.nativeEvent.offsetX, e.nativeEvent.offsetY); ctx.strokeStyle = penColor; ctx.lineWidth = penSize; ctx.lineCap = "round"; ctx.lineJoin = "round"; } }}
+                  onPointerMove={e => { if (!isDrawing) return; const ctx = canvasRef.current?.getContext("2d"); if (ctx) { ctx.lineTo(e.nativeEvent.offsetX, e.nativeEvent.offsetY); ctx.stroke(); } }}
+                  onPointerUp={() => setIsDrawing(false)}
+                  onPointerLeave={() => setIsDrawing(false)}
+                />
+                <div style={{ padding: "8px 14px", display: "flex", alignItems: "center", gap: 4 }}>
+                  {["#1d1d1f", "#ff3b30", "#007aff", "#34c759", "#ff9500", "#af52de", "#ff2d55", "#ffffff"].map(c => (
+                    <div key={c} onClick={() => setPenColor(c)} style={{ width: 22, height: 22, borderRadius: "50%", background: c, border: penColor === c ? `3px solid ${T.acc}` : c === "#ffffff" ? `1px solid ${T.bdr}` : "2px solid transparent", cursor: "pointer" }} />
+                  ))}
+                  <div style={{ width: 1, height: 20, background: T.bdr, margin: "0 4px" }} />
+                  <div style={{ width: 28, height: 28, borderRadius: 6, background: T.bg, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                    <span style={{ fontSize: 12 }}>🩹</span>
+                  </div>
+                  <div style={{ marginLeft: "auto", display: "flex", gap: 3 }}>
+                    {[1, 2, 4, 6].map(s => (
+                      <div key={s} onClick={() => setPenSize(s)} style={{ width: 24, height: 24, borderRadius: 6, background: penSize === s ? T.accLt : "transparent", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                        <div style={{ width: s * 2 + 1, height: s * 2 + 1, borderRadius: "50%", background: T.text }} />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Foto */}
+              <div style={{ background: T.card, borderRadius: 12, border: `1px solid ${T.bdr}`, padding: 14, marginBottom: 12 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: T.blue }}>📷 FOTO (0)</div>
+                  <button style={{ padding: "4px 10px", borderRadius: 6, background: T.acc, color: "#fff", border: "none", fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FF }}>+ Foto</button>
+                </div>
+                <div style={{ fontSize: 10, color: T.sub, marginBottom: 6 }}>0%</div>
+                <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+                  {[
+                    { n: "Panoramica", r: true, c: "#ff3b30" }, { n: "Spalle muro", r: true, c: "#007aff" }, { n: "Soglia", r: true, c: "#007aff" },
+                    { n: "Cassonetto", r: false, c: "#34c759" }, { n: "Dettagli critici", r: true, c: "#ff3b30" }, { n: "Imbotto", r: false, c: "#34c759" },
+                    { n: "Contesto", r: false, c: "#34c759" }, { n: "Altro", r: false, c: "#34c759" },
+                  ].map((cat, i) => (
+                    <div key={i} style={{ padding: "4px 10px", borderRadius: 6, border: `1px solid ${cat.r ? cat.c + "40" : T.bdr}`, background: cat.r ? cat.c + "08" : "transparent", fontSize: 10, fontWeight: 600, color: cat.r ? cat.c : T.sub, cursor: "pointer", display: "flex", alignItems: "center", gap: 3 }}>
+                      {cat.r && <span style={{ fontSize: 8 }}>✕</span>}
+                      <span style={{ fontSize: 10 }}>📷</span> {cat.n}
+                    </div>
+                  ))}
+                </div>
+                <div style={{ textAlign: "center", padding: "16px 0", color: T.sub, fontSize: 11 }}>Nessuna foto — tocca una categoria per iniziare</div>
+              </div>
+
+              {/* AI Foto */}
+              <div style={{ padding: "10px 12px", borderRadius: 12, background: "linear-gradient(135deg, rgba(175,82,222,0.08), rgba(0,122,255,0.08))", border: `1px solid #af52de30`, cursor: "pointer", display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+                <div style={{ width: 36, height: 36, borderRadius: 10, background: "linear-gradient(135deg, #af52de, #007aff)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <span style={{ fontSize: 18 }}>🤖</span>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: "#af52de" }}>AI Misure da Foto</div>
+                  <div style={{ fontSize: 10, color: T.sub }}>Scatta una foto e l'AI suggerisce le misure</div>
+                </div>
+              </div>
+
+              {/* Note */}
+              <div style={{ background: T.card, borderRadius: 12, border: `1px solid ${T.bdr}`, padding: 14 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "#ff9500", marginBottom: 8 }}>📝 NOTE</div>
+                <textarea style={{ width: "100%", padding: 10, fontSize: 13, border: `1px solid ${T.bdr}`, borderRadius: 8, background: T.card, minHeight: 60, resize: "vertical", fontFamily: FF, boxSizing: "border-box" }} placeholder="Note sul vano..." defaultValue={v.note || ""} />
+              </div>
+            </>
+          )}
+
+          {/* ═══ STEP 7: RIEPILOGO ═══ */}
+          {vanoStep === 7 && (
+            <>
+              <div style={{ background: T.card, borderRadius: 12, border: `1px solid ${T.bdr}`, padding: 16, marginBottom: 12 }}>
+                <div style={{ textAlign: "center", marginBottom: 14 }}>
+                  <div style={{ fontSize: 16, fontWeight: 700 }}>{v.nome}</div>
+                  <div style={{ fontSize: 12, color: T.sub }}>{v.tipo} • {v.stanza} • {v.piano}</div>
+                </div>
+                {/* Larghezze */}
+                <div style={{ borderRadius: 10, border: `1px solid #507aff25`, overflow: "hidden", marginBottom: 8 }}>
+                  <div style={{ padding: "6px 12px", background: "#507aff10", fontSize: 11, fontWeight: 700, color: "#507aff" }}>📏 LARGHEZZE</div>
+                  {[["Alto", m.lAlto], ["Centro", m.lCentro], ["Basso", m.lBasso]].map(([l, val]) => (
+                    <div key={l} style={{ display: "flex", justifyContent: "space-between", padding: "6px 12px", borderTop: `1px solid ${T.bdr}`, fontSize: 12 }}>
+                      <span style={{ color: T.text }}>{l}</span>
+                      <span style={{ fontFamily: FM, fontWeight: 600, color: val ? T.text : T.sub2 }}>{val || "—"}</span>
+                    </div>
+                  ))}
+                </div>
+                {/* Altezze */}
+                <div style={{ borderRadius: 10, border: `1px solid #34c75925`, overflow: "hidden", marginBottom: 8 }}>
+                  <div style={{ padding: "6px 12px", background: "#34c75910", fontSize: 11, fontWeight: 700, color: "#34c759" }}>📐 ALTEZZE</div>
+                  {[["Sinistra", m.hSx], ["Centro", m.hCentro], ["Destra", m.hDx]].map(([l, val]) => (
+                    <div key={l} style={{ display: "flex", justifyContent: "space-between", padding: "6px 12px", borderTop: `1px solid ${T.bdr}`, fontSize: 12 }}>
+                      <span>{l}</span>
+                      <span style={{ fontFamily: FM, fontWeight: 600, color: val ? T.text : T.sub2 }}>{val || "—"}</span>
+                    </div>
+                  ))}
+                </div>
+                {/* Diagonali */}
+                <div style={{ borderRadius: 10, border: `1px solid #ff950025`, overflow: "hidden", marginBottom: 8 }}>
+                  <div style={{ padding: "6px 12px", background: "#ff950010", fontSize: 11, fontWeight: 700, color: "#ff9500" }}>✕ DIAGONALI</div>
+                  {[["D1", m.d1], ["D2", m.d2], ["Fuori squadra", fSq !== null ? `${fSq}mm` : ""]].map(([l, val]) => (
+                    <div key={l} style={{ display: "flex", justifyContent: "space-between", padding: "6px 12px", borderTop: `1px solid ${T.bdr}`, fontSize: 12 }}>
+                      <span>{l}</span>
+                      <span style={{ fontFamily: FM, fontWeight: 600, color: l === "Fuori squadra" && fSq > 3 ? "#ff3b30" : val ? T.text : T.sub2 }}>{val || "—"}</span>
+                    </div>
+                  ))}
+                </div>
+                {/* Spallette */}
+                <div style={{ borderRadius: 10, border: `1px solid #32ade625`, overflow: "hidden", marginBottom: 8 }}>
+                  <div style={{ padding: "6px 12px", background: "#32ade610", fontSize: 11, fontWeight: 700, color: "#32ade6" }}>🧱 SPALLETTE</div>
+                  {[["Sinistra", m.spSx], ["Destra", m.spDx], ["Sopra", m.spSopra], ["Imbotte", m.imbotte]].map(([l, val]) => (
+                    <div key={l} style={{ display: "flex", justifyContent: "space-between", padding: "6px 12px", borderTop: `1px solid ${T.bdr}`, fontSize: 12 }}>
+                      <span>{l}</span>
+                      <span style={{ fontFamily: FM, fontWeight: 600, color: val ? T.text : T.sub2 }}>{val || "—"}</span>
+                    </div>
+                  ))}
+                </div>
+                {/* Davanzale */}
+                <div style={{ borderRadius: 10, border: `1px solid #ff2d5525`, overflow: "hidden", marginBottom: 8 }}>
+                  <div style={{ padding: "6px 12px", background: "#ff2d5510", fontSize: 11, fontWeight: 700, color: "#ff2d55" }}>⬇ DAVANZALE</div>
+                  {[["Profondità", m.davProf], ["Sporgenza", m.davSporg], ["Soglia", m.soglia]].map(([l, val]) => (
+                    <div key={l} style={{ display: "flex", justifyContent: "space-between", padding: "6px 12px", borderTop: `1px solid ${T.bdr}`, fontSize: 12 }}>
+                      <span>{l}</span>
+                      <span style={{ fontFamily: FM, fontWeight: 600, color: val ? T.text : T.sub2 }}>{val || "—"}</span>
+                    </div>
+                  ))}
+                </div>
+                {/* Accessori */}
+                {(v.accessori?.tapparella?.attivo || v.accessori?.persiana?.attivo || v.accessori?.zanzariera?.attivo) && (
+                  <div style={{ borderRadius: 10, border: `1px solid #af52de25`, overflow: "hidden", marginBottom: 8 }}>
+                    <div style={{ padding: "6px 12px", background: "#af52de10", fontSize: 11, fontWeight: 700, color: "#af52de" }}>✚ ACCESSORI</div>
+                    {v.accessori?.tapparella?.attivo && <div style={{ padding: "6px 12px", borderTop: `1px solid ${T.bdr}`, fontSize: 12 }}>🪟 Tapparella</div>}
+                    {v.accessori?.persiana?.attivo && <div style={{ padding: "6px 12px", borderTop: `1px solid ${T.bdr}`, fontSize: 12 }}>🏠 Persiana</div>}
+                    {v.accessori?.zanzariera?.attivo && <div style={{ padding: "6px 12px", borderTop: `1px solid ${T.bdr}`, fontSize: 12 }}>🦟 Zanzariera</div>}
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+
+          {/* ═══ NAV BUTTONS ═══ */}
+          <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+            {vanoStep > 0 && (
+              <button onClick={() => setVanoStep(s => s - 1)} style={{ flex: 1, padding: "14px", borderRadius: 12, border: `1px solid ${T.bdr}`, background: T.card, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: FF, color: T.text }}>← Indietro</button>
+            )}
+            {vanoStep < 7 && (
+              <button onClick={() => setVanoStep(s => s + 1)} style={{ flex: vanoStep === 0 ? "1 1 100%" : 1, padding: "14px", borderRadius: 12, border: "none", background: step.color, color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: FF }}>Avanti →</button>
+            )}
+            {vanoStep === 7 && (
+              <button onClick={() => { setVanoStep(0); goBack(); }} style={{ flex: 1, padding: "14px", borderRadius: 12, border: "none", background: "#34c759", color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: FF }}>💾 SALVA TUTTO</button>
+            )}
+          </div>
+
+          {/* ═══ RIEPILOGO RAPIDO ═══ */}
+          <div style={{ marginTop: 12, padding: "8px 12px", background: T.card, borderRadius: 10, border: `1px solid ${T.bdr}` }}>
+            <div style={{ fontSize: 9, fontWeight: 700, color: T.sub, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>Riepilogo rapido</div>
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+              {[
+                ["L", m.lCentro || m.lAlto || m.lBasso],
+                ["H", m.hCentro || m.hSx || m.hDx],
+                ["D1", m.d1], ["D2", m.d2],
+                ["F.sq", fSq !== null ? `${fSq}` : null],
+              ].map(([l, val]) => (
+                <div key={l} style={{ padding: "3px 8px", borderRadius: 4, background: T.bg, fontSize: 10, fontFamily: FM, color: val ? T.text : T.sub2 }}>
+                  {l}: {val || "—"}
+                </div>
+              ))}
+            </div>
+          </div>
+
+        </div>
+      </div>
+    );
+  };
+
+  /* ── AGENDA TAB — Giorno / Settimana / Mese ── */
+  const renderAgenda = () => {
+    const dateStr = (d) => d.toISOString().split("T")[0];
+    const dayEvents = events.filter(e => e.date === dateStr(selDate)).sort((a, b) => (a.time || "99").localeCompare(b.time || "99"));
+    const weekStart = new Date(selDate); weekStart.setDate(selDate.getDate() - selDate.getDay() + 1);
+    const weekDays = Array.from({ length: 7 }, (_, i) => { const d = new Date(weekStart); d.setDate(d.getDate() + i); return d; });
+    const monthStart = new Date(selDate.getFullYear(), selDate.getMonth(), 1);
+    const monthDays = Array.from({ length: 35 }, (_, i) => { const d = new Date(monthStart); d.setDate(d.getDate() + i - monthStart.getDay() + 1); return d; });
+    const isSameDay = (a, b) => dateStr(a) === dateStr(b);
+    const isToday2 = (d) => isSameDay(d, new Date());
+    const eventsOn = (d) => events.filter(e => e.date === dateStr(d));
+
+    const navDate = (dir) => {
+      const d = new Date(selDate);
+      if (agendaView === "giorno") d.setDate(d.getDate() + dir);
+      else if (agendaView === "settimana") d.setDate(d.getDate() + dir * 7);
+      else d.setMonth(d.getMonth() + dir);
+      setSelDate(d);
+    };
+
+    const renderEventCard = (ev) => (
+      <div key={ev.id} style={{ ...S.card, margin: "0 0 8px" }}>
+        <div style={{ ...S.cardInner, display: "flex", gap: 10 }}>
+          <div style={{ width: 3, borderRadius: 2, background: ev.color, flexShrink: 0 }} />
+          {ev.time && <div style={{ fontSize: 12, fontWeight: 700, color: T.sub, minWidth: 38, fontFamily: FM }}>{ev.time}</div>}
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 13, fontWeight: 600 }}>{ev.text}</div>
+            {ev.addr && <div style={{ fontSize: 11, color: T.sub, marginTop: 2 }}>{ev.addr}</div>}
+            <div style={{ display: "flex", gap: 4, marginTop: 3, flexWrap: "wrap" }}>
+              {ev.cm && <span style={S.badge(T.accLt, T.acc)}>{ev.cm}</span>}
+              {ev.persona && <span style={S.badge(T.purpleLt, T.purple)}>{ev.persona}</span>}
+              <span style={S.badge(ev.tipo === "appuntamento" ? T.blueLt : T.orangeLt, ev.tipo === "appuntamento" ? T.blue : T.orange)}>{ev.tipo}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+
+    return (
+      <div style={{ paddingBottom: 80 }}>
+        <div style={S.header}>
+          <div style={{ flex: 1 }}>
+            <div style={S.headerTitle}>Agenda</div>
+            <div style={S.headerSub}>
+              {agendaView === "giorno" ? selDate.toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long" }) :
+               agendaView === "settimana" ? `${weekDays[0].getDate()}–${weekDays[6].getDate()} ${selDate.toLocaleDateString("it-IT", { month: "long", year: "numeric" })}` :
+               selDate.toLocaleDateString("it-IT", { month: "long", year: "numeric" })}
+            </div>
+          </div>
+          <div onClick={() => setShowNewEvent(true)} style={{ width: 36, height: 36, borderRadius: 10, background: T.acc, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 20, fontWeight: 300 }}>+</div>
+        </div>
+
+        {/* View switcher */}
+        <div style={{ display: "flex", gap: 0, margin: "8px 16px", borderRadius: 8, overflow: "hidden", border: `1px solid ${T.bdr}` }}>
+          {["giorno", "settimana", "mese"].map(v => (
+            <div key={v} onClick={() => setAgendaView(v)} style={{ flex: 1, padding: "8px 4px", textAlign: "center", fontSize: 12, fontWeight: 600, background: agendaView === v ? T.acc : T.card, color: agendaView === v ? "#fff" : T.sub, cursor: "pointer", textTransform: "capitalize" }}>
+              {v}
+            </div>
+          ))}
+        </div>
+
+        {/* Nav arrows */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 16px" }}>
+          <div onClick={() => navDate(-1)} style={{ cursor: "pointer", padding: "4px 8px" }}><Ico d={ICO.back} s={18} c={T.sub} /></div>
+          <div onClick={() => setSelDate(new Date())} style={{ fontSize: 12, fontWeight: 600, color: T.acc, cursor: "pointer" }}>Oggi</div>
+          <div onClick={() => navDate(1)} style={{ cursor: "pointer", padding: "4px 8px", transform: "rotate(180deg)" }}><Ico d={ICO.back} s={18} c={T.sub} /></div>
+        </div>
+
+        <div style={{ padding: "0 16px" }}>
+
+          {/* ═══ VISTA MESE ═══ */}
+          {agendaView === "mese" && (
+            <>
+              <div style={{ background: T.card, borderRadius: T.r, border: `1px solid ${T.bdr}`, padding: 12, marginBottom: 12 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 2, textAlign: "center" }}>
+                  {["L", "M", "M", "G", "V", "S", "D"].map((d, i) => (
+                    <div key={i} style={{ fontSize: 10, fontWeight: 600, color: T.sub, padding: "4px 0" }}>{d}</div>
+                  ))}
+                  {monthDays.map((d, i) => {
+                    const inMonth = d.getMonth() === selDate.getMonth();
+                    const sel = isSameDay(d, selDate);
+                    const tod = isToday2(d);
+                    const hasEv = eventsOn(d).length > 0;
+                    return (
+                      <div key={i} onClick={() => setSelDate(new Date(d))} style={{ padding: "6px 2px", borderRadius: 8, fontSize: 12, fontWeight: sel || tod ? 700 : 400, background: sel ? T.acc : tod ? T.accLt : "transparent", color: sel ? "#fff" : !inMonth ? T.sub2 : T.text, cursor: "pointer", position: "relative" }}>
+                        {d.getDate()}
+                        {hasEv && <div style={{ width: 4, height: 4, borderRadius: "50%", background: sel ? "#fff" : T.red, margin: "1px auto 0" }} />}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+              <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>
+                {selDate.toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long" })}
+              </div>
+              {dayEvents.length === 0 ? (
+                <div style={{ padding: "16px", textAlign: "center", color: T.sub, fontSize: 12, background: T.card, borderRadius: T.r, border: `1px dashed ${T.bdr}` }}>Nessun evento. Tocca + per aggiungere.</div>
+              ) : dayEvents.map(renderEventCard)}
+            </>
+          )}
+
+          {/* ═══ VISTA SETTIMANA ═══ */}
+          {agendaView === "settimana" && (
+            <>
+              <div style={{ display: "flex", gap: 2, marginBottom: 12 }}>
+                {weekDays.map((d, i) => {
+                  const sel = isSameDay(d, selDate);
+                  const tod = isToday2(d);
+                  const n = eventsOn(d).length;
+                  return (
+                    <div key={i} onClick={() => setSelDate(new Date(d))} style={{ flex: 1, textAlign: "center", padding: "8px 2px", borderRadius: 10, background: sel ? T.acc : tod ? T.accLt : T.card, border: `1px solid ${sel ? T.acc : T.bdr}`, cursor: "pointer" }}>
+                      <div style={{ fontSize: 9, fontWeight: 600, color: sel ? "#fff" : T.sub, textTransform: "uppercase" }}>
+                        {["Lu", "Ma", "Me", "Gi", "Ve", "Sa", "Do"][i]}
+                      </div>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: sel ? "#fff" : T.text, marginTop: 2 }}>{d.getDate()}</div>
+                      {n > 0 && <div style={{ width: 5, height: 5, borderRadius: "50%", background: sel ? "#fff" : T.red, margin: "2px auto 0" }} />}
+                    </div>
+                  );
+                })}
+              </div>
+              <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>
+                {selDate.toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long" })}
+              </div>
+              {dayEvents.length === 0 ? (
+                <div style={{ padding: "16px", textAlign: "center", color: T.sub, fontSize: 12, background: T.card, borderRadius: T.r, border: `1px dashed ${T.bdr}` }}>Nessun evento</div>
+              ) : dayEvents.map(renderEventCard)}
+            </>
+          )}
+
+          {/* ═══ VISTA GIORNO ═══ */}
+          {agendaView === "giorno" && (
+            <>
+              {/* Timeline ore */}
+              <div style={{ background: T.card, borderRadius: T.r, border: `1px solid ${T.bdr}`, overflow: "hidden", marginBottom: 12 }}>
+                {Array.from({ length: 12 }, (_, i) => i + 7).map(h => {
+                  const hour = `${String(h).padStart(2, "0")}:00`;
+                  const hourEvents = dayEvents.filter(e => e.time && e.time.startsWith(String(h).padStart(2, "0")));
+                  return (
+                    <div key={h} style={{ display: "flex", borderBottom: `1px solid ${T.bdr}`, minHeight: 48 }}>
+                      <div style={{ width: 48, padding: "4px 6px", fontSize: 10, color: T.sub, fontFamily: FM, fontWeight: 600, borderRight: `1px solid ${T.bdr}`, flexShrink: 0 }}>{hour}</div>
+                      <div style={{ flex: 1, padding: "4px 8px" }}>
+                        {hourEvents.map(ev => (
+                          <div key={ev.id} style={{ padding: "4px 8px", borderRadius: 6, background: ev.color + "18", borderLeft: `3px solid ${ev.color}`, marginBottom: 2, fontSize: 11, fontWeight: 600, color: T.text }}>
+                            {ev.text}
+                            {ev.persona && <span style={{ color: T.sub, fontWeight: 400 }}> · {ev.persona}</span>}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              {/* Unscheduled */}
+              {dayEvents.filter(e => !e.time).length > 0 && (
+                <>
+                  <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 6, color: T.sub }}>Senza orario</div>
+                  {dayEvents.filter(e => !e.time).map(renderEventCard)}
+                </>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  /* ── CHAT / AI TAB ── */
+  const renderChat = () => (
+    <div style={{ paddingBottom: 80, display: "flex", flexDirection: "column", height: "calc(100vh - 56px)" }}>
+      <div style={S.header}>
+        <div style={{ flex: 1 }}>
+          <div style={S.headerTitle}>MASTRO AI</div>
+          <div style={S.headerSub}>Il tuo assistente intelligente</div>
+        </div>
+      </div>
+      <div style={{ flex: 1, overflowY: "auto", padding: "12px 16px" }}>
+        {aiMsgs.map((m, i) => (
+          <div key={i} style={{ display: "flex", justifyContent: m.role === "user" ? "flex-end" : "flex-start", marginBottom: 8 }}>
+            <div style={{ maxWidth: "80%", padding: "10px 14px", borderRadius: 14, background: m.role === "user" ? T.acc : T.card, color: m.role === "user" ? "#fff" : T.text, fontSize: 13, lineHeight: 1.5, border: m.role === "ai" ? `1px solid ${T.bdr}` : "none", whiteSpace: "pre-wrap" }}>
+              {m.text}
+            </div>
+          </div>
+        ))}
+      </div>
+      <div style={{ padding: "8px 16px 16px", display: "flex", gap: 8, background: T.card, borderTop: `1px solid ${T.bdr}` }}>
+        <input style={{ ...S.input, flex: 1 }} placeholder="Chiedi a MASTRO AI..." value={aiInput} onChange={e => setAiInput(e.target.value)} onKeyDown={e => e.key === "Enter" && handleAI()} />
+        <div onClick={handleAI} style={{ width: 40, height: 40, borderRadius: 10, background: T.acc, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}>
+          <Ico d={ICO.send} s={18} c="#fff" />
+        </div>
+      </div>
+    </div>
+  );
+
+  /* ── SETTINGS TAB ── */
+  const renderSettings = () => (
+    <div style={{ paddingBottom: 80 }}>
+      <div style={S.header}>
+        <div style={{ flex: 1 }}>
+          <div style={S.headerTitle}>Impostazioni</div>
+        </div>
+      </div>
+
+      {/* Settings sub-tabs — scrollable */}
+      <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch", margin: "8px 16px 12px", borderRadius: 8, border: `1px solid ${T.bdr}` }}>
+        <div style={{ display: "flex", minWidth: "max-content" }}>
+          {[{ id: "generali", l: "⚙️ Generali" }, { id: "team", l: "👥 Team" }, { id: "sistemi", l: "🏗 Sistemi" }, { id: "colori", l: "🎨 Colori" }, { id: "vetri", l: "🪟 Vetri" }, { id: "tipologie", l: "📐 Tipologie" }, { id: "coprifili", l: "📏 Coprifili" }, { id: "lamiere", l: "🔩 Lamiere" }, { id: "pipeline", l: "📊 Pipeline" }].map(t => (
+            <div key={t.id} onClick={() => setSettingsTab(t.id)} style={{ padding: "8px 12px", textAlign: "center", fontSize: 10, fontWeight: 600, background: settingsTab === t.id ? T.acc : T.card, color: settingsTab === t.id ? "#fff" : T.sub, cursor: "pointer", whiteSpace: "nowrap" }}>
+              {t.l}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ padding: "0 16px" }}>
+
+        {/* ═══ GENERALI ═══ */}
+        {settingsTab === "generali" && (
+          <>
+            <div style={S.card}><div style={S.cardInner}>
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <div style={{ width: 48, height: 48, borderRadius: "50%", background: T.acc, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 18, fontWeight: 700 }}>FC</div>
+                <div>
+                  <div style={{ fontSize: 15, fontWeight: 700 }}>Fabio Cozza</div>
+                  <div style={{ fontSize: 12, color: T.sub }}>Walter Cozza Serramenti SRL</div>
+                </div>
+              </div>
+            </div></div>
+            <div style={{ ...S.card, marginTop: 8 }}><div style={S.cardInner}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: T.sub, marginBottom: 8 }}>TEMA</div>
+              <div style={{ display: "flex", gap: 6 }}>
+                {[["chiaro", "☀️"], ["scuro", "🌙"], ["oceano", "🌊"]].map(([id, ico]) => (
+                  <div key={id} onClick={() => setTheme(id)} style={{ flex: 1, padding: "10px 4px", borderRadius: 8, border: `1.5px solid ${theme === id ? T.acc : T.bdr}`, textAlign: "center", cursor: "pointer" }}>
+                    <div style={{ fontSize: 18 }}>{ico}</div>
+                    <div style={{ fontSize: 10, fontWeight: 600, textTransform: "capitalize", marginTop: 2 }}>{id}</div>
+                  </div>
+                ))}
+              </div>
+            </div></div>
+            <div style={{ ...S.card, marginTop: 8 }}><div style={S.cardInner}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: T.sub, marginBottom: 8 }}>STATISTICHE</div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, fontSize: 12 }}>
+                <div><div style={{ fontSize: 20, fontWeight: 700, color: T.acc }}>{cantieri.length}</div>Commesse</div>
+                <div><div style={{ fontSize: 20, fontWeight: 700, color: T.blue }}>{countVani()}</div>Vani</div>
+                <div><div style={{ fontSize: 20, fontWeight: 700, color: T.grn }}>{tasks.filter(t => t.done).length}/{tasks.length}</div>Task</div>
+              </div>
+            </div></div>
+          </>
+        )}
+
+        {/* ═══ TEAM ═══ */}
+        {settingsTab === "team" && (
+          <>
+            {team.map(m => (
+              <div key={m.id} style={{ ...S.card, marginBottom: 8 }}><div style={{ ...S.cardInner, display: "flex", alignItems: "center", gap: 10 }}>
+                <div style={{ width: 36, height: 36, borderRadius: "50%", background: m.colore, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 12, fontWeight: 700, flexShrink: 0 }}>{m.nome.split(" ").map(n => n[0]).join("")}</div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700 }}>{m.nome}</div>
+                  <div style={{ fontSize: 11, color: T.sub }}>{m.ruolo} — {m.compiti}</div>
+                </div>
+                <Ico d={ICO.pen} s={14} c={T.sub} />
+              </div></div>
+            ))}
+            <div style={{ padding: "14px", borderRadius: T.r, border: `1px dashed ${T.bdr}`, textAlign: "center", cursor: "pointer", color: T.sub, fontSize: 12 }}>+ Aggiungi membro</div>
+          </>
+        )}
+
+        {/* ═══ SISTEMI E SOTTOSISTEMI ═══ */}
+        {settingsTab === "sistemi" && (
+          <>
+            <div style={{ fontSize: 11, color: T.sub, marginBottom: 8 }}>Configura marche, sistemi e sottosistemi con colori collegati</div>
+            {sistemiDB.map(s => (
+              <div key={s.id} style={{ ...S.card, marginBottom: 8 }}><div style={S.cardInner}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: T.acc }}>{s.marca}</div>
+                    <div style={{ fontSize: 12, fontWeight: 600 }}>{s.sistema}</div>
+                  </div>
+                  <div style={{ textAlign: "right" }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: T.grn, fontFamily: FM }}>€{s.euroMq}/mq</div>
+                    <div style={{ fontSize: 9, color: T.sub }}>+{s.sovRAL}% RAL · +{s.sovLegno}% Legno</div>
+                  </div>
+                </div>
+                {s.sottosistemi && (
+                  <div style={{ marginBottom: 6 }}>
+                    <div style={{ fontSize: 9, fontWeight: 700, color: T.sub, textTransform: "uppercase", marginBottom: 3 }}>Sottosistemi</div>
+                    <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+                      {s.sottosistemi.map(ss => <span key={ss} style={S.badge(T.blueLt, T.blue)}>{ss}</span>)}
+                    </div>
+                  </div>
+                )}
+                <div style={{ fontSize: 9, fontWeight: 700, color: T.sub, textTransform: "uppercase", marginBottom: 3 }}>Colori disponibili</div>
+                <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+                  {s.colori.map(c => {
+                    const col = coloriDB.find(x => x.code === c);
+                    return <span key={c} style={{ padding: "2px 8px", borderRadius: 4, fontSize: 10, fontWeight: 600, background: col?.hex + "20", color: T.text, border: `1px solid ${col?.hex || T.bdr}40` }}>{col?.hex && <span style={{ display: "inline-block", width: 8, height: 8, borderRadius: "50%", background: col.hex, marginRight: 4, verticalAlign: "middle" }} />}{c}</span>;
+                  })}
+                </div>
+              </div></div>
+            ))}
+            <div onClick={() => {}} style={{ padding: "14px", borderRadius: T.r, border: `1px dashed ${T.acc}`, textAlign: "center", cursor: "pointer", color: T.acc, fontSize: 12, fontWeight: 600 }}>+ Aggiungi sistema</div>
+          </>
+        )}
+
+        {/* ═══ COLORI ═══ */}
+        {settingsTab === "colori" && (
+          <>
+            <div style={{ fontSize: 11, color: T.sub, marginBottom: 8 }}>Colori disponibili — collegati ai sistemi</div>
+            {coloriDB.map(c => (
+              <div key={c.id} style={{ ...S.card, marginBottom: 6 }}><div style={{ ...S.cardInner, display: "flex", alignItems: "center", gap: 10 }}>
+                <div style={{ width: 28, height: 28, borderRadius: 6, background: c.hex, border: `1px solid ${T.bdr}`, flexShrink: 0 }} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600 }}>{c.nome}</div>
+                  <div style={{ fontSize: 10, color: T.sub }}>{c.code} · {c.tipo}</div>
+                </div>
+                <div style={{ fontSize: 10, color: T.sub }}>{sistemiDB.filter(s => s.colori.includes(c.code)).map(s => s.marca).join(", ") || "—"}</div>
+                <Ico d={ICO.trash} s={14} c={T.sub} />
+              </div></div>
+            ))}
+            <div style={{ padding: "14px", borderRadius: T.r, border: `1px dashed ${T.acc}`, textAlign: "center", cursor: "pointer", color: T.acc, fontSize: 12, fontWeight: 600 }}>+ Aggiungi colore</div>
+          </>
+        )}
+
+        {/* ═══ VETRI ═══ */}
+        {settingsTab === "vetri" && (
+          <>
+            <div style={{ fontSize: 11, color: T.sub, marginBottom: 8 }}>Tipologie vetro disponibili per i vani</div>
+            {vetriDB.map(g => (
+              <div key={g.id} style={{ ...S.card, marginBottom: 6 }}><div style={{ ...S.cardInner, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 700 }}>{g.nome}</div>
+                  <div style={{ fontSize: 11, color: T.sub, fontFamily: FM }}>{g.code}</div>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ padding: "3px 8px", borderRadius: 6, background: g.ug <= 0.7 ? T.grnLt : g.ug <= 1.0 ? T.orangeLt : T.redLt, fontSize: 12, fontWeight: 700, fontFamily: FM, color: g.ug <= 0.7 ? T.grn : g.ug <= 1.0 ? T.orange : T.red }}>Ug={g.ug}</span>
+                  <Ico d={ICO.trash} s={14} c={T.sub} />
+                </div>
+              </div></div>
+            ))}
+            <div style={{ padding: "14px", borderRadius: T.r, border: `1px dashed ${T.acc}`, textAlign: "center", cursor: "pointer", color: T.acc, fontSize: 12, fontWeight: 600 }}>+ Aggiungi vetro</div>
+          </>
+        )}
+
+        {/* ═══ TIPOLOGIE ═══ */}
+        {settingsTab === "tipologie" && (
+          <>
+            <div style={{ fontSize: 11, color: T.sub, marginBottom: 8 }}>Tipologie serramento — trascina ⭐ per i preferiti</div>
+            {TIPOLOGIE_RAPIDE.map(t => {
+              const isFav = favTipologie.includes(t.code);
+              return (
+                <div key={t.code} style={{ ...S.card, marginBottom: 4 }}><div style={{ ...S.cardInner, display: "flex", alignItems: "center", gap: 8, padding: "8px 14px" }}>
+                  <div onClick={() => setFavTipologie(fav => isFav ? fav.filter(f => f !== t.code) : [...fav, t.code])} style={{ cursor: "pointer" }}>
+                    <span style={{ fontSize: 16, color: isFav ? "#ff9500" : T.bdr }}>{isFav ? "⭐" : "☆"}</span>
+                  </div>
+                  <span style={{ fontSize: 16 }}>{t.icon}</span>
+                  <div style={{ flex: 1 }}>
+                    <span style={{ fontSize: 12, fontWeight: 700, fontFamily: FM }}>{t.code}</span>
+                    <span style={{ fontSize: 11, color: T.sub, marginLeft: 6 }}>{t.label}</span>
+                  </div>
+                  <Ico d={ICO.pen} s={14} c={T.sub} />
+                </div></div>
+              );
+            })}
+            <div style={{ padding: "14px", borderRadius: T.r, border: `1px dashed ${T.acc}`, textAlign: "center", cursor: "pointer", color: T.acc, fontSize: 12, fontWeight: 600, marginTop: 4 }}>+ Aggiungi tipologia</div>
+          </>
+        )}
+
+        {/* ═══ COPRIFILI ═══ */}
+        {settingsTab === "coprifili" && (
+          <>
+            <div style={{ fontSize: 11, color: T.sub, marginBottom: 8 }}>Lista coprifili disponibili nella creazione vano</div>
+            {coprifiliDB.map(c => (
+              <div key={c.id} style={{ ...S.card, marginBottom: 4 }}><div style={{ ...S.cardInner, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px" }}>
+                <div>
+                  <span style={{ fontSize: 12, fontWeight: 700, fontFamily: FM, color: T.acc }}>{c.cod}</span>
+                  <span style={{ fontSize: 12, marginLeft: 8 }}>{c.nome}</span>
+                </div>
+                <Ico d={ICO.trash} s={14} c={T.sub} />
+              </div></div>
+            ))}
+            <div style={{ padding: "14px", borderRadius: T.r, border: `1px dashed ${T.acc}`, textAlign: "center", cursor: "pointer", color: T.acc, fontSize: 12, fontWeight: 600, marginTop: 4 }}>+ Aggiungi coprifilo</div>
+          </>
+        )}
+
+        {/* ═══ LAMIERE ═══ */}
+        {settingsTab === "lamiere" && (
+          <>
+            <div style={{ fontSize: 11, color: T.sub, marginBottom: 8 }}>Lista lamiere e scossaline</div>
+            {lamiereDB.map(l => (
+              <div key={l.id} style={{ ...S.card, marginBottom: 4 }}><div style={{ ...S.cardInner, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px" }}>
+                <div>
+                  <span style={{ fontSize: 12, fontWeight: 700, fontFamily: FM, color: T.orange }}>{l.cod}</span>
+                  <span style={{ fontSize: 12, marginLeft: 8 }}>{l.nome}</span>
+                </div>
+                <Ico d={ICO.trash} s={14} c={T.sub} />
+              </div></div>
+            ))}
+            <div style={{ padding: "14px", borderRadius: T.r, border: `1px dashed ${T.acc}`, textAlign: "center", cursor: "pointer", color: T.acc, fontSize: 12, fontWeight: 600, marginTop: 4 }}>+ Aggiungi lamiera</div>
+          </>
+        )}
+
+        {/* ═══ PIPELINE ═══ */}
+        {settingsTab === "pipeline" && (
+          <>
+            {PIPELINE.map((p, i) => (
+              <div key={p.id} style={{ ...S.card, marginBottom: 6 }}><div style={{ ...S.cardInner, display: "flex", alignItems: "center", gap: 10, padding: "10px 14px" }}>
+                <span style={{ fontSize: 18 }}>{p.emoji}</span>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700 }}>{p.nome}</div>
+                  <div style={{ fontSize: 10, color: T.sub }}>Fase {i + 1} di {PIPELINE.length}</div>
+                </div>
+                <div style={{ width: 16, height: 16, borderRadius: "50%", background: p.color }} />
+              </div></div>
+            ))}
+          </>
+        )}
+      </div>
+    </div>
+  );
+  /* ═══════ MODALS ═══════ */
+  const renderModal = () => {
+    if (!showModal) return null;
+    return (
+      <div style={S.modal} onClick={e => e.target === e.currentTarget && setShowModal(null)}>
+        <div style={S.modalInner}>
+          {/* TASK MODAL */}
+          {showModal === "task" && (
+            <>
+              <div style={S.modalTitle}>Nuovo task</div>
+              <div style={{ marginBottom: 14 }}>
+                <label style={S.fieldLabel}>Cosa devi fare?</label>
+                <input style={S.input} placeholder="es. Sopralluogo, chiamare fornitore..." value={newTask.text} onChange={e => setNewTask(t => ({ ...t, text: e.target.value }))} />
+              </div>
+              <div style={{ display: "flex", gap: 10, marginBottom: 14 }}>
+                <div style={{ flex: 1 }}>
+                  <label style={S.fieldLabel}>Data</label>
+                  <input style={S.input} type="date" />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={S.fieldLabel}>Ora (opz.)</label>
+                  <input style={S.input} type="time" value={newTask.time} onChange={e => setNewTask(t => ({ ...t, time: e.target.value }))} />
+                </div>
+              </div>
+              <div style={{ marginBottom: 14 }}>
+                <label style={S.fieldLabel}>Priorità</label>
+                <div style={{ display: "flex", gap: 6 }}>
+                  {[{ id: "alta", l: "Urgente", c: T.red }, { id: "media", l: "Normale", c: T.orange }, { id: "bassa", l: "Bassa", c: T.sub }].map(p => (
+                    <div key={p.id} onClick={() => setNewTask(t => ({ ...t, priority: p.id }))} style={{ padding: "6px 12px", borderRadius: 8, border: `1px solid ${newTask.priority === p.id ? p.c : T.bdr}`, background: newTask.priority === p.id ? p.c + "18" : "transparent", color: p.c, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+                      {p.l}
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div style={{ marginBottom: 14 }}>
+                <label style={S.fieldLabel}>Collega a commessa (opzionale)</label>
+                <select style={S.select} value={newTask.cm} onChange={e => setNewTask(t => ({ ...t, cm: e.target.value }))}>
+                  <option value="">— Nessuna —</option>
+                  {cantieri.map(c => <option key={c.id} value={c.code}>{c.code} · {c.cliente}</option>)}
+                </select>
+              </div>
+              <div style={{ marginBottom: 14 }}>
+                <label style={S.fieldLabel}>Note (opzionale)</label>
+                <input style={S.input} placeholder="Dettagli, materiale da portare..." value={newTask.meta} onChange={e => setNewTask(t => ({ ...t, meta: e.target.value }))} />
+              </div>
+              <button style={S.btn} onClick={addTask}>Crea task</button>
+              <button style={S.btnCancel} onClick={() => setShowModal(null)}>Annulla</button>
+            </>
+          )}
+
+          {/* COMMESSA MODAL */}
+          {showModal === "commessa" && (
+            <>
+              <div style={S.modalTitle}>Nuova commessa</div>
+              <div style={{ marginBottom: 14 }}>
+                <label style={S.fieldLabel}>Cliente</label>
+                <input style={S.input} placeholder="Nome e cognome" value={newCM.cliente} onChange={e => setNewCM(c => ({ ...c, cliente: e.target.value }))} />
+              </div>
+              <div style={{ marginBottom: 14 }}>
+                <label style={S.fieldLabel}>Indirizzo</label>
+                <input style={S.input} placeholder="Via, CAP, Città" value={newCM.indirizzo} onChange={e => setNewCM(c => ({ ...c, indirizzo: e.target.value }))} />
+              </div>
+              <div style={{ marginBottom: 14 }}>
+                <label style={S.fieldLabel}>Sistema</label>
+                <select style={S.select} value={newCM.sistema} onChange={e => setNewCM(c => ({ ...c, sistema: e.target.value }))}>
+                  <option value="">— Seleziona —</option>
+                  {sistemiDB.map(s => <option key={s.id} value={`${s.marca} ${s.sistema}`}>{s.marca} {s.sistema} — €{s.euroMq}/mq</option>)}
+                </select>
+              </div>
+              <div style={{ display: "flex", gap: 10, marginBottom: 14 }}>
+                <div style={{ flex: 1 }}>
+                  <label style={S.fieldLabel}>Colore telaio</label>
+                  <select style={S.select} value={newCM.colTelaio} onChange={e => setNewCM(c => ({ ...c, colTelaio: e.target.value }))}>
+                    <option value="">— Seleziona —</option>
+                    {coloriDB.map(c => <option key={c.id} value={c.code}>{c.code} — {c.nome}</option>)}
+                  </select>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={S.fieldLabel}>Colore accessori</label>
+                  <select style={S.select} value={newCM.colAccessori} onChange={e => setNewCM(c => ({ ...c, colAccessori: e.target.value }))}>
+                    <option value="">— Seleziona —</option>
+                    {coloriDB.map(c => <option key={c.id} value={c.code}>{c.code} — {c.nome}</option>)}
+                  </select>
+                </div>
+              </div>
+              {/* Difficoltà salita */}
+              <div style={{ marginBottom: 14 }}>
+                <label style={S.fieldLabel}>🏗 Accesso / Difficoltà salita</label>
+                <div style={{ display: "flex", gap: 4, marginBottom: 6 }}>
+                  {[{ id: "facile", l: "Facile", c: T.grn, e: "✅" }, { id: "media", l: "Media", c: T.orange, e: "⚠️" }, { id: "difficile", l: "Difficile", c: T.red, e: "🔴" }].map(d => (
+                    <div key={d.id} onClick={() => setNewCM(c => ({ ...c, difficoltaSalita: d.id }))} style={{ flex: 1, padding: "8px 4px", borderRadius: 8, border: `1.5px solid ${newCM.difficoltaSalita === d.id ? d.c : T.bdr}`, background: newCM.difficoltaSalita === d.id ? d.c + "15" : T.card, textAlign: "center", cursor: "pointer" }}>
+                      <div style={{ fontSize: 14 }}>{d.e}</div>
+                      <div style={{ fontSize: 10, fontWeight: 600, color: newCM.difficoltaSalita === d.id ? d.c : T.sub }}>{d.l}</div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 10, color: T.sub, fontWeight: 600, marginBottom: 2 }}>Piano edificio</div>
+                    <input style={S.input} placeholder="es. 3° piano" value={newCM.pianoEdificio} onChange={e => setNewCM(c => ({ ...c, pianoEdificio: e.target.value }))} />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 10, color: T.sub, fontWeight: 600, marginBottom: 2 }}>Foro scale (cm)</div>
+                    <input style={S.input} placeholder="es. 80×200" value={newCM.foroScale} onChange={e => setNewCM(c => ({ ...c, foroScale: e.target.value }))} />
+                  </div>
+                </div>
+              </div>
+              <button style={S.btn} onClick={addCommessa}>Crea commessa</button>
+              <button style={S.btnCancel} onClick={() => setShowModal(null)}>Annulla</button>
+            </>
+          )}
+
+          {/* VANO MODAL — QUICK CREATION */}
+          {showModal === "vano" && (
+            <>
+              <div style={S.modalTitle}>Nuovo vano</div>
+              
+              {/* Remember indicator */}
+              {selectedCM?.vani?.length > 0 && newVano.sistema && (
+                <div style={{ padding: "6px 10px", borderRadius: 8, background: T.grnLt, border: `1px solid ${T.grn}30`, marginBottom: 10, fontSize: 10, color: T.grn, fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
+                  ♻️ Info ricordate dal vano precedente (sistema, colori, vetro, telaio, coprifilo, lamiera)
+                </div>
+              )}
+              
+              {/* TIPOLOGIA RAPIDA — Preferiti */}
+              <div style={{ marginBottom: 12 }}>
+                <label style={S.fieldLabel}>Tipologia</label>
+                <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+                  {TIPOLOGIE_RAPIDE.filter(t => favTipologie.includes(t.code)).map(t => (
+                    <div key={t.code} onClick={() => setNewVano(v => ({ ...v, tipo: t.code }))} style={{ padding: "6px 10px", borderRadius: 8, border: `1.5px solid ${newVano.tipo === t.code ? T.acc : T.bdr}`, background: newVano.tipo === t.code ? T.accLt : T.card, fontSize: 11, fontWeight: 700, color: newVano.tipo === t.code ? T.acc : T.text, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}>
+                      <span style={{ fontSize: 12 }}>{t.icon}</span> {t.code}
+                    </div>
+                  ))}
+                  <div onClick={() => { const next = TIPOLOGIE_RAPIDE.find(t => !favTipologie.includes(t.code)); if (next) setNewVano(v => ({ ...v, tipo: next.code })); }} style={{ padding: "6px 10px", borderRadius: 8, border: `1px dashed ${T.bdr}`, fontSize: 10, color: T.sub, cursor: "pointer" }}>+ Altro</div>
+                </div>
+                {!favTipologie.includes(newVano.tipo) && (
+                  <select style={{ ...S.select, marginTop: 6 }} value={newVano.tipo} onChange={e => setNewVano(v => ({ ...v, tipo: e.target.value }))}>
+                    {TIPOLOGIE_RAPIDE.map(t => <option key={t.code} value={t.code}>{t.code} — {t.label}</option>)}
+                  </select>
+                )}
+              </div>
+
+              {/* NOME (auto-generato se vuoto) */}
+              <div style={{ marginBottom: 12 }}>
+                <label style={S.fieldLabel}>Nome (opzionale — auto se vuoto)</label>
+                <input style={S.input} placeholder={`es. Cucina ${TIPOLOGIE_RAPIDE.find(t => t.code === newVano.tipo)?.label || ""}`} value={newVano.nome} onChange={e => setNewVano(v => ({ ...v, nome: e.target.value }))} />
+              </div>
+
+              {/* SISTEMA + COLORI — riga compatta */}
+              <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+                <div style={{ flex: 1 }}>
+                  <label style={S.fieldLabel}>Sistema</label>
+                  <select style={S.select} value={newVano.sistema} onChange={e => setNewVano(v => ({ ...v, sistema: e.target.value }))}>
+                    <option value="">— Sel. —</option>
+                    {sistemiDB.map(s => <option key={s.id} value={`${s.marca} ${s.sistema}`}>{s.marca} {s.sistema}</option>)}
+                  </select>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={S.fieldLabel}>Vetro</label>
+                  <select style={S.select} value={newVano.vetro} onChange={e => setNewVano(v => ({ ...v, vetro: e.target.value }))}>
+                    <option value="">— Sel. —</option>
+                    {vetriDB.map(g => <option key={g.id} value={g.code}>{g.code} Ug={g.ug}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              {/* COLORE PROFILI con bicolore */}
+              <div style={{ marginBottom: 12 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                  <label style={{ ...S.fieldLabel, marginBottom: 0 }}>Colore profili</label>
+                  <div onClick={() => setNewVano(v => ({ ...v, bicolore: !v.bicolore }))} style={{ fontSize: 10, padding: "2px 8px", borderRadius: 4, background: newVano.bicolore ? T.accLt : "transparent", border: `1px solid ${newVano.bicolore ? T.acc : T.bdr}`, color: newVano.bicolore ? T.acc : T.sub, cursor: "pointer", fontWeight: 600 }}>
+                    Bicolore {newVano.bicolore ? "✓" : ""}
+                  </div>
+                </div>
+                {!newVano.bicolore ? (
+                  <select style={S.select} value={newVano.coloreInt} onChange={e => setNewVano(v => ({ ...v, coloreInt: e.target.value, coloreEst: e.target.value }))}>
+                    <option value="">— Seleziona —</option>
+                    {coloriDB.map(c => <option key={c.id} value={c.code}>{c.code} — {c.nome}</option>)}
+                  </select>
+                ) : (
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 9, color: T.sub, fontWeight: 600, marginBottom: 2 }}>Interno</div>
+                      <select style={S.select} value={newVano.coloreInt} onChange={e => setNewVano(v => ({ ...v, coloreInt: e.target.value }))}>
+                        <option value="">— Int —</option>
+                        {coloriDB.map(c => <option key={c.id} value={c.code}>{c.code}</option>)}
+                      </select>
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 9, color: T.sub, fontWeight: 600, marginBottom: 2 }}>Esterno</div>
+                      <select style={S.select} value={newVano.coloreEst} onChange={e => setNewVano(v => ({ ...v, coloreEst: e.target.value }))}>
+                        <option value="">— Est —</option>
+                        {coloriDB.map(c => <option key={c.id} value={c.code}>{c.code}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* COLORE ACCESSORI */}
+              <div style={{ marginBottom: 12 }}>
+                <label style={S.fieldLabel}>Colore accessori</label>
+                <select style={S.select} value={newVano.coloreAcc} onChange={e => setNewVano(v => ({ ...v, coloreAcc: e.target.value }))}>
+                  <option value="">— Come profili —</option>
+                  {coloriDB.map(c => <option key={c.id} value={c.code}>{c.code} — {c.nome}</option>)}
+                </select>
+              </div>
+
+              {/* TELAIO */}
+              <div style={{ marginBottom: 12 }}>
+                <label style={S.fieldLabel}>Telaio</label>
+                <div style={{ display: "flex", gap: 6, marginBottom: 6 }}>
+                  {[{ id: "Z", label: "Telaio a Z" }, { id: "L", label: "Telaio a L" }].map(t => (
+                    <div key={t.id} onClick={() => setNewVano(v => ({ ...v, telaio: v.telaio === t.id ? "" : t.id }))} style={{ flex: 1, padding: "8px", borderRadius: 8, border: `1.5px solid ${newVano.telaio === t.id ? T.acc : T.bdr}`, background: newVano.telaio === t.id ? T.accLt : T.card, textAlign: "center", fontSize: 12, fontWeight: 700, color: newVano.telaio === t.id ? T.acc : T.sub, cursor: "pointer" }}>
+                      {t.label}
+                    </div>
+                  ))}
+                </div>
+                {newVano.telaio === "Z" && (
+                  <div style={{ marginBottom: 6 }}>
+                    <div style={{ fontSize: 10, color: T.sub, fontWeight: 600, marginBottom: 2 }}>Lunghezza ala (mm)</div>
+                    <input style={S.input} type="number" inputMode="numeric" placeholder="es. 35" value={newVano.telaioAlaZ} onChange={e => setNewVano(v => ({ ...v, telaioAlaZ: e.target.value }))} />
+                  </div>
+                )}
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                  <div onClick={() => setNewVano(v => ({ ...v, rifilato: !v.rifilato }))} style={{ width: 36, height: 20, borderRadius: 10, background: newVano.rifilato ? T.grn : T.bdr, cursor: "pointer", padding: 2 }}>
+                    <div style={{ width: 16, height: 16, borderRadius: "50%", background: "#fff", transform: newVano.rifilato ? "translateX(16px)" : "translateX(0)", transition: "transform 0.2s" }} />
+                  </div>
+                  <span style={{ fontSize: 12, fontWeight: 600 }}>Rifilato</span>
+                </div>
+                {newVano.rifilato && (
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 4, marginBottom: 6 }}>
+                    {[["rifilSx", "↙ SX"], ["rifilDx", "↘ DX"], ["rifilSopra", "↑ Sopra"], ["rifilSotto", "↓ Sotto"]].map(([k, l]) => (
+                      <div key={k} style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                        <span style={{ fontSize: 9, fontWeight: 700, color: T.sub, minWidth: 42 }}>{l}</span>
+                        <input style={{ flex: 1, padding: "5px 6px", fontSize: 12, fontFamily: FM, border: `1px solid ${T.bdr}`, borderRadius: 6, textAlign: "center" }} type="number" inputMode="numeric" placeholder="mm" value={newVano[k]} onChange={e => setNewVano(v => ({ ...v, [k]: e.target.value }))} />
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <div style={{ display: "flex", gap: 8 }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 10, color: T.sub, fontWeight: 600, marginBottom: 2 }}>Coprifilo</div>
+                    <select style={S.select} value={newVano.coprifilo} onChange={e => setNewVano(v => ({ ...v, coprifilo: e.target.value }))}>
+                      <option value="">— No —</option>
+                      {coprifiliDB.map(c => <option key={c.id} value={c.cod}>{c.cod} — {c.nome}</option>)}
+                    </select>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 10, color: T.sub, fontWeight: 600, marginBottom: 2 }}>Lamiera</div>
+                    <select style={S.select} value={newVano.lamiera} onChange={e => setNewVano(v => ({ ...v, lamiera: e.target.value }))}>
+                      <option value="">— No —</option>
+                      {lamiereDB.map(l => <option key={l.id} value={l.cod}>{l.cod} — {l.nome}</option>)}
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* STANZA + PIANO — riga compatta */}
+              <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+                <div style={{ flex: 1 }}>
+                  <label style={S.fieldLabel}>Stanza</label>
+                  <select style={S.select} value={newVano.stanza} onChange={e => setNewVano(v => ({ ...v, stanza: e.target.value }))}>
+                    {["Soggiorno", "Cucina", "Camera", "Bagno", "Studio", "Ingresso", "Corridoio", "Altro"].map(t => <option key={t}>{t}</option>)}
+                  </select>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={S.fieldLabel}>Piano</label>
+                  <div style={{ display: "flex", gap: 3, flexWrap: "wrap" }}>
+                    {customPiani.map(p => (
+                      <div key={p} onClick={() => setNewVano(v => ({ ...v, piano: p }))} style={{ padding: "7px 6px", borderRadius: 6, textAlign: "center", border: `1px solid ${newVano.piano === p ? T.acc : T.bdr}`, background: newVano.piano === p ? T.accLt : "transparent", fontSize: 11, fontWeight: 600, color: newVano.piano === p ? T.acc : T.sub, cursor: "pointer", minWidth: 28 }}>
+                        {p}
+                      </div>
+                    ))}
+                    {showAddPiano ? (
+                      <div style={{ display: "flex", gap: 2 }}>
+                        <input style={{ width: 40, padding: "5px 4px", fontSize: 11, border: `1px solid ${T.acc}`, borderRadius: 6, textAlign: "center", fontFamily: FM }} placeholder="P4" value={newPiano} onChange={e => setNewPiano(e.target.value)} autoFocus />
+                        <div onClick={() => { if (newPiano.trim()) { setCustomPiani(p => [...p, newPiano.trim()]); setNewVano(v => ({ ...v, piano: newPiano.trim() })); setNewPiano(""); setShowAddPiano(false); } }} style={{ padding: "7px 6px", borderRadius: 6, background: T.grn, color: "#fff", fontSize: 10, fontWeight: 700, cursor: "pointer" }}>✓</div>
+                      </div>
+                    ) : (
+                      <div onClick={() => setShowAddPiano(true)} style={{ padding: "7px 6px", borderRadius: 6, border: `1px dashed ${T.acc}`, color: T.acc, fontSize: 11, fontWeight: 700, cursor: "pointer" }}>+</div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <button style={S.btn} onClick={addVano}>Aggiungi vano</button>
+              <button style={S.btnCancel} onClick={() => setShowModal(null)}>Annulla</button>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  /* ═══════ MAIN RENDER ═══════ */
+  return (
+    <>
+      <link href={FONT} rel="stylesheet" />
+      <div style={S.app}>
+        {/* Content */}
+        {tab === "home" && !selectedCM && renderHome()}
+        {tab === "commesse" && renderCommesse()}
+        {tab === "agenda" && renderAgenda()}
+        {tab === "chat" && renderChat()}
+        {tab === "settings" && renderSettings()}
+
+        {/* Tab Bar */}
+        {!selectedVano && (
+          <div style={S.tabBar}>
+            {[
+              { id: "home", ico: ICO.home, label: "Home" },
+              { id: "commesse", ico: ICO.filter, label: "Commesse" },
+              { id: "agenda", ico: ICO.calendar, label: "Agenda" },
+              { id: "chat", ico: ICO.ai, label: "AI" },
+              { id: "settings", ico: ICO.settings, label: "Impost." },
+            ].map(t => (
+              <div key={t.id} style={S.tabItem(tab === t.id)} onClick={() => { setTab(t.id); setSelectedCM(null); setSelectedVano(null); }}>
+                <Ico d={t.ico} s={22} c={tab === t.id ? T.acc : T.sub} />
+                <div style={S.tabLabel(tab === t.id)}>{t.label}</div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Modals */}
+        {renderModal()}
+
+        {/* SEND COMMESSA MODAL */}
+        {showSendModal && selectedCM && (
+          <div style={S.modal} onClick={e => e.target === e.currentTarget && setShowSendModal(false)}>
+            <div style={S.modalInner}>
+              {sendConfirm === "sent" ? (
+                <div style={{ textAlign: "center", padding: "30px 0" }}>
+                  <div style={{ fontSize: 48, marginBottom: 12 }}>✅</div>
+                  <div style={{ fontSize: 17, fontWeight: 700, color: T.grn }}>Commessa inviata!</div>
+                  <div style={{ fontSize: 12, color: T.sub, marginTop: 4 }}>Email inviata con tutti i dati selezionati</div>
+                </div>
+              ) : (
+                <>
+                  <div style={S.modalTitle}>📧 Invia Commessa — {selectedCM.code}</div>
+                  <div style={{ fontSize: 12, color: T.sub, marginBottom: 14 }}>Scegli cosa includere nell'invio:</div>
+                  {[
+                    { key: "misure", label: "Misure tutti i vani", ico: "📐" },
+                    { key: "foto", label: "Foto scattate", ico: "📷" },
+                    { key: "disegno", label: "Disegni mano libera", ico: "✏️" },
+                    { key: "accessori", label: "Accessori (tapparelle, zanzariere...)", ico: "🪟" },
+                    { key: "note", label: "Note e annotazioni", ico: "📝" },
+                  ].map(opt => (
+                    <div key={opt.key} onClick={() => setSendOpts(o => ({ ...o, [opt.key]: !o[opt.key] }))} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", background: sendOpts[opt.key] ? T.accLt : T.card, border: `1px solid ${sendOpts[opt.key] ? T.acc : T.bdr}`, borderRadius: 10, marginBottom: 6, cursor: "pointer" }}>
+                      <div style={{ width: 22, height: 22, borderRadius: 6, border: `2px solid ${sendOpts[opt.key] ? T.acc : T.bdr}`, background: sendOpts[opt.key] ? T.acc : "transparent", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 12, fontWeight: 700 }}>
+                        {sendOpts[opt.key] && "✓"}
+                      </div>
+                      <span style={{ fontSize: 16 }}>{opt.ico}</span>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: T.text }}>{opt.label}</span>
+                    </div>
+                  ))}
+                  <div style={{ marginTop: 10, marginBottom: 8 }}>
+                    <label style={S.fieldLabel}>Invia a (email)</label>
+                    <input style={S.input} placeholder="email@destinatario.com" />
+                  </div>
+                  <button onClick={sendCommessa} style={{ ...S.btn, background: "linear-gradient(135deg, #007aff, #0055cc)", marginTop: 4 }}>
+                    📧 Invia commessa completa
+                  </button>
+                  <button style={S.btnCancel} onClick={() => setShowSendModal(false)}>Annulla</button>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* NEW EVENT MODAL */}
+        {showNewEvent && (
+          <div style={S.modal} onClick={e => e.target === e.currentTarget && setShowNewEvent(false)}>
+            <div style={S.modalInner}>
+              <div style={S.modalTitle}>Nuovo evento</div>
+              <div style={{ marginBottom: 14 }}>
+                <label style={S.fieldLabel}>Titolo</label>
+                <input style={S.input} placeholder="es. Sopralluogo, consegna materiale..." value={newEvent.text} onChange={e => setNewEvent(ev => ({ ...ev, text: e.target.value }))} />
+              </div>
+              <div style={{ display: "flex", gap: 10, marginBottom: 14 }}>
+                <div style={{ flex: 1 }}>
+                  <label style={S.fieldLabel}>Data</label>
+                  <input style={S.input} type="date" value={newEvent.date || selDate.toISOString().split("T")[0]} onChange={e => setNewEvent(ev => ({ ...ev, date: e.target.value }))} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={S.fieldLabel}>Ora (opz.)</label>
+                  <input style={S.input} type="time" value={newEvent.time} onChange={e => setNewEvent(ev => ({ ...ev, time: e.target.value }))} />
+                </div>
+              </div>
+              <div style={{ marginBottom: 14 }}>
+                <label style={S.fieldLabel}>Tipo</label>
+                <div style={{ display: "flex", gap: 6 }}>
+                  {[{ id: "appuntamento", l: "📅 Appuntamento", c: T.blue }, { id: "task", l: "✅ Task", c: T.orange }].map(t => (
+                    <div key={t.id} onClick={() => setNewEvent(ev => ({ ...ev, tipo: t.id }))} style={{ flex: 1, padding: "8px 4px", borderRadius: 8, border: `1px solid ${newEvent.tipo === t.id ? t.c : T.bdr}`, background: newEvent.tipo === t.id ? t.c + "18" : "transparent", textAlign: "center", fontSize: 12, fontWeight: 600, color: newEvent.tipo === t.id ? t.c : T.sub, cursor: "pointer" }}>
+                      {t.l}
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div style={{ marginBottom: 14 }}>
+                <label style={S.fieldLabel}>Collega a commessa</label>
+                <select style={S.select} value={newEvent.cm} onChange={e => setNewEvent(ev => ({ ...ev, cm: e.target.value }))}>
+                  <option value="">— Nessuna —</option>
+                  {cantieri.map(c => <option key={c.id} value={c.code}>{c.code} · {c.cliente}</option>)}
+                </select>
+              </div>
+              <div style={{ marginBottom: 14 }}>
+                <label style={S.fieldLabel}>Assegna a persona</label>
+                <select style={S.select} value={newEvent.persona} onChange={e => setNewEvent(ev => ({ ...ev, persona: e.target.value }))}>
+                  <option value="">— Nessuno —</option>
+                  {team.map(m => <option key={m.id} value={m.nome}>{m.nome} — {m.ruolo}</option>)}
+                </select>
+              </div>
+              <button style={S.btn} onClick={addEvent}>Crea evento</button>
+              <button style={S.btnCancel} onClick={() => setShowNewEvent(false)}>Annulla</button>
+            </div>
+          </div>
+        )}
+
+        {/* FASE ADVANCE NOTIFICATION */}
+        {faseNotif && (
+          <div style={{ position: "fixed", top: 60, left: "50%", transform: "translateX(-50%)", maxWidth: 380, width: "90%", padding: "12px 16px", borderRadius: 12, background: T.card, border: `1px solid ${faseNotif.color}40`, boxShadow: `0 4px 20px ${faseNotif.color}30`, zIndex: 300, display: "flex", alignItems: "center", gap: 10, animation: "fadeIn 0.3s ease" }}>
+            <div style={{ width: 36, height: 36, borderRadius: 10, background: faseNotif.color + "20", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <span style={{ fontSize: 18 }}>📧</span>
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: T.text }}>Avanzato a {faseNotif.fase}</div>
+              <div style={{ fontSize: 11, color: T.sub }}>Email inviata a <strong>{faseNotif.addetto}</strong></div>
+            </div>
+            <div style={{ fontSize: 18 }}>✅</div>
+          </div>
+        )}
+      </div>
+    </>
+  );
 }
