@@ -275,13 +275,18 @@ export default function MastroMisure() {
   const [selDate, setSelDate] = useState(new Date());
   const [showNewEvent, setShowNewEvent] = useState(false);
   const [newEvent, setNewEvent] = useState({ text: "", time: "", tipo: "appuntamento", cm: "", persona: "", date: "" });
-  const [events, setEvents] = useState([
-    { id: 1, text: "Sopralluogo Ferraro", time: "09:00", date: "2026-02-19", tipo: "appuntamento", cm: "CM-0003", persona: "Fabio Cozza", color: "#ff3b30", addr: "Via G. Barrio" },
-    { id: 2, text: "Consegna materiale Bruno", time: "14:00", date: "2026-02-19", tipo: "appuntamento", cm: "CM-0002", persona: "Sara Greco", color: "#007aff", addr: "Via Roma 45, Rende" },
-    { id: 3, text: "Posa Cozza — Camera", time: "16:30", date: "2026-02-19", tipo: "appuntamento", cm: "CM-0004", persona: "Marco Ferraro", color: "#34c759", addr: "Via G. Barrio" },
-    { id: 4, text: "Ritiro vetri Finstral", time: "10:00", date: "2026-02-20", tipo: "task", cm: "", persona: "Marco Ferraro", color: "#ff9500" },
-    { id: 5, text: "Preventivo Rossi", time: "", date: "2026-02-21", tipo: "task", cm: "CM-0001", persona: "Sara Greco", color: "#af52de" },
-  ]);
+  const [events, setEvents] = useState(() => {
+    const t = new Date(); const td = t.toISOString().split("T")[0];
+    const tm = new Date(t); tm.setDate(tm.getDate() + 1); const tmStr = tm.toISOString().split("T")[0];
+    const t2 = new Date(t); t2.setDate(t2.getDate() + 2); const t2Str = t2.toISOString().split("T")[0];
+    return [
+      { id: 1, text: "Sopralluogo Ferraro", time: "09:00", date: td, tipo: "appuntamento", cm: "CM-0003", persona: "Fabio Cozza", color: "#ff3b30", addr: "Via G. Barrio" },
+      { id: 2, text: "Consegna materiale Bruno", time: "14:00", date: td, tipo: "appuntamento", cm: "CM-0002", persona: "Sara Greco", color: "#007aff", addr: "Via Roma 45, Rende" },
+      { id: 3, text: "Posa Cozza — Camera", time: "16:30", date: td, tipo: "appuntamento", cm: "CM-0004", persona: "Marco Ferraro", color: "#34c759", addr: "Via G. Barrio" },
+      { id: 4, text: "Ritiro vetri Finstral", time: "10:00", date: tmStr, tipo: "task", cm: "", persona: "Marco Ferraro", color: "#ff9500" },
+      { id: 5, text: "Preventivo Rossi", time: "", date: t2Str, tipo: "task", cm: "CM-0001", persona: "Sara Greco", color: "#af52de" },
+    ];
+  });
   
   // Advance fase notification
   const [faseNotif, setFaseNotif] = useState(null);
@@ -289,6 +294,8 @@ export default function MastroMisure() {
   // AI Photo
   const [showAIPhoto, setShowAIPhoto] = useState(false);
   const [aiPhotoStep, setAiPhotoStep] = useState(0); // 0=ready, 1=analyzing, 2=done
+  const [settingsModal, setSettingsModal] = useState(null); // {type, item?}
+  const [settingsForm, setSettingsForm] = useState({});
   
   // Drawing state
   const canvasRef = useRef(null);
@@ -370,6 +377,52 @@ export default function MastroMisure() {
     if (selectedVano?.id === vanoId) {
       setSelectedVano(prev => ({ ...prev, accessori: { ...prev.accessori, [acc]: { ...prev.accessori[acc], attivo: !prev.accessori[acc].attivo } } }));
     }
+  };
+
+  // DELETE functions
+  const deleteTask = (taskId) => { if (confirm("Eliminare questo task?")) setTasks(ts => ts.filter(t => t.id !== taskId)); };
+  const deleteVano = (vanoId) => {
+    if (!confirm("Eliminare questo vano e tutte le sue misure?")) return;
+    setCantieri(cs => cs.map(c => c.id === selectedCM?.id ? { ...c, vani: c.vani.filter(v => v.id !== vanoId) } : c));
+    setSelectedCM(prev => prev ? ({ ...prev, vani: prev.vani.filter(v => v.id !== vanoId) }) : prev);
+    if (selectedVano?.id === vanoId) { setSelectedVano(null); setVanoStep(0); }
+  };
+  const deleteCommessa = (cmId) => {
+    if (!confirm("Eliminare questa commessa e tutti i suoi vani?")) return;
+    setCantieri(cs => cs.filter(c => c.id !== cmId));
+    if (selectedCM?.id === cmId) { setSelectedCM(null); setSelectedVano(null); }
+  };
+  const deleteEvent = (evId) => { if (confirm("Eliminare questo evento?")) setEvents(ev => ev.filter(e => e.id !== evId)); };
+  const deleteMsg = (msgId) => { if (confirm("Eliminare questo messaggio?")) setMsgs(ms => ms.filter(m => m.id !== msgId)); };
+
+  // SETTINGS CRUD
+  const addSettingsItem = () => {
+    const f = settingsForm;
+    if (settingsModal === "sistema" && f.marca && f.sistema) {
+      setSistemiDB(s => [...s, { id: Date.now(), marca: f.marca, sistema: f.sistema, euroMq: parseInt(f.euroMq) || 0, sovRAL: parseInt(f.sovRAL) || 0, sovLegno: parseInt(f.sovLegno) || 0, colori: [], sottosistemi: f.sottosistemi ? f.sottosistemi.split(",").map(s => s.trim()) : [] }]);
+    } else if (settingsModal === "colore" && f.nome && f.code) {
+      setColoriDB(c => [...c, { id: Date.now(), nome: f.nome, code: f.code, hex: f.hex || "#888888", tipo: f.tipo || "RAL" }]);
+    } else if (settingsModal === "vetro" && f.nome && f.code) {
+      setVetriDB(v => [...v, { id: Date.now(), nome: f.nome, code: f.code, ug: parseFloat(f.ug) || 1.0 }]);
+    } else if (settingsModal === "coprifilo" && f.nome && f.cod) {
+      setCoprifiliDB(c => [...c, { id: Date.now(), nome: f.nome, cod: f.cod }]);
+    } else if (settingsModal === "lamiera" && f.nome && f.cod) {
+      setLamiereDB(l => [...l, { id: Date.now(), nome: f.nome, cod: f.cod }]);
+    } else if (settingsModal === "tipologia" && f.code && f.label) {
+      TIPOLOGIE_RAPIDE.push({ code: f.code, label: f.label, icon: f.icon || "🪟" });
+    } else if (settingsModal === "membro" && f.nome) {
+      const colori = ["#007aff","#34c759","#af52de","#ff9500","#ff3b30","#5ac8fa"];
+      setTeam(t => [...t, { id: Date.now(), nome: f.nome, ruolo: f.ruolo || "Posatore", compiti: f.compiti || "", colore: colori[t.length % colori.length] }]);
+    } else return;
+    setSettingsModal(null); setSettingsForm({});
+  };
+  const deleteSettingsItem = (type, id) => {
+    if (!confirm("Eliminare?")) return;
+    if (type === "sistema") setSistemiDB(s => s.filter(x => x.id !== id));
+    if (type === "colore") setColoriDB(c => c.filter(x => x.id !== id));
+    if (type === "vetro") setVetriDB(v => v.filter(x => x.id !== id));
+    if (type === "coprifilo") setCoprifiliDB(c => c.filter(x => x.id !== id));
+    if (type === "lamiera") setLamiereDB(l => l.filter(x => x.id !== id));
   };
 
   const advanceFase = (cmId) => {
@@ -644,6 +697,7 @@ export default function MastroMisure() {
                 <div style={{ fontSize: 11, color: T.sub, marginTop: 2 }}>{t.meta}</div>
                 {t.cm && <span onClick={e => { e.stopPropagation(); const cm = cantieri.find(c => c.code === t.cm); if (cm) { setSelectedCM(cm); setTab("commesse"); } }} style={{ ...S.badge(T.accLt, T.acc), cursor: "pointer" }}>{t.cm}</span>}
               </div>
+              <div onClick={e => { e.stopPropagation(); deleteTask(t.id); }} style={{ padding: 4, cursor: "pointer", flexShrink: 0 }}><Ico d={ICO.trash} s={14} c={T.sub} /></div>
             </div>
           ))}
         </div>
@@ -792,8 +846,12 @@ export default function MastroMisure() {
 
         {/* Contact actions */}
         <div style={{ display: "flex", gap: 8, padding: "12px 16px" }}>
-          {[{ ico: ICO.phone, label: "Chiama", col: T.grn }, { ico: ICO.map, label: "Naviga", col: T.blue }, { ico: ICO.send, label: "WhatsApp", col: "#25d366" }].map((a, i) => (
-            <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4, padding: "10px 0", background: T.card, borderRadius: T.r, border: `1px solid ${T.bdr}`, cursor: "pointer" }}>
+          {[
+            { ico: ICO.phone, label: "Chiama", col: T.grn, act: () => window.open("tel:+39000000000") },
+            { ico: ICO.map, label: "Naviga", col: T.blue, act: () => window.open(`https://maps.google.com/?q=${encodeURIComponent(c.indirizzo || "")}`) },
+            { ico: ICO.send, label: "WhatsApp", col: "#25d366", act: () => window.open(`https://wa.me/?text=${encodeURIComponent(`Commessa ${c.code} - ${c.cliente}`)}`) },
+          ].map((a, i) => (
+            <div key={i} onClick={a.act} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4, padding: "10px 0", background: T.card, borderRadius: T.r, border: `1px solid ${T.bdr}`, cursor: "pointer" }}>
               <Ico d={a.ico} s={18} c={a.col} />
               <span style={{ fontSize: 10, fontWeight: 600, color: T.sub }}>{a.label}</span>
             </div>
@@ -804,6 +862,11 @@ export default function MastroMisure() {
         <div style={{ padding: "0 16px", marginBottom: 4 }}>
           <button onClick={() => setShowSendModal(true)} style={{ width: "100%", padding: "12px", borderRadius: 10, border: "none", background: "linear-gradient(135deg, #007aff, #0055cc)", color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: FF, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, boxShadow: "0 2px 8px rgba(0,122,255,0.3)" }}>
             <Ico d={ICO.send} s={16} c="#fff" sw={2} /> Invia Commessa
+          </button>
+        </div>
+        <div style={{ padding: "0 16px", marginBottom: 8 }}>
+          <button onClick={() => deleteCommessa(c.id)} style={{ width: "100%", padding: "10px", borderRadius: 10, border: `1px solid ${T.red}30`, background: T.redLt, color: T.red, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: FF }}>
+            🗑 Elimina commessa
           </button>
         </div>
 
@@ -829,9 +892,9 @@ export default function MastroMisure() {
                       <div style={{ fontSize: 14, fontWeight: 600 }}>{v.nome}</div>
                       <div style={{ fontSize: 11, color: T.sub }}>{v.tipo} · {v.stanza} · {v.piano}</div>
                     </div>
-                    <div style={{ textAlign: "right" }}>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: filled >= 6 ? T.grn : T.orange }}>{filled}/{total}</div>
-                      <div style={{ fontSize: 10, color: T.sub }}>misure</div>
+                    <div style={{ textAlign: "right", display: "flex", alignItems: "center", gap: 8 }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: filled >= 6 ? T.grn : T.orange }}>{filled}/{total}<div style={{ fontSize: 10, color: T.sub, fontWeight: 400 }}>misure</div></div>
+                      <div onClick={e => { e.stopPropagation(); deleteVano(v.id); }} style={{ width: 28, height: 28, borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", background: T.redLt, cursor: "pointer" }}><Ico d={ICO.trash} s={13} c={T.red} /></div>
                     </div>
                   </div>
                   {/* Tags */}
@@ -1487,11 +1550,12 @@ export default function MastroMisure() {
             <div style={{ fontSize: 13, fontWeight: 600 }}>{ev.text}</div>
             {ev.addr && <div style={{ fontSize: 11, color: T.sub, marginTop: 2 }}>{ev.addr}</div>}
             <div style={{ display: "flex", gap: 4, marginTop: 3, flexWrap: "wrap" }}>
-              {ev.cm && <span style={S.badge(T.accLt, T.acc)}>{ev.cm}</span>}
+              {ev.cm && <span onClick={() => { const cm = cantieri.find(c => c.code === ev.cm); if (cm) { setSelectedCM(cm); setTab("commesse"); } }} style={{ ...S.badge(T.accLt, T.acc), cursor: "pointer" }}>{ev.cm}</span>}
               {ev.persona && <span style={S.badge(T.purpleLt, T.purple)}>{ev.persona}</span>}
               <span style={S.badge(ev.tipo === "appuntamento" ? T.blueLt : T.orangeLt, ev.tipo === "appuntamento" ? T.blue : T.orange)}>{ev.tipo}</span>
             </div>
           </div>
+          <div onClick={() => deleteEvent(ev.id)} style={{ padding: 4, cursor: "pointer", alignSelf: "center" }}><Ico d={ICO.trash} s={13} c={T.sub} /></div>
         </div>
       </div>
     );
@@ -1720,7 +1784,7 @@ export default function MastroMisure() {
                 <Ico d={ICO.pen} s={14} c={T.sub} />
               </div></div>
             ))}
-            <div style={{ padding: "14px", borderRadius: T.r, border: `1px dashed ${T.bdr}`, textAlign: "center", cursor: "pointer", color: T.sub, fontSize: 12 }}>+ Aggiungi membro</div>
+            <div onClick={() => { setSettingsModal("membro"); setSettingsForm({ nome: "", ruolo: "Posatore", compiti: "" }); }} style={{ padding: "14px", borderRadius: T.r, border: `1px dashed ${T.bdr}`, textAlign: "center", cursor: "pointer", color: T.acc, fontSize: 12, fontWeight: 600 }}>+ Aggiungi membro</div>
           </>
         )}
 
@@ -1757,7 +1821,7 @@ export default function MastroMisure() {
                 </div>
               </div></div>
             ))}
-            <div onClick={() => {}} style={{ padding: "14px", borderRadius: T.r, border: `1px dashed ${T.acc}`, textAlign: "center", cursor: "pointer", color: T.acc, fontSize: 12, fontWeight: 600 }}>+ Aggiungi sistema</div>
+            <div onClick={() => { setSettingsModal("sistema"); setSettingsForm({ marca: "", sistema: "", euroMq: "", sovRAL: "", sovLegno: "", sottosistemi: "" }); }} style={{ padding: "14px", borderRadius: T.r, border: `1px dashed ${T.acc}`, textAlign: "center", cursor: "pointer", color: T.acc, fontSize: 12, fontWeight: 600 }}>+ Aggiungi sistema</div>
           </>
         )}
 
@@ -1773,10 +1837,10 @@ export default function MastroMisure() {
                   <div style={{ fontSize: 10, color: T.sub }}>{c.code} · {c.tipo}</div>
                 </div>
                 <div style={{ fontSize: 10, color: T.sub }}>{sistemiDB.filter(s => s.colori.includes(c.code)).map(s => s.marca).join(", ") || "—"}</div>
-                <Ico d={ICO.trash} s={14} c={T.sub} />
+                <div onClick={() => deleteSettingsItem("colore", c.id)} style={{ cursor: "pointer" }}><Ico d={ICO.trash} s={14} c={T.sub} /></div>
               </div></div>
             ))}
-            <div style={{ padding: "14px", borderRadius: T.r, border: `1px dashed ${T.acc}`, textAlign: "center", cursor: "pointer", color: T.acc, fontSize: 12, fontWeight: 600 }}>+ Aggiungi colore</div>
+            <div onClick={() => { setSettingsModal("colore"); setSettingsForm({ nome: "", code: "", hex: "#888888", tipo: "RAL" }); }} style={{ padding: "14px", borderRadius: T.r, border: `1px dashed ${T.acc}`, textAlign: "center", cursor: "pointer", color: T.acc, fontSize: 12, fontWeight: 600 }}>+ Aggiungi colore</div>
           </>
         )}
 
@@ -1792,11 +1856,11 @@ export default function MastroMisure() {
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <span style={{ padding: "3px 8px", borderRadius: 6, background: g.ug <= 0.7 ? T.grnLt : g.ug <= 1.0 ? T.orangeLt : T.redLt, fontSize: 12, fontWeight: 700, fontFamily: FM, color: g.ug <= 0.7 ? T.grn : g.ug <= 1.0 ? T.orange : T.red }}>Ug={g.ug}</span>
-                  <Ico d={ICO.trash} s={14} c={T.sub} />
+                  <div onClick={() => deleteSettingsItem("vetro", g.id)} style={{ cursor: "pointer" }}><Ico d={ICO.trash} s={14} c={T.sub} /></div>
                 </div>
               </div></div>
             ))}
-            <div style={{ padding: "14px", borderRadius: T.r, border: `1px dashed ${T.acc}`, textAlign: "center", cursor: "pointer", color: T.acc, fontSize: 12, fontWeight: 600 }}>+ Aggiungi vetro</div>
+            <div onClick={() => { setSettingsModal("vetro"); setSettingsForm({ nome: "", code: "", ug: "" }); }} style={{ padding: "14px", borderRadius: T.r, border: `1px dashed ${T.acc}`, textAlign: "center", cursor: "pointer", color: T.acc, fontSize: 12, fontWeight: 600 }}>+ Aggiungi vetro</div>
           </>
         )}
 
@@ -1820,7 +1884,7 @@ export default function MastroMisure() {
                 </div></div>
               );
             })}
-            <div style={{ padding: "14px", borderRadius: T.r, border: `1px dashed ${T.acc}`, textAlign: "center", cursor: "pointer", color: T.acc, fontSize: 12, fontWeight: 600, marginTop: 4 }}>+ Aggiungi tipologia</div>
+            <div onClick={() => { setSettingsModal("tipologia"); setSettingsForm({ code: "", label: "", icon: "🪟" }); }} style={{ padding: "14px", borderRadius: T.r, border: `1px dashed ${T.acc}`, textAlign: "center", cursor: "pointer", color: T.acc, fontSize: 12, fontWeight: 600, marginTop: 4 }}>+ Aggiungi tipologia</div>
           </>
         )}
 
@@ -1834,10 +1898,10 @@ export default function MastroMisure() {
                   <span style={{ fontSize: 12, fontWeight: 700, fontFamily: FM, color: T.acc }}>{c.cod}</span>
                   <span style={{ fontSize: 12, marginLeft: 8 }}>{c.nome}</span>
                 </div>
-                <Ico d={ICO.trash} s={14} c={T.sub} />
+                <div onClick={() => deleteSettingsItem("coprifilo", c.id)} style={{ cursor: "pointer" }}><Ico d={ICO.trash} s={14} c={T.sub} /></div>
               </div></div>
             ))}
-            <div style={{ padding: "14px", borderRadius: T.r, border: `1px dashed ${T.acc}`, textAlign: "center", cursor: "pointer", color: T.acc, fontSize: 12, fontWeight: 600, marginTop: 4 }}>+ Aggiungi coprifilo</div>
+            <div onClick={() => { setSettingsModal("coprifilo"); setSettingsForm({ nome: "", cod: "" }); }} style={{ padding: "14px", borderRadius: T.r, border: `1px dashed ${T.acc}`, textAlign: "center", cursor: "pointer", color: T.acc, fontSize: 12, fontWeight: 600, marginTop: 4 }}>+ Aggiungi coprifilo</div>
           </>
         )}
 
@@ -1851,10 +1915,10 @@ export default function MastroMisure() {
                   <span style={{ fontSize: 12, fontWeight: 700, fontFamily: FM, color: T.orange }}>{l.cod}</span>
                   <span style={{ fontSize: 12, marginLeft: 8 }}>{l.nome}</span>
                 </div>
-                <Ico d={ICO.trash} s={14} c={T.sub} />
+                <div onClick={() => deleteSettingsItem("lamiera", l.id)} style={{ cursor: "pointer" }}><Ico d={ICO.trash} s={14} c={T.sub} /></div>
               </div></div>
             ))}
-            <div style={{ padding: "14px", borderRadius: T.r, border: `1px dashed ${T.acc}`, textAlign: "center", cursor: "pointer", color: T.acc, fontSize: 12, fontWeight: 600, marginTop: 4 }}>+ Aggiungi lamiera</div>
+            <div onClick={() => { setSettingsModal("lamiera"); setSettingsForm({ nome: "", cod: "" }); }} style={{ padding: "14px", borderRadius: T.r, border: `1px dashed ${T.acc}`, textAlign: "center", cursor: "pointer", color: T.acc, fontSize: 12, fontWeight: 600, marginTop: 4 }}>+ Aggiungi lamiera</div>
           </>
         )}
 
@@ -2239,6 +2303,73 @@ export default function MastroMisure() {
               }} style={{ width: 38, height: 38, borderRadius: "50%", background: replyText.trim() ? T.acc : T.bdr, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}>
                 <Ico d={ICO.send} s={16} c={replyText.trim() ? "#fff" : T.sub} />
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* SETTINGS ADD MODAL */}
+        {settingsModal && (
+          <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={e => e.target === e.currentTarget && setSettingsModal(null)}>
+            <div style={{ background: T.card, borderRadius: 16, width: "100%", maxWidth: 380, padding: 20 }}>
+              <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 14 }}>
+                {settingsModal === "sistema" && "Nuovo Sistema"}
+                {settingsModal === "colore" && "Nuovo Colore"}
+                {settingsModal === "vetro" && "Nuovo Vetro"}
+                {settingsModal === "coprifilo" && "Nuovo Coprifilo"}
+                {settingsModal === "lamiera" && "Nuova Lamiera"}
+                {settingsModal === "tipologia" && "Nuova Tipologia"}
+                {settingsModal === "membro" && "Nuovo Membro Team"}
+              </div>
+
+              {settingsModal === "membro" && (<>
+                <div style={{ marginBottom: 10 }}><label style={S.fieldLabel}>Nome e cognome</label><input style={S.input} placeholder="es. Marco Ferraro" value={settingsForm.nome || ""} onChange={e => setSettingsForm(f => ({ ...f, nome: e.target.value }))} /></div>
+                <div style={{ marginBottom: 10 }}><label style={S.fieldLabel}>Ruolo</label><select style={S.select} value={settingsForm.ruolo || "Posatore"} onChange={e => setSettingsForm(f => ({ ...f, ruolo: e.target.value }))}><option>Titolare</option><option>Posatore</option><option>Ufficio</option><option>Magazzino</option></select></div>
+                <div style={{ marginBottom: 10 }}><label style={S.fieldLabel}>Compiti</label><input style={S.input} placeholder="es. Misure, installazione" value={settingsForm.compiti || ""} onChange={e => setSettingsForm(f => ({ ...f, compiti: e.target.value }))} /></div>
+              </>)}
+
+              {settingsModal === "sistema" && (<>
+                <div style={{ marginBottom: 10 }}><label style={S.fieldLabel}>Marca</label><input style={S.input} placeholder="es. Aluplast" value={settingsForm.marca || ""} onChange={e => setSettingsForm(f => ({ ...f, marca: e.target.value }))} /></div>
+                <div style={{ marginBottom: 10 }}><label style={S.fieldLabel}>Sistema</label><input style={S.input} placeholder="es. Ideal 4000" value={settingsForm.sistema || ""} onChange={e => setSettingsForm(f => ({ ...f, sistema: e.target.value }))} /></div>
+                <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+                  <div style={{ flex: 1 }}><label style={S.fieldLabel}>€/mq</label><input style={S.input} type="number" placeholder="180" value={settingsForm.euroMq || ""} onChange={e => setSettingsForm(f => ({ ...f, euroMq: e.target.value }))} /></div>
+                  <div style={{ flex: 1 }}><label style={S.fieldLabel}>Sovr. RAL %</label><input style={S.input} type="number" placeholder="12" value={settingsForm.sovRAL || ""} onChange={e => setSettingsForm(f => ({ ...f, sovRAL: e.target.value }))} /></div>
+                  <div style={{ flex: 1 }}><label style={S.fieldLabel}>Sovr. Legno %</label><input style={S.input} type="number" placeholder="22" value={settingsForm.sovLegno || ""} onChange={e => setSettingsForm(f => ({ ...f, sovLegno: e.target.value }))} /></div>
+                </div>
+                <div style={{ marginBottom: 10 }}><label style={S.fieldLabel}>Sottosistemi (separati da virgola)</label><input style={S.input} placeholder="es. Classicline, Roundline" value={settingsForm.sottosistemi || ""} onChange={e => setSettingsForm(f => ({ ...f, sottosistemi: e.target.value }))} /></div>
+              </>)}
+
+              {settingsModal === "colore" && (<>
+                <div style={{ marginBottom: 10 }}><label style={S.fieldLabel}>Nome</label><input style={S.input} placeholder="es. Grigio antracite" value={settingsForm.nome || ""} onChange={e => setSettingsForm(f => ({ ...f, nome: e.target.value }))} /></div>
+                <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+                  <div style={{ flex: 1 }}><label style={S.fieldLabel}>Codice</label><input style={S.input} placeholder="es. RAL 7016" value={settingsForm.code || ""} onChange={e => setSettingsForm(f => ({ ...f, code: e.target.value }))} /></div>
+                  <div style={{ flex: 1 }}><label style={S.fieldLabel}>Tipo</label><select style={S.select} value={settingsForm.tipo || "RAL"} onChange={e => setSettingsForm(f => ({ ...f, tipo: e.target.value }))}><option>RAL</option><option>Legno</option><option>Satinato</option><option>Altro</option></select></div>
+                </div>
+                <div style={{ marginBottom: 10 }}><label style={S.fieldLabel}>Colore HEX</label><div style={{ display: "flex", gap: 8, alignItems: "center" }}><input type="color" value={settingsForm.hex || "#888888"} onChange={e => setSettingsForm(f => ({ ...f, hex: e.target.value }))} style={{ width: 40, height: 34, border: "none", cursor: "pointer" }} /><input style={{ ...S.input, flex: 1 }} value={settingsForm.hex || "#888888"} onChange={e => setSettingsForm(f => ({ ...f, hex: e.target.value }))} /></div></div>
+              </>)}
+
+              {settingsModal === "vetro" && (<>
+                <div style={{ marginBottom: 10 }}><label style={S.fieldLabel}>Nome</label><input style={S.input} placeholder="es. Triplo basso emissivo" value={settingsForm.nome || ""} onChange={e => setSettingsForm(f => ({ ...f, nome: e.target.value }))} /></div>
+                <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+                  <div style={{ flex: 2 }}><label style={S.fieldLabel}>Codice composizione</label><input style={S.input} placeholder="es. 4/16/4 BE" value={settingsForm.code || ""} onChange={e => setSettingsForm(f => ({ ...f, code: e.target.value }))} /></div>
+                  <div style={{ flex: 1 }}><label style={S.fieldLabel}>Ug</label><input style={S.input} type="number" step="0.1" placeholder="1.1" value={settingsForm.ug || ""} onChange={e => setSettingsForm(f => ({ ...f, ug: e.target.value }))} /></div>
+                </div>
+              </>)}
+
+              {(settingsModal === "coprifilo" || settingsModal === "lamiera") && (<>
+                <div style={{ marginBottom: 10 }}><label style={S.fieldLabel}>Codice</label><input style={S.input} placeholder={settingsModal === "coprifilo" ? "es. CP50" : "es. LD250"} value={settingsForm.cod || ""} onChange={e => setSettingsForm(f => ({ ...f, cod: e.target.value }))} /></div>
+                <div style={{ marginBottom: 10 }}><label style={S.fieldLabel}>Descrizione</label><input style={S.input} placeholder={settingsModal === "coprifilo" ? "es. Coprifilo piatto 50mm" : "es. Lamiera davanzale 250mm"} value={settingsForm.nome || ""} onChange={e => setSettingsForm(f => ({ ...f, nome: e.target.value }))} /></div>
+              </>)}
+
+              {settingsModal === "tipologia" && (<>
+                <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+                  <div style={{ flex: 1 }}><label style={S.fieldLabel}>Codice</label><input style={S.input} placeholder="es. F4A" value={settingsForm.code || ""} onChange={e => setSettingsForm(f => ({ ...f, code: e.target.value }))} /></div>
+                  <div style={{ width: 60 }}><label style={S.fieldLabel}>Icona</label><input style={S.input} placeholder="🪟" value={settingsForm.icon || ""} onChange={e => setSettingsForm(f => ({ ...f, icon: e.target.value }))} /></div>
+                </div>
+                <div style={{ marginBottom: 10 }}><label style={S.fieldLabel}>Descrizione</label><input style={S.input} placeholder="es. Finestra 4 ante" value={settingsForm.label || ""} onChange={e => setSettingsForm(f => ({ ...f, label: e.target.value }))} /></div>
+              </>)}
+
+              <button style={S.btn} onClick={addSettingsItem}>Salva</button>
+              <button style={S.btnCancel} onClick={() => setSettingsModal(null)}>Annulla</button>
             </div>
           </div>
         )}
