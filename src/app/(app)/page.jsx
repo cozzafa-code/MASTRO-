@@ -107,9 +107,21 @@ const TASKS_INIT = [
 ];
 
 const MSGS_INIT = [
-  { id: 1, from: "Fornitore Schüco", preview: "Conferma ordine #4521 — materiale pronto per spedizione il 20/02", time: "14:32", cm: "CM-0002", read: false },
-  { id: 2, from: "Mario (posatore)", preview: "Fabio, per la CM-0004 servono i controtelai speciali?", time: "12:15", cm: "CM-0004", read: false },
-  { id: 3, from: "Cliente Rossi", preview: "Grazie per il preventivo, procediamo con l'ordine", time: "Ieri", cm: "", read: true },
+  { id: 1, from: "Fornitore Schüco", preview: "Conferma ordine #4521 — materiale pronto per spedizione il 20/02", time: "14:32", cm: "CM-0002", read: false, thread: [
+    { who: "Tu", text: "Buongiorno, stato ordine #4521?", time: "09:15", date: "18/02" },
+    { who: "Fornitore Schüco", text: "Ordine in lavorazione, consegna prevista 20/02", time: "10:40", date: "18/02" },
+    { who: "Tu", text: "Perfetto, confermate anche le maniglie satinate?", time: "11:05", date: "18/02" },
+    { who: "Fornitore Schüco", text: "Conferma ordine #4521 — materiale pronto per spedizione il 20/02. Maniglie satinate incluse.", time: "14:32", date: "19/02" },
+  ]},
+  { id: 2, from: "Mario (posatore)", preview: "Fabio, per la CM-0004 servono i controtelai speciali?", time: "12:15", cm: "CM-0004", read: false, thread: [
+    { who: "Mario", text: "Ciao Fabio, domani vado a posare CM-0004", time: "08:30", date: "19/02" },
+    { who: "Tu", text: "Ok Mario, ricordati il silicone neutro", time: "08:45", date: "19/02" },
+    { who: "Mario", text: "Fabio, per la CM-0004 servono i controtelai speciali?", time: "12:15", date: "19/02" },
+  ]},
+  { id: 3, from: "Cliente Rossi", preview: "Grazie per il preventivo, procediamo con l'ordine", time: "Ieri", cm: "", read: true, thread: [
+    { who: "Tu", text: "Buongiorno Sig. Rossi, in allegato il preventivo per la sostituzione dei 5 infissi.", time: "16:00", date: "17/02" },
+    { who: "Cliente Rossi", text: "Grazie per il preventivo, procediamo con l'ordine", time: "09:30", date: "18/02" },
+  ]},
 ];
 
 const TEAM_INIT = [
@@ -227,6 +239,8 @@ export default function MastroMisure() {
   const [cantieri, setCantieri] = useState(CANTIERI_INIT);
   const [tasks, setTasks] = useState(TASKS_INIT);
   const [msgs, setMsgs] = useState(MSGS_INIT);
+  const [selectedMsg, setSelectedMsg] = useState(null);
+  const [replyText, setReplyText] = useState("");
   const [team, setTeam] = useState(TEAM_INIT);
   const [coloriDB, setColoriDB] = useState(COLORI_INIT);
   const [sistemiDB, setSistemiDB] = useState(SISTEMI_INIT);
@@ -643,7 +657,7 @@ export default function MastroMisure() {
       <div style={{ padding: "0 16px", marginBottom: 12 }}>
         <div style={{ background: T.card, borderRadius: T.r, border: `1px solid ${T.bdr}`, overflow: "hidden" }}>
           {msgs.map(m => (
-            <div key={m.id} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "12px 14px", borderBottom: `1px solid ${T.bg}`, cursor: "pointer" }} onClick={() => { setMsgs(ms => ms.map(x => x.id === m.id ? { ...x, read: true } : x)); if (m.cm) { const cm = cantieri.find(c => c.code === m.cm); if (cm) { setSelectedCM(cm); setTab("commesse"); } } }}>
+            <div key={m.id} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "12px 14px", borderBottom: `1px solid ${T.bg}`, cursor: "pointer" }} onClick={() => { setMsgs(ms => ms.map(x => x.id === m.id ? { ...x, read: true } : x)); setSelectedMsg(m); }}>
               <div style={{ width: 8, height: 8, borderRadius: "50%", background: m.read ? "transparent" : T.acc, flexShrink: 0, marginTop: 5 }} />
               <div style={{ flex: 1 }}>
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
@@ -2163,11 +2177,71 @@ export default function MastroMisure() {
       <link href={FONT} rel="stylesheet" />
       <div style={S.app}>
         {/* Content */}
-        {tab === "home" && !selectedCM && renderHome()}
+        {tab === "home" && !selectedCM && !selectedMsg && renderHome()}
         {tab === "commesse" && renderCommesse()}
         {tab === "agenda" && renderAgenda()}
         {tab === "chat" && renderChat()}
         {tab === "settings" && renderSettings()}
+
+        {/* MESSAGE DETAIL OVERLAY */}
+        {selectedMsg && (
+          <div style={{ position: "fixed", inset: 0, background: T.bg, zIndex: 100, display: "flex", flexDirection: "column" }}>
+            {/* Header */}
+            <div style={{ padding: "12px 16px", background: T.card, borderBottom: `1px solid ${T.bdr}`, display: "flex", alignItems: "center", gap: 10 }}>
+              <div onClick={() => { setSelectedMsg(null); setReplyText(""); }} style={{ cursor: "pointer", padding: 4 }}><Ico d={ICO.back} s={20} c={T.sub} /></div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 15, fontWeight: 700 }}>{selectedMsg.from}</div>
+                <div style={{ fontSize: 11, color: T.sub }}>{selectedMsg.cm ? `${selectedMsg.cm} · ` : ""}{selectedMsg.thread?.length || 0} messaggi</div>
+              </div>
+              {selectedMsg.cm && (
+                <div onClick={() => { const cm = cantieri.find(c => c.code === selectedMsg.cm); if (cm) { setSelectedMsg(null); setSelectedCM(cm); setTab("commesse"); } }} style={{ padding: "4px 10px", borderRadius: 6, background: T.accLt, fontSize: 10, fontWeight: 700, color: T.acc, cursor: "pointer" }}>
+                  📂 {selectedMsg.cm}
+                </div>
+              )}
+            </div>
+            {/* Thread */}
+            <div style={{ flex: 1, overflowY: "auto", padding: "12px 16px" }}>
+              {(selectedMsg.thread || []).map((msg, i) => {
+                const isMe = msg.who === "Tu";
+                return (
+                  <div key={i} style={{ marginBottom: 12, display: "flex", flexDirection: "column", alignItems: isMe ? "flex-end" : "flex-start" }}>
+                    <div style={{ fontSize: 9, color: T.sub, marginBottom: 3, fontWeight: 600 }}>{msg.who} · {msg.date} {msg.time}</div>
+                    <div style={{ maxWidth: "80%", padding: "10px 14px", borderRadius: isMe ? "14px 14px 4px 14px" : "14px 14px 14px 4px", background: isMe ? T.acc : T.card, color: isMe ? "#fff" : T.text, border: isMe ? "none" : `1px solid ${T.bdr}`, fontSize: 13, lineHeight: 1.4 }}>
+                      {msg.text}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            {/* Reply bar */}
+            <div style={{ padding: "10px 16px", background: T.card, borderTop: `1px solid ${T.bdr}`, display: "flex", gap: 8, alignItems: "center" }}>
+              <input
+                style={{ flex: 1, padding: "10px 14px", fontSize: 13, border: `1px solid ${T.bdr}`, borderRadius: 20, background: T.bg, outline: "none", fontFamily: FF }}
+                placeholder="Scrivi un messaggio..."
+                value={replyText}
+                onChange={e => setReplyText(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === "Enter" && replyText.trim()) {
+                    const newThread = [...(selectedMsg.thread || []), { who: "Tu", text: replyText, time: new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }), date: new Date().toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit" }) }];
+                    setMsgs(ms => ms.map(m => m.id === selectedMsg.id ? { ...m, thread: newThread, preview: replyText } : m));
+                    setSelectedMsg(prev => ({ ...prev, thread: newThread }));
+                    setReplyText("");
+                  }
+                }}
+              />
+              <div onClick={() => {
+                if (replyText.trim()) {
+                  const newThread = [...(selectedMsg.thread || []), { who: "Tu", text: replyText, time: new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }), date: new Date().toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit" }) }];
+                  setMsgs(ms => ms.map(m => m.id === selectedMsg.id ? { ...m, thread: newThread, preview: replyText } : m));
+                  setSelectedMsg(prev => ({ ...prev, thread: newThread }));
+                  setReplyText("");
+                }
+              }} style={{ width: 38, height: 38, borderRadius: "50%", background: replyText.trim() ? T.acc : T.bdr, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}>
+                <Ico d={ICO.send} s={16} c={replyText.trim() ? "#fff" : T.sub} />
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Tab Bar */}
         {!selectedVano && (
