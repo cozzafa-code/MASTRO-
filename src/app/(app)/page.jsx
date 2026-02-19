@@ -226,7 +226,7 @@ export default function MastroMisure() {
   const [tab, setTab] = useState("home");
   const [cantieri, setCantieri] = useState(CANTIERI_INIT);
   const [tasks, setTasks] = useState(TASKS_INIT);
-  const [msgs] = useState(MSGS_INIT);
+  const [msgs, setMsgs] = useState(MSGS_INIT);
   const [team, setTeam] = useState(TEAM_INIT);
   const [coloriDB, setColoriDB] = useState(COLORI_INIT);
   const [sistemiDB, setSistemiDB] = useState(SISTEMI_INIT);
@@ -588,7 +588,7 @@ export default function MastroMisure() {
       {/* Calendar strip */}
       <div style={{ display: "flex", gap: 4, padding: "12px 16px", overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
         {calDays.map((d, i) => (
-          <div key={i} style={{ textAlign: "center", padding: "8px 6px", borderRadius: 10, minWidth: 44, cursor: "pointer", background: d.isToday ? T.text : "transparent", flexShrink: 0 }}>
+          <div key={i} onClick={() => { setTab("agenda"); setSelDate(new Date(today.getFullYear(), today.getMonth(), today.getDate() - today.getDay() + i + 1)); }} style={{ textAlign: "center", padding: "8px 6px", borderRadius: 10, minWidth: 44, cursor: "pointer", background: d.isToday ? T.text : "transparent", flexShrink: 0 }}>
             <div style={{ fontSize: 10, color: d.isToday ? T.bg : T.sub, fontWeight: 600, textTransform: "uppercase" }}>{d.name}</div>
             <div style={{ fontSize: 16, fontWeight: 700, color: d.isToday ? T.bg : T.text, marginTop: 2 }}>{d.day}</div>
             {d.hasDot && <div style={{ width: 4, height: 4, borderRadius: "50%", background: d.isToday ? T.bg : T.red, margin: "2px auto 0" }} />}
@@ -596,15 +596,15 @@ export default function MastroMisure() {
         ))}
       </div>
 
-      {/* Stats */}
+      {/* Stats — clickable */}
       <div style={{ display: "flex", gap: 1, margin: "0 16px 12px", background: T.bdr, borderRadius: 10, overflow: "hidden" }}>
         {[
-          { n: cantieri.length, l: "Attive", c: T.text },
-          { n: urgentCount(), l: "Urgenti", c: T.red },
-          { n: countVani(), l: "Vani", c: T.text },
-          { n: readyCount(), l: "Pronte", c: T.grn },
+          { n: cantieri.length, l: "Attive", c: T.text, act: () => setTab("commesse") },
+          { n: urgentCount(), l: "Urgenti", c: T.red, act: () => setTab("commesse") },
+          { n: countVani(), l: "Vani", c: T.text, act: () => setTab("commesse") },
+          { n: readyCount(), l: "Pronte", c: T.grn, act: () => setTab("commesse") },
         ].map((s, i) => (
-          <div key={i} style={S.stat}>
+          <div key={i} style={{ ...S.stat, cursor: "pointer" }} onClick={s.act}>
             <div style={{ ...S.statNum, color: s.c }}>{s.n}</div>
             <div style={S.statLabel}>{s.l}</div>
           </div>
@@ -619,16 +619,16 @@ export default function MastroMisure() {
       <div style={{ padding: "0 16px", marginBottom: 12 }}>
         <div style={{ background: T.card, borderRadius: T.r, border: `1px solid ${T.bdr}`, overflow: "hidden" }}>
           {tasks.map(t => (
-            <div key={t.id} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "12px 14px", borderBottom: `1px solid ${T.bg}`, cursor: "pointer" }}>
+            <div key={t.id} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "12px 14px", borderBottom: `1px solid ${T.bg}`, cursor: "pointer" }} onClick={() => toggleTask(t.id)}>
               <div style={{ width: 3, borderRadius: 2, alignSelf: "stretch", flexShrink: 0, background: t.done ? T.bdr : priColor(t.priority) }} />
-              <div onClick={() => toggleTask(t.id)} style={{ width: 20, height: 20, border: `2px solid ${t.done ? T.grn : T.bdr}`, borderRadius: "50%", flexShrink: 0, marginTop: 1, cursor: "pointer", background: t.done ? T.grn : "transparent", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, color: "#fff", fontWeight: 700, transition: "all 0.15s" }}>
+              <div style={{ width: 20, height: 20, border: `2px solid ${t.done ? T.grn : T.bdr}`, borderRadius: "50%", flexShrink: 0, marginTop: 1, background: t.done ? T.grn : "transparent", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, color: "#fff", fontWeight: 700, transition: "all 0.15s" }}>
                 {t.done && "✓"}
               </div>
               <div style={{ fontSize: 11, color: T.sub, fontWeight: 500, minWidth: 42 }}>{t.time}</div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 13, fontWeight: 600, color: t.done ? T.sub : T.text, textDecoration: t.done ? "line-through" : "none", lineHeight: 1.3 }}>{t.text}</div>
                 <div style={{ fontSize: 11, color: T.sub, marginTop: 2 }}>{t.meta}</div>
-                {t.cm && <span style={S.badge(T.accLt, T.acc)}>{t.cm}</span>}
+                {t.cm && <span onClick={e => { e.stopPropagation(); const cm = cantieri.find(c => c.code === t.cm); if (cm) { setSelectedCM(cm); setTab("commesse"); } }} style={{ ...S.badge(T.accLt, T.acc), cursor: "pointer" }}>{t.cm}</span>}
               </div>
             </div>
           ))}
@@ -638,12 +638,12 @@ export default function MastroMisure() {
       {/* Messaggi */}
       <div style={S.section}>
         <div style={S.sectionTitle}>Messaggi</div>
-        <button style={S.sectionBtn}>Vedi tutti</button>
+        <button style={S.sectionBtn} onClick={() => setTab("chat")}>Vedi tutti</button>
       </div>
       <div style={{ padding: "0 16px", marginBottom: 12 }}>
         <div style={{ background: T.card, borderRadius: T.r, border: `1px solid ${T.bdr}`, overflow: "hidden" }}>
           {msgs.map(m => (
-            <div key={m.id} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "12px 14px", borderBottom: `1px solid ${T.bg}`, cursor: "pointer" }}>
+            <div key={m.id} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "12px 14px", borderBottom: `1px solid ${T.bg}`, cursor: "pointer" }} onClick={() => { setMsgs(ms => ms.map(x => x.id === m.id ? { ...x, read: true } : x)); if (m.cm) { const cm = cantieri.find(c => c.code === m.cm); if (cm) { setSelectedCM(cm); setTab("commesse"); } } }}>
               <div style={{ width: 8, height: 8, borderRadius: "50%", background: m.read ? "transparent" : T.acc, flexShrink: 0, marginTop: 5 }} />
               <div style={{ flex: 1 }}>
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
