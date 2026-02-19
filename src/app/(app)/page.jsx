@@ -711,11 +711,19 @@ export default function MastroMisure() {
   /* ── HOME TAB ── */
   const renderHome = () => (
     <div style={{ paddingBottom: 80 }}>
+      {/* Brand bar */}
+      <div style={{ padding: "10px 16px", background: T.card, display: "flex", alignItems: "center", gap: 10, borderBottom: `1px solid ${T.bdr}` }}>
+        <div style={{ width: 32, height: 32, borderRadius: 8, background: "#1c1c1e", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 800, color: "#fff", fontFamily: FF }}>M</div>
+        <div>
+          <div style={{ fontSize: 14, fontWeight: 800, color: T.text, letterSpacing: 1.5, textTransform: "uppercase" }}>MASTRO</div>
+          <div style={{ fontSize: 10, color: T.sub, fontWeight: 500, letterSpacing: 0.5 }}>misure</div>
+        </div>
+      </div>
       {/* Header */}
       <div style={{ padding: "14px 16px 12px", background: T.card, borderBottom: `1px solid ${T.bdr}` }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
           <div>
-            <div style={{ fontSize: 19, fontWeight: 700, letterSpacing: -0.3 }}>Buongiorno, Fabio</div>
+            <div style={{ fontSize: 19, fontWeight: 700, letterSpacing: -0.3 }}>{new Date().getHours() < 13 ? "Buongiorno" : new Date().getHours() < 18 ? "Buon pomeriggio" : "Buonasera"}, Fabio</div>
             <div style={{ fontSize: 12, color: T.sub, marginTop: 1 }}>
               {today.toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
             </div>
