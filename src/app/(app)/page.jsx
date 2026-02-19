@@ -327,6 +327,17 @@ export default function MastroMisure() {
   const [showAddPiano, setShowAddPiano] = useState(false);
   const [newPiano, setNewPiano] = useState("");
 
+  // Responsive width
+  const [winW, setWinW] = useState(typeof window !== "undefined" ? window.innerWidth : 430);
+  useEffect(() => {
+    const h = () => setWinW(window.innerWidth);
+    window.addEventListener("resize", h);
+    return () => window.removeEventListener("resize", h);
+  }, []);
+  const isTablet = winW >= 768;
+  const isDesktop = winW >= 1024;
+  const appMaxW = isDesktop ? 900 : isTablet ? 700 : 430;
+
   const goBack = () => {
     if (showRiepilogo) { setShowRiepilogo(false); return; }
     if (selectedVano) { setSelectedVano(null); setVanoStep(0); return; }
@@ -535,36 +546,37 @@ export default function MastroMisure() {
   };
 
   /* ═══════ STYLES ═══════ */
+  const fs = isDesktop ? 1.15 : isTablet ? 1.08 : 1; // font scale
   const S = {
-    app: { fontFamily: FF, background: T.bg, color: T.text, maxWidth: 430, margin: "0 auto", minHeight: "100vh", position: "relative", WebkitFontSmoothing: "antialiased" },
-    header: { padding: "14px 16px 12px", background: T.card, borderBottom: `1px solid ${T.bdr}`, display: "flex", alignItems: "center", gap: 10 },
-    headerTitle: { fontSize: 19, fontWeight: 700, letterSpacing: -0.3, color: T.text },
-    headerSub: { fontSize: 12, color: T.sub, marginTop: 1 },
-    section: { margin: "0 16px", padding: "10px 0 4px", display: "flex", justifyContent: "space-between", alignItems: "center" },
-    sectionTitle: { fontSize: 13, fontWeight: 700, color: T.text },
-    sectionBtn: { fontSize: 12, color: T.acc, fontWeight: 600, background: "none", border: "none", cursor: "pointer" },
+    app: { fontFamily: FF, background: T.bg, color: T.text, maxWidth: appMaxW, margin: "0 auto", minHeight: "100vh", position: "relative", WebkitFontSmoothing: "antialiased", transition: "max-width 0.3s" },
+    header: { padding: `${14*fs}px ${16*fs}px ${12*fs}px`, background: T.card, borderBottom: `1px solid ${T.bdr}`, display: "flex", alignItems: "center", gap: 10 },
+    headerTitle: { fontSize: 19*fs, fontWeight: 700, letterSpacing: -0.3, color: T.text },
+    headerSub: { fontSize: 12*fs, color: T.sub, marginTop: 1 },
+    section: { margin: `0 ${16*fs}px`, padding: "10px 0 4px", display: "flex", justifyContent: "space-between", alignItems: "center" },
+    sectionTitle: { fontSize: 13*fs, fontWeight: 700, color: T.text },
+    sectionBtn: { fontSize: 12*fs, color: T.acc, fontWeight: 600, background: "none", border: "none", cursor: "pointer" },
     card: { background: T.card, borderRadius: T.r, border: `1px solid ${T.bdr}`, boxShadow: T.cardSh, overflow: "hidden", marginBottom: 8, cursor: "pointer", transition: "box-shadow 0.15s" },
-    cardInner: { padding: "12px 14px" },
-    chip: (active) => ({ padding: "6px 12px", borderRadius: 8, border: `1px solid ${active ? T.acc : T.bdr}`, background: active ? T.acc : T.card, color: active ? "#fff" : T.text, fontSize: 12, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0, transition: "all 0.15s" }),
-    stat: { flex: 1, textAlign: "center", padding: "10px 4px", background: T.card, cursor: "pointer" },
-    statNum: { fontSize: 18, fontWeight: 700 },
-    statLabel: { fontSize: 9, color: T.sub, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.3, marginTop: 1 },
-    badge: (bg, color) => ({ fontSize: 11, fontWeight: 600, padding: "3px 8px", borderRadius: 6, background: bg, color, display: "inline-block" }),
-    input: { width: "100%", padding: "10px 12px", borderRadius: 8, border: `1px solid ${T.bdr}`, background: T.card, fontSize: 14, color: T.text, outline: "none", fontFamily: FF },
-    select: { width: "100%", padding: "10px 12px", borderRadius: 8, border: `1px solid ${T.bdr}`, background: T.card, fontSize: 14, color: T.text, outline: "none", fontFamily: FF },
-    btn: { width: "100%", padding: "14px", borderRadius: 10, border: "none", background: T.acc, color: "#fff", fontSize: 15, fontWeight: 700, cursor: "pointer", fontFamily: FF },
-    btnCancel: { width: "100%", padding: "12px", borderRadius: 10, border: "none", background: "none", color: T.sub, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: FF },
-    tabBar: { position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)", width: "100%", maxWidth: 430, background: T.card + "ee", backdropFilter: "blur(20px)", borderTop: `1px solid ${T.bdr}`, display: "flex", padding: "6px 0 8px", zIndex: 100 },
+    cardInner: { padding: `${12*fs}px ${14*fs}px` },
+    chip: (active) => ({ padding: `${6*fs}px ${12*fs}px`, borderRadius: 8, border: `1px solid ${active ? T.acc : T.bdr}`, background: active ? T.acc : T.card, color: active ? "#fff" : T.text, fontSize: 12*fs, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0, transition: "all 0.15s" }),
+    stat: { flex: 1, textAlign: "center", padding: `${10*fs}px 4px`, background: T.card, cursor: "pointer" },
+    statNum: { fontSize: 18*fs, fontWeight: 700 },
+    statLabel: { fontSize: 9*fs, color: T.sub, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.3, marginTop: 1 },
+    badge: (bg, color) => ({ fontSize: 11*fs, fontWeight: 600, padding: `${3*fs}px ${8*fs}px`, borderRadius: 6, background: bg, color, display: "inline-block" }),
+    input: { width: "100%", padding: `${10*fs}px ${12*fs}px`, borderRadius: 8, border: `1px solid ${T.bdr}`, background: T.card, fontSize: 14*fs, color: T.text, outline: "none", fontFamily: FF, boxSizing: "border-box" },
+    select: { width: "100%", padding: `${10*fs}px ${12*fs}px`, borderRadius: 8, border: `1px solid ${T.bdr}`, background: T.card, fontSize: 14*fs, color: T.text, outline: "none", fontFamily: FF, boxSizing: "border-box" },
+    btn: { width: "100%", padding: `${14*fs}px`, borderRadius: 10, border: "none", background: T.acc, color: "#fff", fontSize: 15*fs, fontWeight: 700, cursor: "pointer", fontFamily: FF },
+    btnCancel: { width: "100%", padding: `${12*fs}px`, borderRadius: 10, border: "none", background: "none", color: T.sub, fontSize: 14*fs, fontWeight: 600, cursor: "pointer", fontFamily: FF },
+    tabBar: { position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)", width: "100%", maxWidth: appMaxW, background: T.card + "ee", backdropFilter: "blur(20px)", borderTop: `1px solid ${T.bdr}`, display: "flex", padding: `${6*fs}px 0 ${8*fs}px`, zIndex: 100, transition: "max-width 0.3s" },
     tabItem: (active) => ({ flex: 1, textAlign: "center", padding: "4px 0", cursor: "pointer", opacity: active ? 1 : 0.5, transition: "opacity 0.15s" }),
-    tabLabel: (active) => ({ fontSize: 10, fontWeight: 600, color: active ? T.acc : T.sub, marginTop: 1 }),
+    tabLabel: (active) => ({ fontSize: 10*fs, fontWeight: 600, color: active ? T.acc : T.sub, marginTop: 1 }),
     modal: { position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.4)", zIndex: 200, display: "flex", justifyContent: "center", alignItems: "flex-end" },
-    modalInner: { background: T.card, borderRadius: "16px 16px 0 0", width: "100%", maxWidth: 430, padding: "20px 16px 30px", maxHeight: "85vh", overflowY: "auto" },
-    modalTitle: { fontSize: 17, fontWeight: 700, marginBottom: 16, color: T.text },
-    fieldLabel: { fontSize: 12, fontWeight: 600, color: T.sub, marginBottom: 4, display: "block" },
+    modalInner: { background: T.card, borderRadius: "16px 16px 0 0", width: "100%", maxWidth: appMaxW, padding: `${20*fs}px ${16*fs}px ${30*fs}px`, maxHeight: "85vh", overflowY: "auto" },
+    modalTitle: { fontSize: 17*fs, fontWeight: 700, marginBottom: 16, color: T.text },
+    fieldLabel: { fontSize: 12*fs, fontWeight: 600, color: T.sub, marginBottom: 4, display: "block" },
     pipeStep: (done, current) => ({ display: "flex", flexDirection: "column", alignItems: "center", minWidth: 52, cursor: "pointer" }),
     pipeCircle: (done, current, color) => ({ width: current ? 32 : 26, height: current ? 32 : 26, borderRadius: "50%", background: done ? color : "transparent", border: done ? "none" : current ? `3px solid ${color}` : `2px dashed ${T.bdr}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: current ? 14 : 12, boxShadow: current ? `0 0 12px ${color}40` : "none", transition: "all 0.2s" }),
     pipeLine: (done) => ({ flex: 1, height: 2, background: done ? T.grn : T.bdr, minWidth: 12, alignSelf: "center", marginTop: -14 }),
-    pipeLabel: (current) => ({ fontSize: 9, fontWeight: current ? 700 : 500, color: current ? T.text : T.sub, marginTop: 4, textAlign: "center", maxWidth: 52 }),
+    pipeLabel: (current) => ({ fontSize: 9*fs, fontWeight: current ? 700 : 500, color: current ? T.text : T.sub, marginTop: 4, textAlign: "center", maxWidth: 52 }),
   };
 
   /* ═══════ CALENDAR STRIP ═══════ */
@@ -842,11 +854,11 @@ export default function MastroMisure() {
   );
 
   /* ── COMMESSA CARD ── */
-  const renderCMCard = (c) => {
+  const renderCMCard = (c, inGrid) => {
     const fase = PIPELINE.find(p => p.id === c.fase);
     const progress = ((faseIndex(c.fase) + 1) / PIPELINE.length) * 100;
     return (
-      <div key={c.id} style={{ ...S.card, margin: "0 16px 8px" }} onClick={() => { setSelectedCM(c); setTab("commesse"); }}>
+      <div key={c.id} style={{ ...S.card, margin: inGrid ? "0" : "0 16px 8px" }} onClick={() => { setSelectedCM(c); setTab("commesse"); }}>
         <div style={S.cardInner}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div>
@@ -903,7 +915,9 @@ export default function MastroMisure() {
           <input style={{ ...S.input, flex: 1 }} placeholder="Cerca commessa..." value={searchQ} onChange={e => setSearchQ(e.target.value)} />
         </div>
 
-        {filtered.map(c => renderCMCard(c))}
+        <div style={isTablet ? { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, padding: "0 16px" } : {}}>
+          {filtered.map(c => renderCMCard(c, isTablet))}
+        </div>
       </div>
     );
   };
@@ -1016,7 +1030,7 @@ export default function MastroMisure() {
           <div style={S.sectionTitle}>Vani ({c.vani.length})</div>
           <button style={S.sectionBtn} onClick={() => setShowModal("vano")}>+ Nuovo vano</button>
         </div>
-        <div style={{ padding: "0 16px" }}>
+        <div style={{ padding: "0 16px", ...(isTablet && c.vani.length > 0 ? { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 } : {}) }}>
           {c.vani.length === 0 ? (
             <div onClick={() => setShowModal("vano")} style={{ padding: "20px", textAlign: "center", background: T.card, borderRadius: T.r, border: `1px dashed ${T.bdr}`, cursor: "pointer", color: T.sub, fontSize: 13 }}>
               Nessun vano. Tocca per aggiungerne uno.
@@ -2419,7 +2433,18 @@ export default function MastroMisure() {
   return (
     <>
       <link href={FONT} rel="stylesheet" />
-      <div style={S.app}>
+      <style>{`
+        * { box-sizing: border-box; }
+        body { margin: 0; background: ${isDesktop ? '#e5e5ea' : isTablet ? '#f0f0f5' : T.bg}; }
+        @media (min-width: 768px) {
+          .mastro-app-wrap { box-shadow: 0 0 40px rgba(0,0,0,0.12); border-radius: 16px; margin-top: 16px; margin-bottom: 16px; overflow: hidden; min-height: calc(100vh - 32px); }
+        }
+        @media (min-width: 1024px) {
+          .mastro-app-wrap { margin-top: 20px; margin-bottom: 20px; min-height: calc(100vh - 40px); border-radius: 20px; }
+        }
+        input, select, textarea, button { font-size: inherit; }
+      `}</style>
+      <div style={S.app} className="mastro-app-wrap">
         {/* Content */}
         {tab === "home" && !selectedCM && !selectedMsg && renderHome()}
         {tab === "commesse" && renderCommesse()}
