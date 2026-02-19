@@ -77,7 +77,7 @@ const CANTIERI_INIT = [
     { id: 1, nome: "Cucina", tipo: "Finestra", stanza: "Cucina", piano: "PT", misure: { lAlto: 1200, lCentro: 1198, lBasso: 1195, hSx: 1400, hCentro: 1402, hDx: 1398, d1: 0, d2: 0, spSx: 120, spDx: 120, arch: 0, davInt: 200, davEst: 50 }, cassonetto: true, casH: 250, casP: 300, accessori: { tapparella: { attivo: true, colore: "RAL 9010", l: 1200, h: 1600 }, persiana: { attivo: false }, zanzariera: { attivo: true, colore: "RAL 9010", l: 1180, h: 1380 } }, foto: { panoramica: true, spalle: true, soglia: false, dettagli: false }, note: "Muro portante, attenzione alla spalletta sinistra" },
     { id: 2, nome: "Salone", tipo: "Portafinestra", stanza: "Soggiorno", piano: "PT", misure: { lAlto: 1400, lCentro: 1402, lBasso: 1400, hSx: 2200, hCentro: 2200, hDx: 2198, d1: 2610, d2: 2608, spSx: 150, spDx: 150, arch: 0, davInt: 0, davEst: 0 }, cassonetto: false, accessori: { tapparella: { attivo: true, colore: "RAL 7016", l: 1400, h: 2400 }, persiana: { attivo: false }, zanzariera: { attivo: false } }, foto: { panoramica: true, spalle: true, soglia: true, dettagli: true }, note: "" },
     { id: 3, nome: "Camera", tipo: "Finestra", stanza: "Camera", piano: "P1", misure: {}, foto: {}, note: "", accessori: { tapparella: { attivo: false }, persiana: { attivo: false }, zanzariera: { attivo: false } } },
-  ], sistema: "Schüco CT70", colTelaio: "RAL 9010", colAccessori: "RAL 9010", creato: "15 Feb", aggiornato: "oggi", log: [
+  ], sistema: "Schüco CT70", tipo: "nuova", telefono: "338 1234567", mezzoSalita: "Scala interna", allegati: [], creato: "15 Feb", aggiornato: "oggi", log: [
     { chi: "Fabio", cosa: "aggiunto vano Cucina — L:1200 H:1400", quando: "Oggi, 10:30", color: "#007aff" },
     { chi: "Fabio", cosa: "completato misure Salone", quando: "Oggi, 09:15", color: "#34c759" },
     { chi: "Marco", cosa: "eseguito sopralluogo", quando: "17 Feb, 14:00", color: "#ff9500" },
@@ -88,15 +88,15 @@ const CANTIERI_INIT = [
     { id: 2, nome: "Studio", tipo: "Finestra", stanza: "Studio", piano: "PT", misure: { lAlto: 1000, lCentro: 998, lBasso: 1000, hSx: 1200, hCentro: 1200, hDx: 1198 }, foto: { panoramica: true, soglia: true }, note: "Doppio vetro richiesto", accessori: { tapparella: { attivo: true, colore: "RAL 7016", l: 1000, h: 1400 }, persiana: { attivo: false }, zanzariera: { attivo: false } } },
     { id: 3, nome: "Ingresso", tipo: "Porta", stanza: "Ingresso", piano: "PT", misure: { lAlto: 900, lCentro: 900, lBasso: 900, hSx: 2100, hCentro: 2100, hDx: 2100 }, foto: {}, note: "", accessori: { tapparella: { attivo: false }, persiana: { attivo: false }, zanzariera: { attivo: false } } },
     { id: 4, nome: "Cameretta", tipo: "Finestra", stanza: "Camera", piano: "P1", misure: { lAlto: 1100, lCentro: 1100, lBasso: 1098 }, foto: {}, note: "", accessori: { tapparella: { attivo: false }, persiana: { attivo: false }, zanzariera: { attivo: false } } },
-  ], sistema: "Rehau S80", colTelaio: "RAL 7016", colAccessori: "RAL 9005", creato: "10 Feb", aggiornato: "16 Feb", log: [
+  ], sistema: "Rehau S80", tipo: "nuova", telefono: "347 9876543", mezzoSalita: "Scala a mano", allegati: [], creato: "10 Feb", aggiornato: "16 Feb", log: [
     { chi: "Fabio", cosa: "avanzato a Ordine", quando: "16 Feb, 11:00", color: "#ff2d55" },
     { chi: "Fabio", cosa: "completato tutte le misure", quando: "15 Feb, 16:30", color: "#34c759" },
     { chi: "Fabio", cosa: "creato la commessa", quando: "10 Feb, 08:00", color: "#86868b" },
   ]},
   { id: 3, code: "CM-0003", cliente: "Mario Ferraro", indirizzo: "Via Gabriele Barrio, Cosenza", fase: "sopralluogo", vani: [
     { id: 1, nome: "Sala", tipo: "Scorrevole", stanza: "Soggiorno", piano: "PT", misure: {}, foto: {}, note: "", accessori: { tapparella: { attivo: false }, persiana: { attivo: false }, zanzariera: { attivo: false } } },
-  ], sistema: "", colTelaio: "", colAccessori: "", creato: "12 Feb", aggiornato: "12 Feb", alert: "Sopralluogo oggi", log: [] },
-  { id: 4, code: "CM-0001", cliente: "Antonio Rossi", indirizzo: "Via G. Barrio, 8", fase: "sopralluogo", vani: [], sistema: "", colTelaio: "", colAccessori: "", creato: "8 Feb", aggiornato: "8 Feb", alert: "Nessun vano inserito", log: [] },
+  ], sistema: "", tipo: "riparazione", telefono: "", mezzoSalita: "", allegati: [], creato: "12 Feb", aggiornato: "12 Feb", alert: "Sopralluogo oggi", log: [] },
+  { id: 4, code: "CM-0001", cliente: "Antonio Rossi", indirizzo: "Via G. Barrio, 8", fase: "sopralluogo", vani: [], sistema: "", tipo: "nuova", telefono: "333 7654321", mezzoSalita: "", allegati: [], creato: "8 Feb", aggiornato: "8 Feb", alert: "Nessun vano inserito", log: [] },
 ];
 
 const TASKS_INIT = [
@@ -306,11 +306,13 @@ export default function MastroMisure() {
 
   // New task form
   const [newTask, setNewTask] = useState({ text: "", meta: "", time: "", priority: "media", cm: "" });
+  const [globalSearch, setGlobalSearch] = useState("");
   // New commessa form
-  const [newCM, setNewCM] = useState({ cliente: "", indirizzo: "", sistema: "", colTelaio: "", colAccessori: "", difficoltaSalita: "", foroScale: "", pianoEdificio: "" });
+  const [newCM, setNewCM] = useState({ cliente: "", indirizzo: "", telefono: "", sistema: "", tipo: "nuova", difficoltaSalita: "", mezzoSalita: "", foroScale: "", pianoEdificio: "", note: "" });
   // New vano form
   const [newVano, setNewVano] = useState({ nome: "", tipo: "F1A", stanza: "Soggiorno", piano: "PT", sistema: "", coloreInt: "", coloreEst: "", bicolore: false, coloreAcc: "", vetro: "", telaio: "", telaioAlaZ: "", rifilato: false, rifilSx: "", rifilDx: "", rifilSopra: "", rifilSotto: "", coprifilo: "", lamiera: "" });
   const [customPiani, setCustomPiani] = useState(["S1", "PT", "P1", "P2", "P3"]);
+  const [mezziSalita, setMezziSalita] = useState(["Scala interna", "Scala esterna", "Scala aerea", "Scala a mano", "Gru", "Elevatore", "Ponteggio", "Nessuno"]);
   const [showAddPiano, setShowAddPiano] = useState(false);
   const [newPiano, setNewPiano] = useState("");
 
@@ -339,9 +341,9 @@ export default function MastroMisure() {
   const addCommessa = () => {
     if (!newCM.cliente.trim()) return;
     const code = "CM-" + String(cantieri.length + 1).padStart(4, "0");
-    const nc = { id: Date.now(), code, cliente: newCM.cliente, indirizzo: newCM.indirizzo, fase: "sopralluogo", vani: [], sistema: newCM.sistema, colTelaio: newCM.colTelaio, colAccessori: newCM.colAccessori, difficoltaSalita: newCM.difficoltaSalita, foroScale: newCM.foroScale, pianoEdificio: newCM.pianoEdificio, creato: "Oggi", aggiornato: "Oggi", log: [{ chi: "Fabio", cosa: "creato la commessa", quando: "Adesso", color: T.sub }] };
+    const nc = { id: Date.now(), code, cliente: newCM.cliente, indirizzo: newCM.indirizzo, telefono: newCM.telefono, fase: "sopralluogo", vani: [], sistema: newCM.sistema, tipo: newCM.tipo, difficoltaSalita: newCM.difficoltaSalita, mezzoSalita: newCM.mezzoSalita, foroScale: newCM.foroScale, pianoEdificio: newCM.pianoEdificio, note: newCM.note, allegati: [], creato: "Oggi", aggiornato: "Oggi", log: [{ chi: "Fabio", cosa: "creato la commessa", quando: "Adesso", color: T.sub }] };
     setCantieri(cs => [nc, ...cs]);
-    setNewCM({ cliente: "", indirizzo: "", sistema: "", colTelaio: "", colAccessori: "" });
+    setNewCM({ cliente: "", indirizzo: "", telefono: "", sistema: "", tipo: "nuova", difficoltaSalita: "", mezzoSalita: "", foroScale: "", pianoEdificio: "", note: "" });
     setShowModal(null);
     setSelectedCM(nc);
     setTab("commesse");
@@ -484,7 +486,7 @@ export default function MastroMisure() {
     if (!selectedCM) return;
     const cm = selectedCM;
     let html = `<html><head><title>MASTRO MISURE — ${cm.code}</title><style>body{font-family:Arial,sans-serif;max-width:800px;margin:0 auto;padding:20px}h1{color:#0066cc;border-bottom:3px solid #0066cc;padding-bottom:10px}h2{color:#333;margin-top:30px}.vano{border:1px solid #ddd;border-radius:8px;padding:15px;margin:10px 0;page-break-inside:avoid}.misure-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}.m-item{background:#f5f5f7;padding:6px 10px;border-radius:4px;font-size:13px}.m-label{color:#666;font-size:11px}.m-val{font-weight:700;color:#1d1d1f}.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}.info{color:#666;font-size:13px}@media print{body{padding:0}}</style></head><body>`;
-    html += `<div class="header"><div><h1>MASTRO MISURE</h1><p class="info">Report Misure — ${cm.code}</p></div><div style="text-align:right"><p><strong>${cm.cliente}</strong></p><p class="info">${cm.indirizzo}</p><p class="info">Sistema: ${cm.sistema || "N/D"} | Colore: ${cm.colTelaio || "N/D"}</p></div></div>`;
+    html += `<div class="header"><div><h1>MASTRO MISURE</h1><p class="info">Report Misure — ${cm.code}</p></div><div style="text-align:right"><p><strong>${cm.cliente}</strong></p><p class="info">${cm.indirizzo}</p><p class="info">Sistema: ${cm.sistema || "N/D"} | Tipo: ${cm.tipo === "riparazione" ? "Riparazione" : "Nuova"}</p></div></div>`;
     cm.vani.forEach((v, i) => {
       const m = v.misure || {};
       html += `<div class="vano"><h3>${i + 1}. ${v.nome} — ${v.tipo} (${v.stanza}, ${v.piano})</h3><div class="misure-grid">`;
@@ -655,12 +657,64 @@ export default function MastroMisure() {
       {/* Calendar strip */}
       <div style={{ display: "flex", gap: 4, padding: "12px 16px", overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
         {calDays.map((d, i) => (
-          <div key={i} onClick={() => { setTab("agenda"); setSelDate(new Date(today.getFullYear(), today.getMonth(), today.getDate() - today.getDay() + i + 1)); }} style={{ textAlign: "center", padding: "8px 6px", borderRadius: 10, minWidth: 44, cursor: "pointer", background: d.isToday ? T.text : "transparent", flexShrink: 0 }}>
+          <div key={i} onClick={() => { setTab("agenda"); setAgendaView("giorno"); setSelDate(new Date(today.getFullYear(), today.getMonth(), today.getDate() - today.getDay() + i + 1)); }} style={{ textAlign: "center", padding: "8px 6px", borderRadius: 10, minWidth: 44, cursor: "pointer", background: d.isToday ? T.text : "transparent", flexShrink: 0 }}>
             <div style={{ fontSize: 10, color: d.isToday ? T.bg : T.sub, fontWeight: 600, textTransform: "uppercase" }}>{d.name}</div>
             <div style={{ fontSize: 16, fontWeight: 700, color: d.isToday ? T.bg : T.text, marginTop: 2 }}>{d.day}</div>
             {d.hasDot && <div style={{ width: 4, height: 4, borderRadius: "50%", background: d.isToday ? T.bg : T.red, margin: "2px auto 0" }} />}
           </div>
         ))}
+      </div>
+
+      {/* Global search */}
+      <div style={{ padding: "0 16px", marginBottom: 10 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 14px", background: T.card, borderRadius: 10, border: `1px solid ${T.bdr}` }}>
+          <Ico d={ICO.search} s={16} c={T.sub} />
+          <input
+            style={{ flex: 1, border: "none", background: "transparent", fontSize: 13, color: T.text, outline: "none", fontFamily: FF }}
+            placeholder="Cerca commesse, clienti, vani..."
+            value={globalSearch}
+            onChange={e => setGlobalSearch(e.target.value)}
+          />
+          {globalSearch && <div onClick={() => setGlobalSearch("")} style={{ cursor: "pointer", fontSize: 14, color: T.sub }}>✕</div>}
+        </div>
+        {globalSearch.trim().length > 1 && (() => {
+          const q = globalSearch.toLowerCase();
+          const cmResults = cantieri.filter(c => c.cliente?.toLowerCase().includes(q) || c.code?.toLowerCase().includes(q) || c.indirizzo?.toLowerCase().includes(q));
+          const vanoResults = cantieri.flatMap(c => c.vani.filter(v => v.nome?.toLowerCase().includes(q) || v.tipo?.toLowerCase().includes(q) || v.stanza?.toLowerCase().includes(q)).map(v => ({ ...v, cmCode: c.code, cmCliente: c.cliente, cmId: c.id, cm: c })));
+          const taskResults = tasks.filter(t => t.text?.toLowerCase().includes(q) || t.meta?.toLowerCase().includes(q));
+          const evResults = events.filter(e => e.text?.toLowerCase().includes(q) || e.persona?.toLowerCase().includes(q));
+          const total = cmResults.length + vanoResults.length + taskResults.length + evResults.length;
+          return total > 0 ? (
+            <div style={{ background: T.card, borderRadius: 10, border: `1px solid ${T.bdr}`, marginTop: 6, maxHeight: 280, overflowY: "auto" }}>
+              {cmResults.map(c => (
+                <div key={c.id} onClick={() => { setSelectedCM(c); setTab("commesse"); setGlobalSearch(""); }} style={{ padding: "10px 14px", borderBottom: `1px solid ${T.bg}`, cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ fontSize: 16 }}>📁</span>
+                  <div><div style={{ fontSize: 12, fontWeight: 600 }}>{c.cliente}</div><div style={{ fontSize: 10, color: T.sub }}>{c.code} · {c.indirizzo}</div></div>
+                </div>
+              ))}
+              {vanoResults.map(v => (
+                <div key={v.id} onClick={() => { setSelectedCM(v.cm); setSelectedVano(v); setTab("commesse"); setGlobalSearch(""); }} style={{ padding: "10px 14px", borderBottom: `1px solid ${T.bg}`, cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ fontSize: 16 }}>🪟</span>
+                  <div><div style={{ fontSize: 12, fontWeight: 600 }}>{v.nome}</div><div style={{ fontSize: 10, color: T.sub }}>{v.cmCode} · {v.stanza} · {v.tipo}</div></div>
+                </div>
+              ))}
+              {taskResults.map(t => (
+                <div key={t.id} onClick={() => { setGlobalSearch(""); }} style={{ padding: "10px 14px", borderBottom: `1px solid ${T.bg}`, cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ fontSize: 16 }}>☑️</span>
+                  <div><div style={{ fontSize: 12, fontWeight: 600 }}>{t.text}</div><div style={{ fontSize: 10, color: T.sub }}>{t.cm || "Task"} · {t.meta}</div></div>
+                </div>
+              ))}
+              {evResults.map(e => (
+                <div key={e.id} onClick={() => { setTab("agenda"); setAgendaView("giorno"); setSelDate(new Date(e.date)); setGlobalSearch(""); }} style={{ padding: "10px 14px", borderBottom: `1px solid ${T.bg}`, cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ fontSize: 16 }}>📅</span>
+                  <div><div style={{ fontSize: 12, fontWeight: 600 }}>{e.text}</div><div style={{ fontSize: 10, color: T.sub }}>{e.date} {e.time} · {e.persona}</div></div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div style={{ padding: "10px 14px", background: T.card, borderRadius: 10, border: `1px solid ${T.bdr}`, marginTop: 6, fontSize: 12, color: T.sub, textAlign: "center" }}>Nessun risultato per "{globalSearch}"</div>
+          );
+        })()}
       </div>
 
       {/* Stats — clickable */}
@@ -750,7 +804,10 @@ export default function MastroMisure() {
               </div>
               <div style={{ fontSize: 12, color: T.sub, marginTop: 3 }}>{c.indirizzo} · {c.vani.length} vani</div>
             </div>
-            <span style={S.badge(fase?.color + "18", fase?.color)}>{fase?.nome}</span>
+            <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+              {c.tipo === "riparazione" && <span style={S.badge(T.orangeLt, T.orange)}>🔧</span>}
+              <span style={S.badge(fase?.color + "18", fase?.color)}>{fase?.nome}</span>
+            </div>
           </div>
           {c.alert && <div style={{ ...S.badge(c.alert.includes("Nessun") ? T.orangeLt : T.redLt, c.alert.includes("Nessun") ? T.orange : T.red), marginTop: 6 }}>{c.alert}</div>}
           <div style={{ height: 3, background: T.bdr, borderRadius: 2, marginTop: 8 }}>
@@ -822,13 +879,17 @@ export default function MastroMisure() {
 
         {/* Info badges */}
         <div style={{ padding: "8px 16px", display: "flex", gap: 6, flexWrap: "wrap" }}>
+          {c.tipo === "riparazione" && <span style={S.badge(T.orangeLt, T.orange)}>🔧 Riparazione</span>}
+          {c.tipo === "nuova" && <span style={S.badge(T.grnLt, T.grn)}>🆕 Nuova</span>}
           {c.sistema && <span style={S.badge(T.blueLt, T.blue)}>{c.sistema}</span>}
-          {c.colTelaio && <span style={S.badge(T.purpleLt, T.purple)}>Telaio: {c.colTelaio}</span>}
-          {c.colAccessori && <span style={S.badge(T.orangeLt, T.orange)}>Acc: {c.colAccessori}</span>}
           {c.difficoltaSalita && <span style={S.badge(c.difficoltaSalita === "facile" ? T.grnLt : c.difficoltaSalita === "media" ? T.orangeLt : T.redLt, c.difficoltaSalita === "facile" ? T.grn : c.difficoltaSalita === "media" ? T.orange : T.red)}>Salita: {c.difficoltaSalita}</span>}
+          {c.mezzoSalita && <span style={S.badge(T.purpleLt, T.purple)}>🪜 {c.mezzoSalita}</span>}
           {c.pianoEdificio && <span style={S.badge(T.blueLt, T.blue)}>Piano: {c.pianoEdificio}</span>}
           {c.foroScale && <span style={S.badge(T.redLt, T.red)}>Foro: {c.foroScale}</span>}
+          {c.telefono && <span onClick={() => window.open(`tel:${c.telefono}`)} style={{ ...S.badge(T.grnLt, T.grn), cursor: "pointer" }}>📞 {c.telefono}</span>}
         </div>
+        {/* Note commessa */}
+        {c.note && <div style={{ padding: "0 16px", marginBottom: 6 }}><div style={{ padding: "8px 12px", borderRadius: 8, background: T.card, border: `1px solid ${T.bdr}`, fontSize: 12, color: T.sub, lineHeight: 1.4 }}>📝 {c.note}</div></div>}
 
         {/* Pipeline */}
         <div style={{ padding: "4px 16px 0" }}>
@@ -847,7 +908,7 @@ export default function MastroMisure() {
         {/* Contact actions */}
         <div style={{ display: "flex", gap: 8, padding: "12px 16px" }}>
           {[
-            { ico: ICO.phone, label: "Chiama", col: T.grn, act: () => window.open("tel:+39000000000") },
+            { ico: ICO.phone, label: "Chiama", col: T.grn, act: () => window.open(`tel:${c.telefono || "+39000000000"}`) },
             { ico: ICO.map, label: "Naviga", col: T.blue, act: () => window.open(`https://maps.google.com/?q=${encodeURIComponent(c.indirizzo || "")}`) },
             { ico: ICO.send, label: "WhatsApp", col: "#25d366", act: () => window.open(`https://wa.me/?text=${encodeURIComponent(`Commessa ${c.code} - ${c.cliente}`)}`) },
           ].map((a, i) => (
@@ -870,6 +931,38 @@ export default function MastroMisure() {
           </button>
         </div>
 
+        {/* Allegati / Note / Vocali */}
+        <div style={{ padding: "0 16px", marginBottom: 8 }}>
+          <div style={{ display: "flex", gap: 6 }}>
+            {[
+              { ico: "📎", label: "Allegato", act: () => { const a = { id: Date.now(), tipo: "file", nome: "Allegato_" + new Date().toLocaleDateString("it-IT").replace(/\//g, "-"), data: new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }) }; setCantieri(cs => cs.map(x => x.id === c.id ? { ...x, allegati: [...(x.allegati || []), a] } : x)); setSelectedCM(p => ({ ...p, allegati: [...(p.allegati || []), a] })); }},
+              { ico: "📝", label: "Nota", act: () => { const txt = prompt("Scrivi una nota:"); if (txt) { const a = { id: Date.now(), tipo: "nota", nome: txt, data: new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }) }; setCantieri(cs => cs.map(x => x.id === c.id ? { ...x, allegati: [...(x.allegati || []), a] } : x)); setSelectedCM(p => ({ ...p, allegati: [...(p.allegati || []), a] })); }}},
+              { ico: "🎤", label: "Vocale", act: () => { const a = { id: Date.now(), tipo: "vocale", nome: "Nota vocale " + new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }), data: new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }), durata: "0:" + String(Math.floor(Math.random() * 30 + 5)).padStart(2, "0") }; setCantieri(cs => cs.map(x => x.id === c.id ? { ...x, allegati: [...(x.allegati || []), a] } : x)); setSelectedCM(p => ({ ...p, allegati: [...(p.allegati || []), a] })); }},
+            ].map((b, i) => (
+              <div key={i} onClick={b.act} style={{ flex: 1, padding: "10px 4px", background: T.card, borderRadius: T.r, border: `1px solid ${T.bdr}`, textAlign: "center", cursor: "pointer" }}>
+                <div style={{ fontSize: 18 }}>{b.ico}</div>
+                <div style={{ fontSize: 10, fontWeight: 600, color: T.sub, marginTop: 2 }}>{b.label}</div>
+              </div>
+            ))}
+          </div>
+          {/* Lista allegati */}
+          {(c.allegati || []).length > 0 && (
+            <div style={{ marginTop: 6, background: T.card, borderRadius: T.r, border: `1px solid ${T.bdr}`, overflow: "hidden" }}>
+              {(c.allegati || []).map(a => (
+                <div key={a.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", borderBottom: `1px solid ${T.bg}` }}>
+                  <span style={{ fontSize: 16 }}>{a.tipo === "nota" ? "📝" : a.tipo === "vocale" ? "🎤" : "📎"}</span>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: T.text }}>{a.nome}</div>
+                    <div style={{ fontSize: 10, color: T.sub }}>{a.data}{a.durata ? ` · ${a.durata}` : ""}</div>
+                  </div>
+                  {a.tipo === "vocale" && <div style={{ padding: "3px 8px", borderRadius: 6, background: T.accLt, fontSize: 10, fontWeight: 600, color: T.acc, cursor: "pointer" }}>▶ Play</div>}
+                  <div onClick={() => { setCantieri(cs => cs.map(x => x.id === c.id ? { ...x, allegati: (x.allegati || []).filter(al => al.id !== a.id) } : x)); setSelectedCM(p => ({ ...p, allegati: (p.allegati || []).filter(al => al.id !== a.id) })); }} style={{ cursor: "pointer" }}><Ico d={ICO.trash} s={12} c={T.sub} /></div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
         {/* Vani */}
         <div style={S.section}>
           <div style={S.sectionTitle}>Vani ({c.vani.length})</div>
@@ -888,9 +981,14 @@ export default function MastroMisure() {
               <div key={v.id} style={{ ...S.card, margin: "0 0 8px" }} onClick={() => setSelectedVano(v)}>
                 <div style={S.cardInner}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <div>
-                      <div style={{ fontSize: 14, fontWeight: 600 }}>{v.nome}</div>
-                      <div style={{ fontSize: 11, color: T.sub }}>{v.tipo} · {v.stanza} · {v.piano}</div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <div style={{ width: 36, height: 36, borderRadius: 8, background: T.accLt, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>
+                        {TIPOLOGIE_RAPIDE.find(t => t.code === v.tipo)?.icon || "🪟"}
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 14, fontWeight: 600 }}>{v.nome}</div>
+                        <div style={{ fontSize: 11, color: T.sub }}>{TIPOLOGIE_RAPIDE.find(t => t.code === v.tipo)?.label || v.tipo} · {v.stanza} · {v.piano}</div>
+                      </div>
                     </div>
                     <div style={{ textAlign: "right", display: "flex", alignItems: "center", gap: 8 }}>
                       <div style={{ fontSize: 12, fontWeight: 700, color: filled >= 6 ? T.grn : T.orange }}>{filled}/{total}<div style={{ fontSize: 10, color: T.sub, fontWeight: 400 }}>misure</div></div>
@@ -965,8 +1063,8 @@ export default function MastroMisure() {
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px 16px", fontSize: 12 }}>
               <span style={{ color: T.sub }}>Indirizzo:</span><span style={{ fontWeight: 600 }}>{c.indirizzo}</span>
               <span style={{ color: T.sub }}>Sistema:</span><span style={{ fontWeight: 600 }}>{c.sistema || "N/D"}</span>
-              <span style={{ color: T.sub }}>Colore telaio:</span><span style={{ fontWeight: 600 }}>{c.colTelaio || "N/D"}</span>
-              <span style={{ color: T.sub }}>Colore accessori:</span><span style={{ fontWeight: 600 }}>{c.colAccessori || "N/D"}</span>
+              <span style={{ color: T.sub }}>Tipo:</span><span style={{ fontWeight: 600 }}>{c.tipo === "riparazione" ? "🔧 Riparazione" : "🆕 Nuova"}</span>
+              <span style={{ color: T.sub }}>Mezzo salita:</span><span style={{ fontWeight: 600 }}>{c.mezzoSalita || "N/D"}</span>
             </div>
           </div>
 
@@ -1727,7 +1825,7 @@ export default function MastroMisure() {
       {/* Settings sub-tabs — scrollable */}
       <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch", margin: "8px 16px 12px", borderRadius: 8, border: `1px solid ${T.bdr}` }}>
         <div style={{ display: "flex", minWidth: "max-content" }}>
-          {[{ id: "generali", l: "⚙️ Generali" }, { id: "team", l: "👥 Team" }, { id: "sistemi", l: "🏗 Sistemi" }, { id: "colori", l: "🎨 Colori" }, { id: "vetri", l: "🪟 Vetri" }, { id: "tipologie", l: "📐 Tipologie" }, { id: "coprifili", l: "📏 Coprifili" }, { id: "lamiere", l: "🔩 Lamiere" }, { id: "pipeline", l: "📊 Pipeline" }].map(t => (
+          {[{ id: "generali", l: "⚙️ Generali" }, { id: "team", l: "👥 Team" }, { id: "sistemi", l: "🏗 Sistemi" }, { id: "colori", l: "🎨 Colori" }, { id: "vetri", l: "🪟 Vetri" }, { id: "tipologie", l: "📐 Tipologie" }, { id: "coprifili", l: "📏 Coprifili" }, { id: "lamiere", l: "🔩 Lamiere" }, { id: "salita", l: "🪜 Salita" }, { id: "pipeline", l: "📊 Pipeline" }].map(t => (
             <div key={t.id} onClick={() => setSettingsTab(t.id)} style={{ padding: "8px 12px", textAlign: "center", fontSize: 10, fontWeight: 600, background: settingsTab === t.id ? T.acc : T.card, color: settingsTab === t.id ? "#fff" : T.sub, cursor: "pointer", whiteSpace: "nowrap" }}>
               {t.l}
             </div>
@@ -1922,6 +2020,23 @@ export default function MastroMisure() {
           </>
         )}
 
+        {/* ═══ SALITA ═══ */}
+        {settingsTab === "salita" && (
+          <>
+            <div style={{ fontSize: 11, color: T.sub, marginBottom: 8 }}>Configura i mezzi di salita disponibili</div>
+            {mezziSalita.map((m, i) => (
+              <div key={i} style={{ ...S.card, marginBottom: 4 }}><div style={{ ...S.cardInner, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ fontSize: 16 }}>🪜</span>
+                  <span style={{ fontSize: 13, fontWeight: 600 }}>{m}</span>
+                </div>
+                <div onClick={() => { if (confirm(`Eliminare "${m}"?`)) setMezziSalita(ms => ms.filter((_, j) => j !== i)); }} style={{ cursor: "pointer" }}><Ico d={ICO.trash} s={14} c={T.sub} /></div>
+              </div></div>
+            ))}
+            <div onClick={() => { const n = prompt("Nome mezzo di salita:"); if (n?.trim()) setMezziSalita(ms => [...ms, n.trim()]); }} style={{ padding: "14px", borderRadius: T.r, border: `1px dashed ${T.acc}`, textAlign: "center", cursor: "pointer", color: T.acc, fontSize: 12, fontWeight: 600, marginTop: 4 }}>+ Aggiungi mezzo salita</div>
+          </>
+        )}
+
         {/* ═══ PIPELINE ═══ */}
         {settingsTab === "pipeline" && (
           <>
@@ -1994,13 +2109,27 @@ export default function MastroMisure() {
           {showModal === "commessa" && (
             <>
               <div style={S.modalTitle}>Nuova commessa</div>
+              {/* Tipo: Nuova / Riparazione */}
+              <div style={{ display: "flex", gap: 6, marginBottom: 14 }}>
+                {[{ id: "nuova", l: "🆕 Nuova installazione", c: T.acc }, { id: "riparazione", l: "🔧 Riparazione", c: T.orange }].map(t => (
+                  <div key={t.id} onClick={() => setNewCM(c => ({ ...c, tipo: t.id }))} style={{ flex: 1, padding: "10px 6px", borderRadius: 10, border: `1.5px solid ${newCM.tipo === t.id ? t.c : T.bdr}`, background: newCM.tipo === t.id ? t.c + "15" : T.card, textAlign: "center", cursor: "pointer" }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: newCM.tipo === t.id ? t.c : T.sub }}>{t.l}</div>
+                  </div>
+                ))}
+              </div>
               <div style={{ marginBottom: 14 }}>
                 <label style={S.fieldLabel}>Cliente</label>
                 <input style={S.input} placeholder="Nome e cognome" value={newCM.cliente} onChange={e => setNewCM(c => ({ ...c, cliente: e.target.value }))} />
               </div>
-              <div style={{ marginBottom: 14 }}>
-                <label style={S.fieldLabel}>Indirizzo</label>
-                <input style={S.input} placeholder="Via, CAP, Città" value={newCM.indirizzo} onChange={e => setNewCM(c => ({ ...c, indirizzo: e.target.value }))} />
+              <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
+                <div style={{ flex: 2 }}>
+                  <label style={S.fieldLabel}>Indirizzo</label>
+                  <input style={S.input} placeholder="Via, CAP, Città" value={newCM.indirizzo} onChange={e => setNewCM(c => ({ ...c, indirizzo: e.target.value }))} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={S.fieldLabel}>Telefono</label>
+                  <input style={S.input} placeholder="347..." value={newCM.telefono} onChange={e => setNewCM(c => ({ ...c, telefono: e.target.value }))} />
+                </div>
               </div>
               <div style={{ marginBottom: 14 }}>
                 <label style={S.fieldLabel}>Sistema</label>
@@ -2008,22 +2137,6 @@ export default function MastroMisure() {
                   <option value="">— Seleziona —</option>
                   {sistemiDB.map(s => <option key={s.id} value={`${s.marca} ${s.sistema}`}>{s.marca} {s.sistema} — €{s.euroMq}/mq</option>)}
                 </select>
-              </div>
-              <div style={{ display: "flex", gap: 10, marginBottom: 14 }}>
-                <div style={{ flex: 1 }}>
-                  <label style={S.fieldLabel}>Colore telaio</label>
-                  <select style={S.select} value={newCM.colTelaio} onChange={e => setNewCM(c => ({ ...c, colTelaio: e.target.value }))}>
-                    <option value="">— Seleziona —</option>
-                    {coloriDB.map(c => <option key={c.id} value={c.code}>{c.code} — {c.nome}</option>)}
-                  </select>
-                </div>
-                <div style={{ flex: 1 }}>
-                  <label style={S.fieldLabel}>Colore accessori</label>
-                  <select style={S.select} value={newCM.colAccessori} onChange={e => setNewCM(c => ({ ...c, colAccessori: e.target.value }))}>
-                    <option value="">— Seleziona —</option>
-                    {coloriDB.map(c => <option key={c.id} value={c.code}>{c.code} — {c.nome}</option>)}
-                  </select>
-                </div>
               </div>
               {/* Difficoltà salita */}
               <div style={{ marginBottom: 14 }}>
@@ -2036,7 +2149,7 @@ export default function MastroMisure() {
                     </div>
                   ))}
                 </div>
-                <div style={{ display: "flex", gap: 8 }}>
+                <div style={{ display: "flex", gap: 8, marginBottom: 6 }}>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 10, color: T.sub, fontWeight: 600, marginBottom: 2 }}>Piano edificio</div>
                     <input style={S.input} placeholder="es. 3° piano" value={newCM.pianoEdificio} onChange={e => setNewCM(c => ({ ...c, pianoEdificio: e.target.value }))} />
@@ -2046,6 +2159,18 @@ export default function MastroMisure() {
                     <input style={S.input} placeholder="es. 80×200" value={newCM.foroScale} onChange={e => setNewCM(c => ({ ...c, foroScale: e.target.value }))} />
                   </div>
                 </div>
+                <div>
+                  <div style={{ fontSize: 10, color: T.sub, fontWeight: 600, marginBottom: 2 }}>Mezzo di salita</div>
+                  <select style={S.select} value={newCM.mezzoSalita} onChange={e => setNewCM(c => ({ ...c, mezzoSalita: e.target.value }))}>
+                    <option value="">— Seleziona —</option>
+                    {mezziSalita.map(m => <option key={m} value={m}>{m}</option>)}
+                  </select>
+                </div>
+              </div>
+              {/* Note */}
+              <div style={{ marginBottom: 14 }}>
+                <label style={S.fieldLabel}>Note</label>
+                <textarea style={{ ...S.input, minHeight: 60, resize: "vertical" }} placeholder="Note aggiuntive sulla commessa..." value={newCM.note} onChange={e => setNewCM(c => ({ ...c, note: e.target.value }))} />
               </div>
               <button style={S.btn} onClick={addCommessa}>Crea commessa</button>
               <button style={S.btnCancel} onClick={() => setShowModal(null)}>Annulla</button>
