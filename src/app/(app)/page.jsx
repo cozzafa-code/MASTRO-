@@ -2931,17 +2931,17 @@ export default function MastroMisure() {
         {!selectedVano && (
           <div style={S.tabBar}>
             {[
-              { id: "home", ico: ICO.home, label: "Home" },
-              { id: "commesse", ico: ICO.filter, label: "Commesse" },
-              { id: "messaggi", ico: ICO.chat, label: "Messaggi" },
-              { id: "agenda", ico: ICO.calendar, label: "Agenda" },
-              { id: "settings", ico: ICO.settings, label: "Impost." },
+              { id: "home", emoji: "🏠", label: "Home" },
+              { id: "commesse", emoji: "📁", label: "Commesse" },
+              { id: "messaggi", emoji: "💬", label: "Messaggi" },
+              { id: "agenda", emoji: "📅", label: "Agenda" },
+              { id: "settings", emoji: "⚙️", label: "Impost." },
             ].map(t => (
               <div key={t.id} style={S.tabItem(tab === t.id)} onClick={() => { setTab(t.id); setSelectedCM(null); setSelectedVano(null); setSelectedMsg(null); }}>
                 <div style={{ position: "relative", display: "inline-block" }}>
-                  <Ico d={t.ico} s={22} c={tab === t.id ? T.acc : T.sub} />
+                  <div style={{ fontSize: 22 }}>{t.emoji}</div>
                   {t.id === "messaggi" && msgs.filter(m => !m.read).length > 0 && (
-                    <div style={{ position: "absolute", top: -4, right: -8, width: 16, height: 16, borderRadius: "50%", background: T.red, color: "#fff", fontSize: 9, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <div style={{ position: "absolute", top: -4, right: -10, minWidth: 16, height: 16, borderRadius: "50%", background: T.red, color: "#fff", fontSize: 9, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 3px" }}>
                       {msgs.filter(m => !m.read).length}
                     </div>
                   )}
