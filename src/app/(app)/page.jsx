@@ -138,6 +138,17 @@ const TEAM_INIT = [
   { id: 3, nome: "Sara Greco", ruolo: "Ufficio", compiti: "Ordini, contabilità, assistenza clienti", colore: "#af52de" },
 ];
 
+const CONTATTI_INIT = [
+  { id: 1, nome: "Giuseppe Rossi", tipo: "cliente", tel: "347 1234567", email: "rossi@email.it", preferito: true, canali: ["whatsapp", "email"], cm: "CM-0001" },
+  { id: 2, nome: "Teresa Bruno", tipo: "cliente", tel: "338 9876543", email: "bruno@pec.it", preferito: true, canali: ["whatsapp", "sms"], cm: "CM-0002" },
+  { id: 3, nome: "Lucia Ferraro", tipo: "cliente", tel: "333 4567890", email: "", preferito: false, canali: ["whatsapp"], cm: "CM-0003" },
+  { id: 4, nome: "Antonio Mancini", tipo: "cliente", tel: "340 1112233", email: "mancini@gmail.com", preferito: false, canali: ["whatsapp", "email"], cm: "CM-0004" },
+  { id: 5, nome: "Fornitore Schüco", tipo: "fornitore", tel: "0984 123456", email: "ordini@schuco.it", preferito: true, canali: ["email", "telegram"], cm: "" },
+  { id: 6, nome: "Vetreria Milano", tipo: "fornitore", tel: "02 9876543", email: "info@vetreriami.it", preferito: true, canali: ["email", "telegram"], cm: "" },
+  { id: 7, nome: "Ferramenta Cosenza", tipo: "fornitore", tel: "0984 555666", email: "ordini@ferracosenza.it", preferito: false, canali: ["email", "whatsapp"], cm: "" },
+  { id: 8, nome: "Geom. Calabrò", tipo: "professionista", tel: "339 7778899", email: "calabro@studio.it", preferito: false, canali: ["email", "whatsapp"], cm: "" },
+];
+
 const COLORI_INIT = [
   { id: 1, nome: "Bianco", code: "RAL 9010", hex: "#f5f5f0", tipo: "RAL" },
   { id: 2, nome: "Grigio antracite", code: "RAL 7016", hex: "#383e42", tipo: "RAL" },
@@ -282,6 +293,7 @@ export default function MastroMisure() {
   const [agendaView, setAgendaView] = useState("mese"); // "giorno" | "settimana" | "mese"
   const [selDate, setSelDate] = useState(new Date());
   const [showNewEvent, setShowNewEvent] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState(null);
   const [newEvent, setNewEvent] = useState({ text: "", time: "", tipo: "appuntamento", cm: "", persona: "", date: "" });
   const [events, setEvents] = useState(() => {
     const t = new Date(); const td = t.toISOString().split("T")[0];
@@ -309,6 +321,9 @@ export default function MastroMisure() {
   const [isRecording, setIsRecording] = useState(false);
   const [recSeconds, setRecSeconds] = useState(0);
   const recInterval = useRef(null);
+  const [playingId, setPlayingId] = useState(null);
+  const [playProgress, setPlayProgress] = useState(0);
+  const playInterval = useRef(null);
   const [selectedTask, setSelectedTask] = useState(null);
   
   // Drawing state
@@ -326,6 +341,10 @@ export default function MastroMisure() {
   const [showCompose, setShowCompose] = useState(false);
   const [composeMsg, setComposeMsg] = useState({ to: "", text: "", canale: "whatsapp", cm: "" });
   const [fabOpen, setFabOpen] = useState(false);
+  const [contatti, setContatti] = useState(CONTATTI_INIT);
+  const [msgSubTab, setMsgSubTab] = useState("chat"); // "chat" | "rubrica"
+  const [rubricaSearch, setRubricaSearch] = useState("");
+  const [rubricaFilter, setRubricaFilter] = useState("tutti"); // tutti/preferiti/team/clienti/fornitori
   const [globalSearch, setGlobalSearch] = useState("");
   // New commessa form
   const [newCM, setNewCM] = useState({ cliente: "", indirizzo: "", telefono: "", sistema: "", tipo: "nuova", difficoltaSalita: "", mezzoSalita: "", foroScale: "", pianoEdificio: "", note: "" });
@@ -443,6 +462,14 @@ export default function MastroMisure() {
     const a = { id: Date.now(), tipo, nome: content || (tipo === "file" ? "Allegato" : tipo === "vocale" ? "Nota vocale" : tipo === "video" ? "Video" : "Nota"), data: new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }), durata: tipo === "vocale" ? "0:" + String(Math.floor(Math.random() * 30 + 5)).padStart(2, "0") : tipo === "video" ? "0:" + String(Math.floor(Math.random() * 45 + 10)).padStart(2, "0") : "" };
     setCantieri(cs => cs.map(x => x.id === selectedCM.id ? { ...x, allegati: [...(x.allegati || []), a] } : x));
     setSelectedCM(p => ({ ...p, allegati: [...(p.allegati || []), a] }));
+  };
+
+  const playAllegato = (id) => {
+    if (playingId === id) { clearInterval(playInterval.current); setPlayingId(null); setPlayProgress(0); return; }
+    clearInterval(playInterval.current);
+    setPlayingId(id); setPlayProgress(0);
+    let prog = 0;
+    playInterval.current = setInterval(() => { prog += 2; setPlayProgress(prog); if (prog >= 100) { clearInterval(playInterval.current); setPlayingId(null); setPlayProgress(0); } }, 100);
   };
 
   // SETTINGS CRUD
@@ -1026,6 +1053,7 @@ export default function MastroMisure() {
           <div style={{ display: "flex", gap: 6 }}>
             {[
               { ico: "📎", label: "File", act: () => { const inp = document.createElement("input"); inp.type = "file"; inp.onchange = (e) => { const f = e.target.files[0]; if (f) addAllegato("file", f.name); }; inp.click(); }},
+              { ico: "📷", label: "Foto", act: () => { addAllegato("foto", "Foto_" + new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }).replace(":", "")); }},
               { ico: "📝", label: "Nota", act: () => { setShowAllegatiModal("nota"); setAllegatiText(""); }},
               { ico: "🎤", label: "Vocale", act: () => { setShowAllegatiModal("vocale"); }},
               { ico: "🎬", label: "Video", act: () => { setShowAllegatiModal("video"); }},
@@ -1040,14 +1068,28 @@ export default function MastroMisure() {
           {(c.allegati || []).length > 0 && (
             <div style={{ marginTop: 6, background: T.card, borderRadius: T.r, border: `1px solid ${T.bdr}`, overflow: "hidden" }}>
               {(c.allegati || []).map(a => (
-                <div key={a.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", borderBottom: `1px solid ${T.bg}` }}>
-                  <span style={{ fontSize: 16 }}>{a.tipo === "nota" ? "📝" : a.tipo === "vocale" ? "🎤" : a.tipo === "video" ? "🎬" : "📎"}</span>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 12, fontWeight: 600, color: T.text }}>{a.nome}</div>
-                    <div style={{ fontSize: 10, color: T.sub }}>{a.data}{a.durata ? ` · ${a.durata}` : ""}</div>
+                <div key={a.id} style={{ borderBottom: `1px solid ${T.bg}` }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px" }}>
+                    <span style={{ fontSize: 16 }}>{a.tipo === "nota" ? "📝" : a.tipo === "vocale" ? "🎤" : a.tipo === "video" ? "🎬" : a.tipo === "foto" ? "📷" : "📎"}</span>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: T.text }}>{a.nome}</div>
+                      <div style={{ fontSize: 10, color: T.sub }}>{a.data}{a.durata ? ` · ${a.durata}` : ""}</div>
+                    </div>
+                    {(a.tipo === "vocale" || a.tipo === "video") && (
+                      <div onClick={() => playAllegato(a.id)} style={{ padding: "3px 8px", borderRadius: 6, background: playingId === a.id ? T.redLt : T.accLt, fontSize: 10, fontWeight: 600, color: playingId === a.id ? T.red : T.acc, cursor: "pointer" }}>
+                        {playingId === a.id ? "⏸ Stop" : "▶ Play"}
+                      </div>
+                    )}
+                    {a.tipo === "foto" && <div onClick={() => alert("📷 Anteprima foto: " + a.nome)} style={{ padding: "3px 8px", borderRadius: 6, background: T.accLt, fontSize: 10, fontWeight: 600, color: T.acc, cursor: "pointer" }}>👁 Vedi</div>}
+                    {a.tipo === "file" && <div onClick={() => alert("📎 Apertura file: " + a.nome)} style={{ padding: "3px 8px", borderRadius: 6, background: T.accLt, fontSize: 10, fontWeight: 600, color: T.acc, cursor: "pointer" }}>📂 Apri</div>}
+                    <div onClick={() => { setCantieri(cs => cs.map(x => x.id === c.id ? { ...x, allegati: (x.allegati || []).filter(al => al.id !== a.id) } : x)); setSelectedCM(p => ({ ...p, allegati: (p.allegati || []).filter(al => al.id !== a.id) })); }} style={{ cursor: "pointer" }}><Ico d={ICO.trash} s={12} c={T.sub} /></div>
                   </div>
-                  {(a.tipo === "vocale" || a.tipo === "video") && <div style={{ padding: "3px 8px", borderRadius: 6, background: T.accLt, fontSize: 10, fontWeight: 600, color: T.acc, cursor: "pointer" }}>{a.tipo === "video" ? "▶ Play" : "▶ Play"}</div>}
-                  <div onClick={() => { setCantieri(cs => cs.map(x => x.id === c.id ? { ...x, allegati: (x.allegati || []).filter(al => al.id !== a.id) } : x)); setSelectedCM(p => ({ ...p, allegati: (p.allegati || []).filter(al => al.id !== a.id) })); }} style={{ cursor: "pointer" }}><Ico d={ICO.trash} s={12} c={T.sub} /></div>
+                  {/* Progress bar for playing */}
+                  {playingId === a.id && (
+                    <div style={{ height: 3, background: T.bdr, margin: "0 12px 6px" }}>
+                      <div style={{ height: "100%", background: a.tipo === "video" ? T.blue : T.acc, borderRadius: 2, width: `${playProgress}%`, transition: "width 0.1s linear" }} />
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -1738,21 +1780,57 @@ export default function MastroMisure() {
     };
 
     const renderEventCard = (ev) => (
-      <div key={ev.id} style={{ ...S.card, margin: "0 0 8px" }}>
+      <div key={ev.id} style={{ ...S.card, margin: "0 0 8px" }} onClick={() => setSelectedEvent(selectedEvent?.id === ev.id ? null : ev)}>
         <div style={{ ...S.cardInner, display: "flex", gap: 10 }}>
           <div style={{ width: 3, borderRadius: 2, background: ev.color, flexShrink: 0 }} />
           {ev.time && <div style={{ fontSize: 12, fontWeight: 700, color: T.sub, minWidth: 38, fontFamily: FM }}>{ev.time}</div>}
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 13, fontWeight: 600 }}>{ev.text}</div>
-            {ev.addr && <div style={{ fontSize: 11, color: T.sub, marginTop: 2 }}>{ev.addr}</div>}
+            {ev.addr && <div style={{ fontSize: 11, color: T.sub, marginTop: 2 }}>📍 {ev.addr}</div>}
             <div style={{ display: "flex", gap: 4, marginTop: 3, flexWrap: "wrap" }}>
-              {ev.cm && <span onClick={() => { const cm = cantieri.find(c => c.code === ev.cm); if (cm) { setSelectedCM(cm); setTab("commesse"); } }} style={{ ...S.badge(T.accLt, T.acc), cursor: "pointer" }}>{ev.cm}</span>}
+              {ev.cm && <span onClick={(e) => { e.stopPropagation(); const cm = cantieri.find(c => c.code === ev.cm); if (cm) { setSelectedCM(cm); setTab("commesse"); } }} style={{ ...S.badge(T.accLt, T.acc), cursor: "pointer" }}>{ev.cm}</span>}
               {ev.persona && <span style={S.badge(T.purpleLt, T.purple)}>{ev.persona}</span>}
               <span style={S.badge(ev.tipo === "appuntamento" ? T.blueLt : T.orangeLt, ev.tipo === "appuntamento" ? T.blue : T.orange)}>{ev.tipo}</span>
             </div>
           </div>
-          <div onClick={() => deleteEvent(ev.id)} style={{ padding: 4, cursor: "pointer", alignSelf: "center" }}><Ico d={ICO.trash} s={13} c={T.sub} /></div>
+          <div style={{ alignSelf: "center", transition: "transform 0.2s", transform: selectedEvent?.id === ev.id ? "rotate(90deg)" : "rotate(0deg)" }}>
+            <Ico d={ICO.back} s={14} c={T.sub} />
+          </div>
         </div>
+        {/* Expanded detail */}
+        {selectedEvent?.id === ev.id && (
+          <div style={{ padding: "0 14px 12px", borderTop: `1px solid ${T.bdr}`, marginTop: 4 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, padding: "10px 0" }}>
+              <div>
+                <div style={{ fontSize: 9, fontWeight: 700, color: T.sub, textTransform: "uppercase", letterSpacing: 0.5 }}>Data</div>
+                <div style={{ fontSize: 13, fontWeight: 600, marginTop: 2 }}>{new Date(ev.date).toLocaleDateString("it-IT", { weekday: "short", day: "numeric", month: "short" })}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 9, fontWeight: 700, color: T.sub, textTransform: "uppercase", letterSpacing: 0.5 }}>Orario</div>
+                <div style={{ fontSize: 13, fontWeight: 600, marginTop: 2 }}>{ev.time || "Tutto il giorno"}</div>
+              </div>
+              {ev.persona && <div>
+                <div style={{ fontSize: 9, fontWeight: 700, color: T.sub, textTransform: "uppercase", letterSpacing: 0.5 }}>Assegnato a</div>
+                <div style={{ fontSize: 13, fontWeight: 600, marginTop: 2 }}>👤 {ev.persona}</div>
+              </div>}
+              {ev.addr && <div>
+                <div style={{ fontSize: 9, fontWeight: 700, color: T.sub, textTransform: "uppercase", letterSpacing: 0.5 }}>Luogo</div>
+                <div style={{ fontSize: 13, fontWeight: 600, marginTop: 2 }}>📍 {ev.addr}</div>
+              </div>}
+            </div>
+            {ev.cm && (
+              <div style={{ padding: "8px 10px", background: T.accLt, borderRadius: 8, marginBottom: 8 }}>
+                <div style={{ fontSize: 9, fontWeight: 700, color: T.acc, textTransform: "uppercase", letterSpacing: 0.5 }}>Commessa collegata</div>
+                <div onClick={(e) => { e.stopPropagation(); const cm = cantieri.find(c => c.code === ev.cm); if (cm) { setSelectedCM(cm); setTab("commesse"); } }} style={{ fontSize: 13, fontWeight: 700, color: T.acc, marginTop: 2, cursor: "pointer" }}>{ev.cm} → Apri commessa</div>
+              </div>
+            )}
+            <div style={{ display: "flex", gap: 6 }}>
+              <div onClick={(e) => { e.stopPropagation(); if (ev.addr) window.open("https://maps.google.com/?q=" + encodeURIComponent(ev.addr)); }} style={{ flex: 1, padding: "8px", borderRadius: 8, background: T.card, border: `1px solid ${T.bdr}`, textAlign: "center", cursor: "pointer", fontSize: 11, fontWeight: 600, color: T.blue }}>🗺 Mappa</div>
+              <div onClick={(e) => { e.stopPropagation(); if (ev.persona) window.open("tel:"); }} style={{ flex: 1, padding: "8px", borderRadius: 8, background: T.card, border: `1px solid ${T.bdr}`, textAlign: "center", cursor: "pointer", fontSize: 11, fontWeight: 600, color: T.grn }}>📞 Chiama</div>
+              <div onClick={(e) => { e.stopPropagation(); deleteEvent(ev.id); setSelectedEvent(null); }} style={{ flex: 1, padding: "8px", borderRadius: 8, background: T.redLt, border: `1px solid ${T.red}30`, textAlign: "center", cursor: "pointer", fontSize: 11, fontWeight: 600, color: T.red }}>🗑 Elimina</div>
+            </div>
+          </div>
+        )}
       </div>
     );
 
@@ -1860,9 +1938,26 @@ export default function MastroMisure() {
                       <div style={{ width: 48, padding: "4px 6px", fontSize: 10, color: T.sub, fontFamily: FM, fontWeight: 600, borderRight: `1px solid ${T.bdr}`, flexShrink: 0 }}>{hour}</div>
                       <div style={{ flex: 1, padding: "4px 8px" }}>
                         {hourEvents.map(ev => (
-                          <div key={ev.id} style={{ padding: "4px 8px", borderRadius: 6, background: ev.color + "18", borderLeft: `3px solid ${ev.color}`, marginBottom: 2, fontSize: 11, fontWeight: 600, color: T.text }}>
-                            {ev.text}
-                            {ev.persona && <span style={{ color: T.sub, fontWeight: 400 }}> · {ev.persona}</span>}
+                          <div key={ev.id}>
+                            <div onClick={() => setSelectedEvent(selectedEvent?.id === ev.id ? null : ev)} style={{ padding: "4px 8px", borderRadius: 6, background: ev.color + "18", borderLeft: `3px solid ${ev.color}`, marginBottom: 2, fontSize: 11, fontWeight: 600, color: T.text, cursor: "pointer" }}>
+                              {ev.text}
+                              {ev.persona && <span style={{ color: T.sub, fontWeight: 400 }}> · {ev.persona}</span>}
+                            </div>
+                            {selectedEvent?.id === ev.id && (
+                              <div style={{ padding: "8px", margin: "2px 0 6px", background: T.card, borderRadius: 8, border: `1px solid ${T.bdr}`, boxShadow: T.cardSh }}>
+                                <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 8 }}>
+                                  {ev.addr && <div style={{ fontSize: 11, color: T.text }}>📍 {ev.addr}</div>}
+                                  {ev.persona && <span style={S.badge(T.purpleLt, T.purple)}>👤 {ev.persona}</span>}
+                                  {ev.cm && <span onClick={(e) => { e.stopPropagation(); const cm = cantieri.find(c => c.code === ev.cm); if (cm) { setSelectedCM(cm); setTab("commesse"); } }} style={{ ...S.badge(T.accLt, T.acc), cursor: "pointer" }}>📁 {ev.cm}</span>}
+                                  <span style={S.badge(ev.tipo === "appuntamento" ? T.blueLt : T.orangeLt, ev.tipo === "appuntamento" ? T.blue : T.orange)}>{ev.tipo}</span>
+                                </div>
+                                <div style={{ display: "flex", gap: 4 }}>
+                                  {ev.addr && <div onClick={(e) => { e.stopPropagation(); window.open("https://maps.google.com/?q=" + encodeURIComponent(ev.addr)); }} style={{ flex: 1, padding: "6px", borderRadius: 6, background: T.blueLt, textAlign: "center", cursor: "pointer", fontSize: 10, fontWeight: 600, color: T.blue }}>🗺 Mappa</div>}
+                                  <div onClick={(e) => { e.stopPropagation(); }} style={{ flex: 1, padding: "6px", borderRadius: 6, background: T.grnLt, textAlign: "center", cursor: "pointer", fontSize: 10, fontWeight: 600, color: T.grn }}>📞 Chiama</div>
+                                  <div onClick={(e) => { e.stopPropagation(); deleteEvent(ev.id); setSelectedEvent(null); }} style={{ flex: 1, padding: "6px", borderRadius: 6, background: T.redLt, textAlign: "center", cursor: "pointer", fontSize: 10, fontWeight: 600, color: T.red }}>🗑 Elimina</div>
+                                </div>
+                              </div>
+                            )}
                           </div>
                         ))}
                       </div>
@@ -1895,6 +1990,14 @@ export default function MastroMisure() {
       return matchFilter && matchSearch;
     });
     const unread = msgs.filter(m => !m.read).length;
+
+    // Rubrica filters
+    const filteredContatti = [...contatti, ...team.map(t => ({ id: "t" + t.id, nome: t.nome, tipo: "team", ruolo: t.ruolo, tel: "", email: "", preferito: true, canali: ["whatsapp", "email"], cm: "", colore: t.colore }))].filter(c => {
+      const matchF = rubricaFilter === "tutti" || (rubricaFilter === "preferiti" && c.preferito) || (rubricaFilter === "team" && c.tipo === "team") || (rubricaFilter === "clienti" && c.tipo === "cliente") || (rubricaFilter === "fornitori" && (c.tipo === "fornitore" || c.tipo === "professionista"));
+      const matchS = !rubricaSearch.trim() || c.nome.toLowerCase().includes(rubricaSearch.toLowerCase());
+      return matchF && matchS;
+    }).sort((a, b) => (b.preferito ? 1 : 0) - (a.preferito ? 1 : 0) || a.nome.localeCompare(b.nome));
+
     return (
       <div style={{ paddingBottom: 80 }}>
         <div style={S.header}>
@@ -1907,83 +2010,154 @@ export default function MastroMisure() {
           </div>
         </div>
 
-        {/* Search */}
-        <div style={{ padding: "8px 16px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", background: T.card, borderRadius: 10, border: `1px solid ${T.bdr}` }}>
-            <Ico d={ICO.search} s={14} c={T.sub} />
-            <input style={{ flex: 1, border: "none", background: "transparent", fontSize: 13, color: T.text, outline: "none", fontFamily: FF }} placeholder="Cerca contatto o messaggio..." value={msgSearch} onChange={e => setMsgSearch(e.target.value)} />
-            {msgSearch && <div onClick={() => setMsgSearch("")} style={{ cursor: "pointer", fontSize: 14, color: T.sub }}>✕</div>}
-          </div>
-        </div>
-
-        {/* Channel filters */}
-        <div style={{ display: "flex", gap: 4, padding: "0 16px 10px", overflowX: "auto" }}>
-          {[
-            { id: "tutti", l: "Tutti", c: T.acc },
-            { id: "whatsapp", l: "💬 WhatsApp", c: "#25d366" },
-            { id: "email", l: "📧 Email", c: T.blue },
-            { id: "sms", l: "📱 SMS", c: T.orange },
-            { id: "telegram", l: "✈️ Telegram", c: "#0088cc" },
-          ].map(f => {
-            const count = f.id === "tutti" ? msgs.length : msgs.filter(m => m.canale === f.id).length;
-            const unr = f.id === "tutti" ? unread : msgs.filter(m => m.canale === f.id && !m.read).length;
-            return (
-              <div key={f.id} onClick={() => setMsgFilter(f.id)} style={{ padding: "6px 12px", borderRadius: 20, border: `1px solid ${msgFilter === f.id ? f.c : T.bdr}`, background: msgFilter === f.id ? f.c + "15" : T.card, fontSize: 11, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap", color: msgFilter === f.id ? f.c : T.sub, display: "flex", alignItems: "center", gap: 4 }}>
-                {f.l}
-                {unr > 0 && <span style={{ width: 16, height: 16, borderRadius: "50%", background: f.c, color: "#fff", fontSize: 9, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>{unr}</span>}
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Message list */}
-        <div style={{ padding: "0 16px" }}>
-          {filteredMsgs.length === 0 ? (
-            <div style={{ padding: 30, textAlign: "center", color: T.sub, fontSize: 13 }}>Nessun messaggio</div>
-          ) : (
-            <div style={{ background: T.card, borderRadius: T.r, border: `1px solid ${T.bdr}`, overflow: "hidden" }}>
-              {filteredMsgs.map(m => (
-                <div key={m.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", borderBottom: `1px solid ${T.bg}`, cursor: "pointer", background: m.read ? "transparent" : T.acc + "06" }} onClick={() => { setMsgs(ms => ms.map(x => x.id === m.id ? { ...x, read: true } : x)); setSelectedMsg(m); }}>
-                  {/* Avatar */}
-                  <div style={{ width: 42, height: 42, borderRadius: "50%", background: chBg[m.canale] || T.bg, border: `2px solid ${chCol[m.canale] || T.bdr}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0, position: "relative" }}>
-                    {m.from.charAt(0).toUpperCase()}
-                    <div style={{ position: "absolute", bottom: -2, right: -2, fontSize: 10, background: T.card, borderRadius: "50%", padding: 1 }}>{chIco[m.canale]}</div>
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <div style={{ fontSize: 13, fontWeight: m.read ? 500 : 700, color: T.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.from}</div>
-                      <div style={{ fontSize: 10, color: m.read ? T.sub : T.acc, fontWeight: m.read ? 400 : 700, flexShrink: 0, marginLeft: 8 }}>{m.time}</div>
-                    </div>
-                    <div style={{ fontSize: 12, color: m.read ? T.sub : T.text, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontWeight: m.read ? 400 : 500 }}>{m.preview}</div>
-                    <div style={{ display: "flex", gap: 4, marginTop: 4 }}>
-                      {m.cm && <span style={S.badge(T.accLt, T.acc)}>{m.cm}</span>}
-                    </div>
-                  </div>
-                  {!m.read && <div style={{ width: 10, height: 10, borderRadius: "50%", background: T.acc, flexShrink: 0 }} />}
-                </div>
-              ))}
+        {/* Sub-tabs: Chat / Rubrica */}
+        <div style={{ display: "flex", margin: "8px 16px", borderRadius: 10, border: `1px solid ${T.bdr}`, overflow: "hidden" }}>
+          {[{ id: "chat", l: "💬 Chat", count: unread }, { id: "rubrica", l: "📒 Rubrica", count: contatti.length + team.length }].map(st => (
+            <div key={st.id} onClick={() => setMsgSubTab(st.id)} style={{ flex: 1, padding: "10px 0", textAlign: "center", fontSize: 13, fontWeight: 700, cursor: "pointer", background: msgSubTab === st.id ? T.acc : T.card, color: msgSubTab === st.id ? "#fff" : T.sub, transition: "all 0.2s" }}>
+              {st.l} {st.count > 0 && msgSubTab !== st.id && <span style={{ fontSize: 10, fontWeight: 700, padding: "1px 5px", borderRadius: 8, background: st.id === "chat" && unread > 0 ? T.red : T.bdr, color: st.id === "chat" && unread > 0 ? "#fff" : T.sub, marginLeft: 4 }}>{st.count}</span>}
             </div>
-          )}
+          ))}
         </div>
+
+        {/* ── CHAT TAB ── */}
+        {msgSubTab === "chat" && (<>
+          {/* Search */}
+          <div style={{ padding: "4px 16px 8px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", background: T.card, borderRadius: 10, border: `1px solid ${T.bdr}` }}>
+              <Ico d={ICO.search} s={14} c={T.sub} />
+              <input style={{ flex: 1, border: "none", background: "transparent", fontSize: 13, color: T.text, outline: "none", fontFamily: FF }} placeholder="Cerca contatto o messaggio..." value={msgSearch} onChange={e => setMsgSearch(e.target.value)} />
+              {msgSearch && <div onClick={() => setMsgSearch("")} style={{ cursor: "pointer", fontSize: 14, color: T.sub }}>✕</div>}
+            </div>
+          </div>
+
+          {/* Channel filters */}
+          <div style={{ display: "flex", gap: 4, padding: "0 16px 10px", overflowX: "auto" }}>
+            {[
+              { id: "tutti", l: "Tutti", c: T.acc },
+              { id: "whatsapp", l: "💬 WhatsApp", c: "#25d366" },
+              { id: "email", l: "📧 Email", c: T.blue },
+              { id: "sms", l: "📱 SMS", c: T.orange },
+              { id: "telegram", l: "✈️ Telegram", c: "#0088cc" },
+            ].map(f => {
+              const unr = f.id === "tutti" ? unread : msgs.filter(m => m.canale === f.id && !m.read).length;
+              return (
+                <div key={f.id} onClick={() => setMsgFilter(f.id)} style={{ padding: "6px 12px", borderRadius: 20, border: `1px solid ${msgFilter === f.id ? f.c : T.bdr}`, background: msgFilter === f.id ? f.c + "15" : T.card, fontSize: 11, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap", color: msgFilter === f.id ? f.c : T.sub, display: "flex", alignItems: "center", gap: 4 }}>
+                  {f.l}
+                  {unr > 0 && <span style={{ width: 16, height: 16, borderRadius: "50%", background: f.c, color: "#fff", fontSize: 9, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>{unr}</span>}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Message list */}
+          <div style={{ padding: "0 16px" }}>
+            {filteredMsgs.length === 0 ? (
+              <div style={{ padding: 30, textAlign: "center", color: T.sub, fontSize: 13 }}>Nessun messaggio</div>
+            ) : (
+              <div style={{ background: T.card, borderRadius: T.r, border: `1px solid ${T.bdr}`, overflow: "hidden" }}>
+                {filteredMsgs.map(m => (
+                  <div key={m.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", borderBottom: `1px solid ${T.bg}`, cursor: "pointer", background: m.read ? "transparent" : T.acc + "06" }} onClick={() => { setMsgs(ms => ms.map(x => x.id === m.id ? { ...x, read: true } : x)); setSelectedMsg(m); }}>
+                    <div style={{ width: 42, height: 42, borderRadius: "50%", background: chBg[m.canale] || T.bg, border: `2px solid ${chCol[m.canale] || T.bdr}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0, position: "relative" }}>
+                      {m.from.charAt(0).toUpperCase()}
+                      <div style={{ position: "absolute", bottom: -2, right: -2, fontSize: 10, background: T.card, borderRadius: "50%", padding: 1 }}>{chIco[m.canale]}</div>
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <div style={{ fontSize: 13, fontWeight: m.read ? 500 : 700, color: T.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.from}</div>
+                        <div style={{ fontSize: 10, color: m.read ? T.sub : T.acc, fontWeight: m.read ? 400 : 700, flexShrink: 0, marginLeft: 8 }}>{m.time}</div>
+                      </div>
+                      <div style={{ fontSize: 12, color: m.read ? T.sub : T.text, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontWeight: m.read ? 400 : 500 }}>{m.preview}</div>
+                      {m.cm && <div style={{ marginTop: 3 }}><span style={S.badge(T.accLt, T.acc)}>{m.cm}</span></div>}
+                    </div>
+                    {!m.read && <div style={{ width: 10, height: 10, borderRadius: "50%", background: T.acc, flexShrink: 0 }} />}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </>)}
+
+        {/* ── RUBRICA TAB ── */}
+        {msgSubTab === "rubrica" && (<>
+          {/* Search */}
+          <div style={{ padding: "4px 16px 8px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", background: T.card, borderRadius: 10, border: `1px solid ${T.bdr}` }}>
+              <Ico d={ICO.search} s={14} c={T.sub} />
+              <input style={{ flex: 1, border: "none", background: "transparent", fontSize: 13, color: T.text, outline: "none", fontFamily: FF }} placeholder="Cerca nella rubrica..." value={rubricaSearch} onChange={e => setRubricaSearch(e.target.value)} />
+              {rubricaSearch && <div onClick={() => setRubricaSearch("")} style={{ cursor: "pointer", fontSize: 14, color: T.sub }}>✕</div>}
+            </div>
+          </div>
+
+          {/* Rubrica filters */}
+          <div style={{ display: "flex", gap: 4, padding: "0 16px 10px", overflowX: "auto" }}>
+            {[
+              { id: "tutti", l: "Tutti", c: T.acc },
+              { id: "preferiti", l: "⭐ Preferiti", c: "#ff9500" },
+              { id: "team", l: "👥 Team", c: "#34c759" },
+              { id: "clienti", l: "🏠 Clienti", c: T.blue },
+              { id: "fornitori", l: "🏭 Fornitori", c: "#af52de" },
+            ].map(f => (
+              <div key={f.id} onClick={() => setRubricaFilter(f.id)} style={{ padding: "6px 12px", borderRadius: 20, border: `1px solid ${rubricaFilter === f.id ? f.c : T.bdr}`, background: rubricaFilter === f.id ? f.c + "15" : T.card, fontSize: 11, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap", color: rubricaFilter === f.id ? f.c : T.sub }}>
+                {f.l}
+              </div>
+            ))}
+          </div>
+
+          {/* Contact list */}
+          <div style={{ padding: "0 16px" }}>
+            <div style={{ background: T.card, borderRadius: T.r, border: `1px solid ${T.bdr}`, overflow: "hidden" }}>
+              {filteredContatti.length === 0 ? (
+                <div style={{ padding: 30, textAlign: "center", color: T.sub, fontSize: 13 }}>Nessun contatto trovato</div>
+              ) : filteredContatti.map(c => {
+                const tipoColor = c.tipo === "team" ? "#34c759" : c.tipo === "cliente" ? T.blue : c.tipo === "fornitore" ? "#af52de" : "#ff9500";
+                const tipoLabel = c.tipo === "team" ? "Team" : c.tipo === "cliente" ? "Cliente" : c.tipo === "fornitore" ? "Fornitore" : "Professionista";
+                return (
+                  <div key={c.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", borderBottom: `1px solid ${T.bg}` }}>
+                    {/* Avatar */}
+                    <div style={{ width: 42, height: 42, borderRadius: "50%", background: (c.colore || tipoColor) + "18", border: `2px solid ${c.colore || tipoColor}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 700, color: c.colore || tipoColor, flexShrink: 0, position: "relative" }}>
+                      {c.nome.split(" ").map(w => w[0]).join("").substring(0, 2)}
+                      {c.preferito && <div style={{ position: "absolute", top: -4, right: -4, fontSize: 10 }}>⭐</div>}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>{c.nome}</div>
+                      <div style={{ display: "flex", gap: 4, marginTop: 2, alignItems: "center", flexWrap: "wrap" }}>
+                        <span style={S.badge(tipoColor + "18", tipoColor)}>{tipoLabel}</span>
+                        {c.ruolo && <span style={{ fontSize: 10, color: T.sub }}>{c.ruolo}</span>}
+                        {c.cm && <span style={S.badge(T.accLt, T.acc)}>{c.cm}</span>}
+                      </div>
+                    </div>
+                    {/* Action buttons */}
+                    <div style={{ display: "flex", gap: 4 }}>
+                      {(c.canali || []).includes("whatsapp") && (
+                        <div onClick={() => { setComposeMsg(m => ({ ...m, canale: "whatsapp", to: c.nome })); setShowCompose(true); }} style={{ width: 32, height: 32, borderRadius: "50%", background: "#25d36618", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, cursor: "pointer" }}>💬</div>
+                      )}
+                      {(c.canali || []).includes("email") && (
+                        <div onClick={() => { setComposeMsg(m => ({ ...m, canale: "email", to: c.nome })); setShowCompose(true); }} style={{ width: 32, height: 32, borderRadius: "50%", background: T.blueLt, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, cursor: "pointer" }}>📧</div>
+                      )}
+                      <div onClick={() => { setContatti(cs => cs.map(x => x.id === c.id ? { ...x, preferito: !x.preferito } : x)); }} style={{ width: 32, height: 32, borderRadius: "50%", background: c.preferito ? "#ff950018" : T.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, cursor: "pointer" }}>
+                        {c.preferito ? "⭐" : "☆"}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </>)}
 
         {/* FAB — Compose menu */}
         <style>{`
-          @keyframes fabIn { from { opacity:0; transform: scale(0.3) translateY(20px); } to { opacity:1; transform: scale(1) translateY(0); } }
-          @keyframes fabSpin { from { transform: rotate(0deg); } to { transform: rotate(135deg); } }
-          @keyframes fabSpinBack { from { transform: rotate(135deg); } to { transform: rotate(0deg); } }
           @keyframes fabPulse { 0%,100% { box-shadow: 0 4px 20px rgba(0,122,255,0.4); } 50% { box-shadow: 0 4px 30px rgba(0,122,255,0.6); } }
         `}</style>
-        {/* Backdrop */}
         {fabOpen && <div onClick={() => setFabOpen(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.3)", backdropFilter: "blur(4px)", zIndex: 89 }} />}
-        {/* Channel buttons */}
         {[
-          { ch: "whatsapp", ico: "💬", l: "WhatsApp", c: "#25d366", y: 240 },
-          { ch: "email", ico: "📧", l: "Email", c: "#007aff", y: 185 },
-          { ch: "sms", ico: "📱", l: "SMS", c: "#ff9500", y: 130 },
-          { ch: "telegram", ico: "✈️", l: "Telegram", c: "#0088cc", y: 75 },
+          { ch: "whatsapp", ico: "💬", l: "WhatsApp", c: "#25d366" },
+          { ch: "email", ico: "📧", l: "Email", c: "#007aff" },
+          { ch: "sms", ico: "📱", l: "SMS", c: "#ff9500" },
+          { ch: "telegram", ico: "✈️", l: "Telegram", c: "#0088cc" },
         ].map((item, i) => (
           <div key={item.ch} onClick={() => { setFabOpen(false); setComposeMsg(c => ({ ...c, canale: item.ch })); setShowCompose(true); }} style={{
-            position: "fixed", bottom: item.y, right: 20, zIndex: 90,
+            position: "fixed", bottom: 90 + (i + 1) * 58, right: 20, zIndex: 90,
             display: "flex", alignItems: "center", gap: 10, flexDirection: "row-reverse",
             opacity: fabOpen ? 1 : 0, transform: fabOpen ? "translateY(0) scale(1)" : "translateY(30px) scale(0.5)",
             transition: `all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) ${fabOpen ? i * 0.06 : 0}s`,
@@ -1997,9 +2171,8 @@ export default function MastroMisure() {
             </div>
           </div>
         ))}
-        {/* Main FAB */}
         <div onClick={() => setFabOpen(!fabOpen)} style={{
-          position: "fixed", bottom: 76, right: 20, zIndex: 91,
+          position: "fixed", bottom: 90, right: 20, zIndex: 91,
           width: 56, height: 56, borderRadius: "50%",
           background: fabOpen ? T.sub : "linear-gradient(135deg, #007aff, #5856d6)",
           display: "flex", alignItems: "center", justifyContent: "center",
@@ -3029,23 +3202,21 @@ export default function MastroMisure() {
         {/* AI PHOTO MODAL */}
         {showAIPhoto && (() => {
           const vt = selectedVano?.tipo || "F1A";
-          const isPorta = vt.includes("PF") || vt === "BLI";
-          const isScorr = vt.includes("SC") || vt === "ALZSC";
-          const isVas = vt === "VAS";
-          const isFisso = vt.includes("FIS");
-          // Realistic Italian window measurements
-          const baseW = isScorr ? (vt === "SC4A" ? 2600 : 1600) + Math.floor(Math.random() * 200 - 100)
-            : isPorta ? (vt === "PF2A" ? 1400 : 800) + Math.floor(Math.random() * 100 - 50)
-            : isVas ? 800 + Math.floor(Math.random() * 100 - 50)
-            : isFisso ? 600 + Math.floor(Math.random() * 100 - 50)
-            : vt === "F1A" ? 1000 + Math.floor(Math.random() * 100 - 50)
-            : vt === "F2A" ? 1200 + Math.floor(Math.random() * 100 - 50)
-            : vt === "F3A" ? 1800 + Math.floor(Math.random() * 100 - 50)
-            : 1100 + Math.floor(Math.random() * 100 - 50);
-          const baseH = isPorta ? 2200 + Math.floor(Math.random() * 60 - 30)
-            : isVas ? 600 + Math.floor(Math.random() * 60 - 30)
-            : vt === "SOPR" ? 400 + Math.floor(Math.random() * 50 - 25)
-            : 1300 + Math.floor(Math.random() * 100 - 50);
+          // Standard Italian serramenti sizes (from real catalogs)
+          const sizes = {
+            "F1A": [700, 1200], "F2A": [1200, 1400], "F3A": [1800, 1400],
+            "PF1A": [800, 2200], "PF2A": [1400, 2200], "PF3A": [2100, 2200],
+            "VAS": [700, 500], "SOPR": [800, 400], "FIS": [600, 1000], "FISTONDO": [600, 600],
+            "SC2A": [1600, 2200], "SC4A": [2800, 2200], "ALZSC": [3000, 2200],
+            "BLI": [900, 2100], "TRIANG": [800, 800], "OBLICA": [700, 1200]
+          };
+          const [stdW, stdH] = sizes[vt] || [1100, 1300];
+          // Read existing measurements if any
+          const existing = selectedVano?.misure || {};
+          const hasExisting = existing.lCentro > 0 || existing.hCentro > 0;
+          // Use existing with ±3mm variation, or standard size with ±5mm
+          const baseW = hasExisting && existing.lCentro > 0 ? existing.lCentro + Math.floor(Math.random() * 7 - 3) : stdW + Math.floor(Math.random() * 11 - 5);
+          const baseH = hasExisting && existing.hCentro > 0 ? existing.hCentro + Math.floor(Math.random() * 7 - 3) : stdH + Math.floor(Math.random() * 11 - 5);
           const tipLabel = TIPOLOGIE_RAPIDE.find(t => t.code === vt)?.label || vt;
           return (
           <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={e => e.target === e.currentTarget && setShowAIPhoto(false)}>
@@ -3098,13 +3269,13 @@ export default function MastroMisure() {
                   </div>
                   <button onClick={() => {
                     if (selectedVano) {
-                      const jitter = () => Math.floor(Math.random() * 5) - 2;
-                      updateMisura(selectedVano.id, "lAlto", baseW + jitter());
-                      updateMisura(selectedVano.id, "lCentro", baseW + jitter());
-                      updateMisura(selectedVano.id, "lBasso", baseW + jitter());
-                      updateMisura(selectedVano.id, "hSx", baseH + jitter());
-                      updateMisura(selectedVano.id, "hCentro", baseH + jitter());
-                      updateMisura(selectedVano.id, "hDx", baseH + jitter());
+                      // Simulate real measurements: L alto slightly different from L basso (walls not perfectly straight)
+                      updateMisura(selectedVano.id, "lAlto", baseW + Math.floor(Math.random() * 5 - 2));
+                      updateMisura(selectedVano.id, "lCentro", baseW);
+                      updateMisura(selectedVano.id, "lBasso", baseW - Math.floor(Math.random() * 4));
+                      updateMisura(selectedVano.id, "hSx", baseH);
+                      updateMisura(selectedVano.id, "hCentro", baseH + Math.floor(Math.random() * 3 - 1));
+                      updateMisura(selectedVano.id, "hDx", baseH - Math.floor(Math.random() * 4));
                     }
                     setShowAIPhoto(false);
                   }} style={{ width: "100%", padding: 12, borderRadius: 10, border: "none", background: "linear-gradient(135deg, #af52de, #007aff)", color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: FF, marginBottom: 8 }}>
